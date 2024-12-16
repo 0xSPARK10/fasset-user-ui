@@ -1,0 +1,25 @@
+.paperArrow {
+    &:after {
+        top: 0;
+        right: 0;
+        left: 140px;
+        border: solid transparent;
+        content: "";
+        height: 0;
+        width: 0;
+        position: absolute;
+        pointer-events: none;
+        border-bottom-color: rgba(230, 30, 87, 0.09);
+        border-width: 10px;
+        margin-top: -19px;
+
+        @media (min-width: 768px) {
+            right: 100%;
+            top: 50%;
+            left: auto;
+            border-right-color: rgba(230, 30, 87, 0.09);
+            border-bottom-color: transparent;
+            margin-top: -10px;
+        }
+    }
+}

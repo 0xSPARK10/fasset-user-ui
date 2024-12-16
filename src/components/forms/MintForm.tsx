@@ -1,0 +1,731 @@
+import React, {
+    useEffect,
+    useState,
+    forwardRef,
+    useImperativeHandle,
+    useCallback,
+    memo,
+} from "react";
+import {
+    Anchor,
+    Button,
+    Divider,
+    Loader,
+    LoadingOverlay,
+    NumberInput,
+    Popover,
+    Text,
+    FocusTrap
+} from "@mantine/core";
+import CryptoJS from "crypto-js";
+import { useForm, UseFormReturnType } from "@mantine/form";
+import { IconArrowUpRight } from "@tabler/icons-react";
+import { yupResolver } from "mantine-form-yup-resolver";
+import * as yup from "yup";
+import { useDebouncedCallback, useElementSize, useMediaQuery } from "@mantine/hooks";
+import { useTranslation } from "react-i18next";
+import { AxiosError } from "axios";
+import CopyIcon from "@/components/icons/CopyIcon";
+import AgentsList from "@/components/mint/AgentsList";
+import { showErrorNotification } from "@/hooks/useNotifications";
+import { truncateString, fromLots, toLots, toNumber, formatNumber, toSatoshi } from "@/utils";
+import { IAgent, IFAssetCoin, ISelectedAgent } from "@/types";
+import { useWeb3 } from "@/hooks/useWeb3";
+import { useMaxLots, useReturnAddresses } from "@/api/minting";
+import { useUnderlyingBalance, useNativeBalance } from "@/api/balance";
+import { useBestAgent, useAllAgents } from "@/api/user";
+import { WALLET } from "@/constants";
+import classes from "@/styles/components/forms/MintForm.module.scss";
+
+interface IMintForm {
+    isFormDisabled?: (status: boolean) => void;
+    setSelectedAgent: (agent: ISelectedAgent) => void;
+    selectedAgent: ISelectedAgent | undefined;
+    setLots: (lots: number | undefined) => void;
+    lots: number | undefined;
+    fAssetCoin: IFAssetCoin;
+    refreshBalance: () => void;
+}
+
+export type FormRef = {
+    form: () => UseFormReturnType<any>;
+}
+
+const MintForm = forwardRef<FormRef, IMintForm>(
+    ({
+         isFormDisabled,
+         setSelectedAgent,
+         selectedAgent,
+         lots,
+         setLots,
+         fAssetCoin,
+         refreshBalance
+    }: IMintForm, ref) => {
+    const [maxLots, setMaxLots] = useState<number>();
+    const [transfer, setTransfer] = useState<number>();
+    const [mintingFee, setMintingFee] = useState<number>();
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [areLotsLimited, setAreLotsLimited] = useState<boolean>(false);
+    const [isDisabled, setIsDisabled] = useState<boolean>(true);
+    const [isAgentPopoverActive, setIsAgentPopoverActive] = useState<boolean>(false);
+    const [isManualSelectedAgent, setIsManualSelectedAgent] = useState<boolean>(false);
+
+    const { walletConnectConnector, connectedCoins, mainToken } = useWeb3();
+    const popoverSize = useElementSize();
+    const transferLabelSize = useElementSize();
+    const mintingFeeLabelSize = useElementSize();
+    const reservationLabelSize = useElementSize();
+    const { t } = useTranslation();
+    const isMobile = useMediaQuery('(max-width: 640px)');
+    const bestAgent = useBestAgent();
+    const fetchMaxLots = useMaxLots(fAssetCoin.type, false);
+    const agents = useAllAgents(fAssetCoin.type);
+    const returnAddresses = useReturnAddresses(
+        fAssetCoin.type,
+        transfer && mintingFee ? toSatoshi(transfer + mintingFee) : 0,
+        false
+    );
+
+    const connectedCoin = connectedCoins.find(coin => coin.type == fAssetCoin.type);
+    const underlyingBalance = useUnderlyingBalance(
+        connectedCoin && connectedCoin.connectedWallet === WALLET.LEDGER && connectedCoin.xpub !== undefined
+            ? CryptoJS.AES.decrypt(connectedCoin.xpub!, process.env.XPUB_SECRET!).toString(CryptoJS.enc.Utf8)
+            : fAssetCoin?.address!,
+        fAssetCoin.type,
+        fAssetCoin?.address !== undefined,
+        connectedCoin && connectedCoin.connectedWallet === WALLET.LEDGER && connectedCoin.xpub !== undefined
+    );
+
+    const nativeBalances = useNativeBalance(mainToken?.address ?? '', mainToken?.address !== undefined);
+    const schema = yup.object().shape({
+        lots: yup.number()
+            .required(t('validation.messages.required', { field: t('mint_modal.form.lots_label') }))
+            .min(1)
+    });
+    const form = useForm({
+        mode: 'uncontrolled',
+        initialValues: {
+            lots: undefined,
+            agentAddress: '',
+            collateralReservationFee: '',
+            feeBIPS: '',
+            estimatedFee: undefined,
+            minterUnderlyingAddresses: [],
+            utxos: []
+        },
+        validate: yupResolver(schema),
+        onValuesChange: (values: any) => {
+            if (values?.lots?.length === 0) {
+                form.setFieldValue('lots', undefined);
+            }
+        }
+    });
+
+    const inputDescription = `${t('mint_modal.form.lots_limit_label', {
+        nativeName: fAssetCoin.nativeName,
+        lots: maxLots,
+        lotSize: fAssetCoin.lotSize
+    })}\n ${areLotsLimited ? t('mint_modal.form.maximum_number_of_lots_label') + "\n" : ''} ${t('mint_modal.form.amounted_based_label', { nativeName: fAssetCoin.nativeName })}`;
+    const labelWidth = Math.max(transferLabelSize.width, mintingFeeLabelSize.width, reservationLabelSize.width);
+
+    const refetchBestAgent = useCallback(async (setAgent: boolean = true) => {
+        try {
+            if (isFormDisabled) {
+                isFormDisabled(true);
+            }
+
+            const response = await bestAgent.mutateAsync({
+                fAsset: fAssetCoin.type,
+                lots: lots as number
+            });
+
+            if (setAgent) {
+                const fee = (transfer ?? 0) * ((Number(response?.feeBIPS) ?? 0) / 10000);
+                setMintingFee(fee);
+
+                setSelectedAgent({
+                    name: response?.agentName,
+                    address: response?.agentAddress,
+                    feeBIPS: response?.feeBIPS,
+                    handshakeType: response?.handshakeType,
+                    underlyingAddress: response?.underlyingAddress,
+                    infoUrl: response?.infoUrl
+                });
+                form.setValues((prev) => ({
+                    ...prev,
+                    agentAddress: response?.agentAddress,
+                    collateralReservationFee: response?.collateralReservationFee,
+                    feeBIPS: response?.feeBIPS
+                }));
+            } else {
+                form.setFieldValue('collateralReservationFee', response?.collateralReservationFee);
+            }
+        } catch (error: any) {
+            error = error as AxiosError;
+            if (error.response.status === 400) {
+                setIsDisabled(true);
+                if (isFormDisabled) {
+                    isFormDisabled(true);
+                }
+
+                form.setFieldError(
+                    'lots',
+                    !isManualSelectedAgent
+                        ? error?.response?.data?.message
+                        : t('mint_modal.form.error_agent_no_lots_available')
+                );
+            } else {
+                showErrorNotification(error?.response?.data?.message);
+            }
+        } finally {
+            if (isFormDisabled) {
+                isFormDisabled(false);
+            }
+        }
+    }, [bestAgent, form]);
+
+    useEffect(() => {
+        return () => {
+            setLots(undefined)
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!mintingFee || !selectedAgent || selectedAgent.handshakeType === 0 || fAssetCoin.type.toLowerCase().includes('xrp')) {
+            form.setFieldValue(
+                'minterUnderlyingAddresses',
+                fAssetCoin.type.toLowerCase().includes('xrp') ? [fAssetCoin.address!] : []
+            );
+            return;
+        }
+
+        const fetch = async () => {
+            const response = await returnAddresses.refetch();
+            form.setValues((prev) => ({
+                ...prev,
+                minterUnderlyingAddresses: response.data?.addresses!,
+                utxos: response.data?.utxos!,
+                estimatedFee: response.data?.estimatedFee
+            }));
+        }
+
+        fetch();
+    }, [mintingFee, selectedAgent]);
+
+    useEffect(() => {
+        if (lots) {
+            refetchBestAgent(!isManualSelectedAgent);
+        } else {
+            setMintingFee(undefined);
+        }
+    }, [lots]);
+
+    useEffect(() => {
+        if (!underlyingBalance.data || !nativeBalances.data) return;
+
+        const fetch = async () => {
+            try {
+                setIsDisabled(false);
+                if (isFormDisabled) {
+                    isFormDisabled(false);
+                }
+
+                setIsLoading(true);
+
+                if (underlyingBalance.data.balance === null) {
+                    await walletConnectConnector.fetchUtxoAddresses(fAssetCoin.network.namespace, fAssetCoin.network.chainId, fAssetCoin.address!);
+                    return;
+                }
+
+                const maxLotsResponse = await fetchMaxLots.refetch({ throwOnError: true });
+                setAreLotsLimited(maxLotsResponse.data?.lotsLimited ?? false);
+
+                const agentMaxLots = Number(maxLotsResponse.data?.maxLots!);
+                let balanceLots = Math.floor((toNumber(underlyingBalance.data.balance!) - fAssetCoin.minWalletBalance) / fAssetCoin.lotSize);
+                if (balanceLots < 0) {
+                    balanceLots = 0;
+                }
+
+                // get fee for max lots to mint
+                const response = await bestAgent.mutateAsync({
+                    fAsset: fAssetCoin.type,
+                    lots: Math.min(balanceLots, agentMaxLots)
+                });
+
+                let balance = toNumber(underlyingBalance.data.balance!);
+                const fee = (transfer ?? balance) * ((Number(response.feeBIPS) ?? 0) / 10000);
+                // substract fee from coin balance and recalculate max lots to mint
+                balance -= fee;
+                // wallet needs to have minimal X coins
+                balance -= fAssetCoin.minWalletBalance;
+                if (balance < 0) {
+                    balance = 0;
+                }
+
+                balanceLots = toLots(balance, fAssetCoin.lotSize) as number;
+                setMaxLots(Math.min(balanceLots, agentMaxLots));
+            } catch (error: any) {
+                if (error.code === 4001) {
+                    refreshBalance();
+                } else {
+                    error = error as AxiosError;
+                    if (error?.response?.status === 400) {
+                        if (error?.response?.data?.message.toLowerCase().includes('cannot mint more than')) {
+                            await fetchMaxLots.refetch();
+                            return;
+                        }
+
+                        setIsDisabled(true);
+                        if (isFormDisabled) {
+                            isFormDisabled(true);
+                        }
+                        form.setFieldError('lots', error?.response?.data?.message);
+                    } else {
+                        showErrorNotification(error?.response?.data?.message);
+                    }
+                }
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        fetch();
+    }, [underlyingBalance.data, nativeBalances.data]);
+
+    useEffect(() => {
+        if (!fetchMaxLots.isError) return;
+
+        const error: any = fetchMaxLots?.error;
+        if (error?.response?.status === 400) {
+            setIsDisabled(true);
+            if (isFormDisabled) {
+                isFormDisabled(true);
+            }
+            form.setFieldError('lots', error?.response?.data?.message);
+        } else {
+            showErrorNotification(error?.response?.data?.message);
+        }
+    }, [fetchMaxLots.isError]);
+
+    useImperativeHandle(ref, () => ({
+        form: () => {
+            return form;
+        }
+    }));
+
+    form.watch('lots', ({ value }) => {
+        debounceSetLots(value);
+    });
+
+    const debounceSetLots = useDebouncedCallback(async (value) => {
+        setLots(value);
+        setTransfer(fromLots(value, fAssetCoin.lotSize) as number);
+        if (value && selectedAgent !== undefined) {
+            setMintingFee(fromLots(value, fAssetCoin.lotSize) as number * ((Number(selectedAgent.feeBIPS) ?? 0) / 10000));
+        }
+    }, 500);
+
+    const setAgent = (event: React.MouseEvent<HTMLDivElement>, agent: IAgent) => {
+        if (event.target instanceof SVGElement) {
+            return;
+        }
+
+        setIsManualSelectedAgent(true);
+
+        setSelectedAgent({
+            name: agent.agentName,
+            address: agent.vault,
+            feeBIPS: agent.feeBIPS,
+            handshakeType: agent.handshakeType,
+            underlyingAddress: agent.underlyingAddress,
+            infoUrl: agent.url,
+        });
+        setIsAgentPopoverActive(false);
+
+        let balance = toNumber(underlyingBalance?.data?.balance!);
+        const fee = transfer! * ((Number(agent.feeBIPS) ?? 0) / 10000);
+        setMintingFee(fee);
+
+        // substract fee from balance and recalculate max lots to mint
+        balance -= fee;
+        // wallet needs to have minimal 10 coins
+        balance -= fAssetCoin.minWalletBalance;
+
+        if (balance < 0) {
+            balance = 0;
+        }
+
+        const balanceLots = toLots(balance, fAssetCoin.lotSize) as number;
+        setMaxLots(Math.min(balanceLots, Number(agent.freeLots)));
+
+        const values = form.getValues();
+        form.setValues((prev) => ({
+            ...prev,
+            agentAddress: agent.vault,
+            feeBIPS: agent.feeBIPS,
+            lots: values.lots > Number(agent.freeLots) ? Number(agent.freeLots) : lots
+        }));
+
+        if (values.lots) {
+            refetchBestAgent(false);
+        }
+    }
+
+    const HandshakeBlock = memo(({ agent }: { agent: ISelectedAgent | undefined }) => {
+        let url = agent ? agent.infoUrl : '';
+        if (!/^https?:\/\//i.test(url)) {
+            url = 'https://' + url;
+        }
+
+        return (
+            <div className="inline-block">
+                <Text
+                    className="text-12 uppercase mt-3"
+                    fw={400}
+                    c="var(--flr-gray)"
+                >
+                    {t('mint_modal.form.handshake_required_label')}
+                </Text>
+                <div className="mt-2 flex justify-between">
+                    <Text
+                        className="text-16"
+                        fw={400}
+                        c="var(--flr-black)"
+                    >
+                        {!isManualSelectedAgent && bestAgent.isPending
+                            ? <Loader size={14} />
+                            : (
+                                (lots || isManualSelectedAgent) && agent?.address
+                                    ? t(agent?.handshakeType !== 0 ? 'mint_modal.form.yes_label' : 'mint_modal.form.no_label')
+                                    : <span>&mdash;</span>
+                            )
+                        }
+                    </Text>
+                    {(lots || isManualSelectedAgent) && agent && agent?.infoUrl?.length > 0 && agent.handshakeType !== 0 &&
+                        <Anchor
+                            underline="always"
+                            href={url}
+                            target="_blank"
+                            className="inline-flex items-center text-16"
+                            c="var(--flr-black)"
+                            fw={700}
+                        >
+                            {t('mint_modal.form.tou_label')}
+                            <IconArrowUpRight
+                                size={20}
+                                className="ml-1 flex-shrink-0"
+                            />
+                        </Anchor>
+                    }
+                </div>
+            </div>
+        );
+    });
+    HandshakeBlock.displayName = 'handshakeBlock';
+
+    return (
+        <div ref={popoverSize.ref}>
+            <LoadingOverlay visible={isLoading || underlyingBalance.isPending} />
+            <FocusTrap active={true}>
+                <NumberInput
+                    {...form.getInputProps('lots')}
+                    key={form.key('lots')}
+                    label={
+                        <Text
+                            className="text-12"
+                            fw={400}
+                            c="var(--flr-gray)"
+                        >
+                            {t('mint_modal.form.lots_label')}
+                        </Text>
+                    }
+                    description={
+                        underlyingBalance.isPending || isLoading
+                            ? t('mint_modal.form.lots_waiting_balance_label', {coin: fAssetCoin.nativeName})
+                            : isDisabled
+                                ? ''
+                                : inputDescription
+                    }
+                    inputWrapperOrder={['label', 'input', 'error', 'description']}
+                    inputMode="numeric"
+                    type="tel"
+                    size="sm"
+                    step={1}
+                    min={maxLots !== undefined && maxLots > 0 ? 1 : 0}
+                    max={maxLots}
+                    allowDecimal={false}
+                    disabled={isDisabled}
+                    clampBehavior="strict"
+                    className="mt-3"
+                    classNames={{
+                        label: 'uppercase',
+                        input: classes.lotsInput,
+                        wrapper: 'flex-shrink-0 w-full sm:w-2/4'
+                    }}
+                    inputContainer={children => (
+                        <div className="flex items-center justify-between flex-wrap sm:flex-nowrap">
+                            {children}
+                            <div className="sm:ml-8 mb-1 hidden sm:flex items-center">
+                                {fAssetCoin.icon({ width: "24", height: "24" })}
+                                <Text
+                                    fw={500}
+                                    c="var(--flr-black)"
+                                    className="text-18 mx-2"
+                                >
+                                    {
+                                        fromLots(
+                                            typeof lots === 'number'
+                                                ? lots
+                                                : (lots !== undefined && (lots as string).length > 0 ? lots : undefined),
+                                            fAssetCoin.lotSize,
+                                            fAssetCoin.decimals,
+                                            true
+                                        )
+                                    }
+                                </Text>
+                                <Text
+                                    c="var(--flr-gray)"
+                                    className="text-18"
+                                    fw={400}
+                                >
+                                    {fAssetCoin.type}
+                                </Text>
+                            </div>
+                        </div>
+                    )}
+                />
+            </FocusTrap>
+            <div className="flex items-center mt-2 sm:hidden">
+                {fAssetCoin.icon({ width: "30", height: "30" })}
+                <Text
+                    fw={500}
+                    className="text-18 mx-2"
+                >
+                    {fromLots(lots, fAssetCoin.lotSize, fAssetCoin.decimals,true)}
+                </Text>
+                <Text
+                    c="var(--flr-gray)"
+                    fw={400}
+                    className="text-18"
+                >
+                    {fAssetCoin.symbol}
+                </Text>
+            </div>
+            <Divider
+                className="my-8"
+                styles={{
+                    root: {
+                        marginLeft: isMobile ? '-1rem' : '-2.75rem',
+                        marginRight: isMobile ? '-1rem' : '-2.75rem'
+                    }
+                }}
+            />
+            <div className="flex flex-col sm:flex-row justify-between">
+                <div className="mb-2 sm:mb-0">
+                    <Text
+                        c="var(--flr-gray)"
+                        className="text-12 uppercase"
+                    >
+                        {t('mint_modal.form.name_label')}
+                    </Text>
+                    <Text
+                        c="var(--flr-black)"
+                        className="text-16"
+                    >
+                        {!isManualSelectedAgent && bestAgent.isPending
+                            ? <Loader size={14} />
+                            : (
+                                (lots || isManualSelectedAgent) && selectedAgent?.name
+                                    ? selectedAgent?.name
+                                    : <span>&mdash;</span>
+                            )
+                        }
+                    </Text>
+                </div>
+                <div className="mb-2 sm:mb-0">
+                    <Text
+                        c="var(--flr-gray)"
+                        className="text-12 uppercase"
+                    >
+                        {t('mint_modal.form.address_label')}
+                    </Text>
+                    <div className="flex items-center">
+                        <Text
+                            c="var(--flr-black)"
+                            className="text-16"
+                        >
+                            {!isManualSelectedAgent && bestAgent.isPending
+                                ? <Loader size={14} />
+                                : (
+                                    (lots || isManualSelectedAgent) && selectedAgent?.address
+                                        ? truncateString(selectedAgent?.address, 5, 5)
+                                        : <span>&mdash;</span>
+                                )
+                            }
+                        </Text>
+                        {(isManualSelectedAgent || lots) && selectedAgent?.address &&
+                            <CopyIcon
+                                text={selectedAgent.address}
+                                color="var(--flr-black)"
+                            />
+                        }
+                    </div>
+                </div>
+                <div className="inline-block sm:hidden mb-2 sm:mb-0">
+                    <HandshakeBlock
+                        agent={selectedAgent}
+                    />
+                </div>
+                <Popover
+                    width={popoverSize.width + 15}
+                    opened={isAgentPopoverActive}
+                    onChange={() => setIsAgentPopoverActive(!isAgentPopoverActive)}
+                    position={isMobile ? 'bottom' : 'bottom-end'}
+                >
+                    <Popover.Target>
+                        <Button
+                            variant="gradient"
+                            radius="xl"
+                            onClick={() => setIsAgentPopoverActive(!isAgentPopoverActive)}
+                            disabled={(!isManualSelectedAgent && !lots) || isDisabled}
+                        >
+                            {t('mint_modal.form.change_agent_button')}
+                        </Button>
+                    </Popover.Target>
+                    <Popover.Dropdown className="p-2 md:p-3">
+                        <AgentsList
+                            agents={agents}
+                            setAgent={setAgent}
+                        />
+                    </Popover.Dropdown>
+                </Popover>
+            </div>
+            <div className="hidden sm:inline-block">
+                <HandshakeBlock
+                    agent={selectedAgent}
+                />
+            </div>
+            <Divider
+                className="my-8"
+                styles={{
+                    root: {
+                        marginLeft: isMobile ? '-1rem' : '-2.75rem',
+                        marginRight: isMobile ? '-1rem' : '-2.75rem'
+                    }
+                }}
+            />
+            <div className="mt-2">
+                <Text
+                    fw={400}
+                    c="var(--flr-gray)"
+                    className="mb-1 text-12 uppercase"
+                >
+                    {t('mint_modal.form.you_will_send_label')}
+                </Text>
+                <div className="flex justify-between">
+                    <Text
+                        className="text-16"
+                        fw={400}
+                    >
+                        {t('mint_modal.form.transfer_label')}
+                    </Text>
+                    <div className="flex items-center">
+                        {fAssetCoin.nativeIcon && fAssetCoin.nativeIcon({ width: "16", height: "16" })}
+                        <Text
+                            className="mx-2 text-16"
+                            fw={400}
+                        >
+                            {transfer
+                                ? formatNumber(transfer, fAssetCoin.decimals)
+                                : <span>&mdash;</span>
+                            }
+                        </Text>
+                        <Text
+                            ref={transferLabelSize.ref}
+                            className="text-16"
+                            fw={400}
+                            c="var(--flr-gray)"
+                            style={{ width: labelWidth > 0 ? `${labelWidth}px` : 'auto' }}
+                        >
+                            {fAssetCoin.nativeName}
+                        </Text>
+                    </div>
+                </div>
+                <Text
+                    fw={400}
+                    c="var(--flr-gray)"
+                    className="mb-1 mt-5 uppercase text-12"
+                >
+                    {t('mint_modal.form.fees_label')}
+                </Text>
+                <div className="flex justify-between items-center">
+                    <Text
+                        className="text-16"
+                        fw={400}
+                        c="var(--flr-black)"
+                    >
+                        {t('mint_modal.form.minting_fee_label')}
+                    </Text>
+                    <div className="flex items-center">
+                        {fAssetCoin.nativeIcon && fAssetCoin.nativeIcon({ width: "16", height: "16" })}
+                        <Text
+                            className="mx-2 text-16"
+                            fw={400}
+                        >
+                            {bestAgent.isPending
+                                ? <Loader size={14} />
+                                : (mintingFee
+                                    ? formatNumber(mintingFee, fAssetCoin.decimals)
+                                    : <span>&mdash;</span>)
+                            }
+                        </Text>
+                        <Text
+                            ref={mintingFeeLabelSize.ref}
+                            className="text-16"
+                            fw={400}
+                            c="var(--flr-gray)"
+                            style={{ width: labelWidth > 0 ? `${labelWidth}px` : 'auto' }}
+                        >
+                            {fAssetCoin.nativeName}
+                        </Text>
+                    </div>
+                </div>
+                <div className="flex justify-between items-center mt-2">
+                    <Text
+                        className="text-16"
+                        fw={400}
+                        c="var(--flr-black)"
+                    >
+                        {t('mint_modal.form.reservation_fee_label')}
+                    </Text>
+                    <div className="flex items-center">
+                        {mainToken?.icon !== undefined && mainToken?.icon({ width: "16", height: "16" })}
+                        <Text
+                            className="mx-2 text-16"
+                            fw={400}
+                        >
+                            {bestAgent.isPending
+                                ? <Loader size={14} />
+                                : (lots && bestAgent?.data?.collateralReservationFee
+                                    ? (Number(bestAgent?.data?.collateralReservationFee) / 1000000000000000000).toLocaleString('en-US', { maximumFractionDigits: 2 })
+                                    : <span>&mdash;</span>)
+                            }
+                        </Text>
+                        <Text
+                            ref={reservationLabelSize.ref}
+                            className="text-16"
+                            fw={400}
+                            c="var(--flr-gray)"
+                            style={{ width: labelWidth > 0 ? `${labelWidth}px` : 'auto' }}
+                        >
+                            {mainToken?.type}
+                        </Text>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+});
+
+MintForm.displayName = 'MintForm';
+export default MintForm;

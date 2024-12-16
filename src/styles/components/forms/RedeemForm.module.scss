@@ -1,0 +1,11 @@
+.lotsInput {
+    border-radius: 0.125rem;
+
+    @media (screen(sm)) {
+        width: 320px;
+    }
+
+    &::placeholder {
+        text-transform: uppercase;
+    }
+}

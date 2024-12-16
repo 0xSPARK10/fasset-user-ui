@@ -1,0 +1,7 @@
+.sortIcon {
+    transition: transform 0.2s;
+
+    &.isReversed {
+        transform: scaleY(-1);
+    }
+}

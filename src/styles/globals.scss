@@ -1,0 +1,329 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --foreground-rgb: 0, 0, 0;
+    --background-start-rgb: 214, 219, 220;
+    --background-end-rgb: 255, 255, 255;
+    --button-hover-color: 0, 0, 0;
+    --flr-lightest-red: #fce2e9;
+    --flr-red: #BD2222;
+    --flr-button-hover-color: #D3385A;
+    --flr-lightest-green: #D7F6E5;
+    --flr-green: #116622;
+    --flr-black: #000;
+    --flr-lightest-orange: #FCEBE2;
+    --flr-orange: #CA7345;
+    --flr-lightest-gray: #FBFBFB;
+    --flr-light-gray: #D9D9D9;
+    --flr-gray: #777777;
+    --flr-dark-gray: #4D4E4D;
+    --flr-border-color: #E7E7E7;
+    --flr-white: #FFF;
+    --flr-warning: #F19D70;
+    --flr-pink: #E61E57;
+    --flr-teal: #26A17B;
+    --flr-lightest-blue: #DFE9FD;
+    --flr-blue: #2775CA;
+    --tab-border-color: #fff;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --foreground-rgb: 255, 255, 255;
+        --background-start-rgb: 0, 0, 0;
+        --background-end-rgb: 0, 0, 0;
+        --loader-color: 0, 0, 0;
+    }
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--mantine-color-gray-0);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.4);
+    border-radius: 12px;
+    border: 2px solid transparent;
+}
+
+html {
+    font-size: 16px;
+}
+
+input[type="color"],
+input[type="date"],
+input[type="datetime"],
+input[type="datetime-local"],
+input[type="email"],
+input[type="month"],
+input[type="number"],
+input[type="password"],
+input[type="search"],
+input[type="tel"],
+input[type="text"],
+input[type="time"],
+input[type="url"],
+input[type="week"],
+select:focus,
+textarea {
+    font-size: 16px;
+}
+
+@layer utilities {
+    .text-balance {
+        text-wrap: balance;
+    }
+}
+
+ul {
+    list-style: disc;
+}
+
+ol {
+    list-style: decimal;
+}
+
+// Modal
+.mantine-Modal-header {
+    border-bottom: 1px solid var(--mantine-color-gray-3);
+    padding: 2rem 1rem;
+    margin-bottom: 2rem;
+
+    @media (min-width: 40em) {
+        padding: 2rem 2.75rem;
+    }
+    @media (max-width: 640px) {
+        position: relative;
+    }
+
+    .mantine-CloseButton-root {
+        transform: scale(1.25);
+    }
+}
+
+// Input
+.mantine-Input-input {
+    &[aria-invalid="false"] {
+        &:focus {
+            border-color: var(--mantine-color-black);
+        }
+    }
+}
+
+// Loader
+.mantine-Loader-root {
+    --loader-color: #242425;
+
+    &:after {
+        border-color: var(--loader-color) rgba(36, 36, 37, .1) rgba(36, 36, 37, .1) rgba(36, 36, 37, .1);
+    }
+}
+
+// Button
+.mantine-Button-root {
+    &[data-variant="gradient"] {
+        background: linear-gradient(45deg, var(--mantine-color-white) 0%, #EAEAEA 100%);
+        color: var(--mantine-color-black);
+        border: 0.5px solid var(--mantine-color-black);
+
+        &:not([data-disabled="true"]):hover {
+            background: linear-gradient(90deg, #fff 1.02%, #ffd8e1 96.26%);
+            border-color: var(--flr-button-hover-color);
+        }
+        &[data-loading="true"] {
+            .mantine-Loader-root {
+                &:after {
+                    border-color: #000 rgba(36, 36, 37, 0.1) rgba(36, 36, 37, 0.1) rgba(36, 36, 37, 0.1);
+                }
+            }
+        }
+        &[data-disabled="true"] {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+    }
+    &:not([data-variant="gradient"]):not([data-variant="outline"]):not([data-variant="transparent"]):not([data-variant="default"]):not([data-disabled="true"]):not([data-variant="subtle"]) {
+        &:hover {
+            background: var(--flr-button-hover-color);
+            color: var(--flr-white);
+        }
+    }
+    &:hover {
+        &[data-disabled="true"] {
+            color: var(--mantine-color-gray-5);
+        }
+    }
+
+    &.hover-gradient {
+        &:hover {
+            background: linear-gradient(90deg, #fff 1.02%, #ffd8e1 96.26%);
+            border-color: var(--flr-button-hover-color);
+            color: var(--flr-black);
+        }
+    }
+}
+
+//Stepper
+.mantine-Stepper-stepIcon {
+    border-color: #CED4DA;
+    background-color: transparent;
+
+    &[data-progress="true"] {
+        ::after {
+            border-color: var(--flr-black) rgba(36, 36, 37, 0.1) rgba(36, 36, 37, 0.1) rgba(36, 36, 37, 0.1);
+        }
+    }
+
+    &[data-completed="true"] {
+        border-color: var(--mantine-color-gray-4);
+        background-color: var(--mantine-color-white);
+
+    }
+}
+.mantine-Stepper-step {
+    &:last-child {
+        min-height: auto;
+    }
+}
+
+.small-wrapped-stepper {
+    margin-top: 10px;
+    margin-right: 10px;
+    .mantine-Stepper-stepBody {
+        height: var(--stepper-icon-size);
+
+        .mantine-Stepper-stepLabel {
+            margin: auto;
+            font-weight: bold;
+            font-size: 0.8em;
+        }
+    }
+    .mantine-Stepper-step {
+        margin-top: 0px;
+        --stepper-icon-size: 1.1rem;
+        min-height: calc(var(--stepper-icon-size) + var(--mantine-spacing-xs) + var(--separator-spacing));
+
+        .mantine-Stepper-stepIcon {
+            background: var(--step-color);
+            border-width: 0;
+            color: var(--mantine-color-default);
+
+            svg {
+                width: calc(0.8rem* var(--mantine-scale));
+                height: calc(0.8rem* var(--mantine-scale));
+            }
+        }
+
+    }
+    .mantine-Stepper-verticalSeparator {
+        top: var(--stepper-icon-size);
+        inset-inline-start: calc(var(--stepper-icon-size) / 2 - 1px);
+        border-color: var(--vertical-separator-color) !important;
+    }
+}
+
+// Tooltip
+.mantine-Tooltip-tooltip {
+    background-color: var(--mantine-color-white);
+    padding: 0.75rem;
+    color: var(--mantine-color-black);
+    border: 1px solid var(--mantine-color-default-border);
+}
+
+// Checkbox
+.mantine-Checkbox-label {
+    &:where([data-disabled="true"]) {
+        color: var(--mantine-color-gray-6);
+    }
+}
+
+// Badge
+.mantine-Badge-root .mantine-Badge-label {
+    text-transform: none;
+}
+
+// Tabs
+.mantine-Tabs-list {
+    button {
+        &:where([data-active]) {
+            border-color: var(--mantine-color-black);
+        }
+    }
+}
+
+// Action icons
+.mantine-ActionIcon-root {
+    &[data-variant="gradient"] {
+        background: linear-gradient(45deg, var(--mantine-color-white) 0%, #EAEAEA 100%);
+        color: var(--mantine-color-black);
+        border: 0.5px solid var(--mantine-color-black);
+    }
+}
+
+// Dropdowns
+.mantine-Menu-dropdown {
+    &[data-variant="gradient"] {
+        background: linear-gradient(45deg, var(--mantine-color-white) 0%, #EAEAEA 100%);
+        color: var(--mantine-color-black);
+        border: 1px solid var(--mantine-color-black);
+        padding: 0;
+
+        > button {
+            &:not(:last-of-type) {
+                border-bottom-left-radius: 0;
+                border-bottom-right-radius: 0;
+                border-bottom: 1px solid #D6D6D6;
+            }
+        }
+    }
+}
+
+.fau-hover-row-table {
+    .fau-hover-mobile-content {
+        display: none;
+
+        @media (max-width: 1280px) {
+            display: block;
+        }
+    }
+    .fau-hover-content {
+        position: absolute;
+        right: 0;
+        height: calc(100% - 2px);
+        margin-top: 1px;
+        margin-bottom: 1px;
+        align-items: center;
+        display: none;
+        padding-right: 20px;
+        padding-left: 20px;
+        background-color: var(--mantine-color-white);
+        top: 0;
+    }
+    tbody > tr {
+        position: relative;
+
+        &:hover {
+            .fau-hover-content {
+                @media (min-width: 1281px) {
+                    display: flex;
+                }
+
+            }
+        }
+    }
+}
+
+.status-dot {
+    height: 10px;
+    width: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}

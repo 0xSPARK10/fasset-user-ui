@@ -1,0 +1,22 @@
+.container {
+    width: clamp(768px, 96vw, 1600px);
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0;
+}
+.filters {
+    scrollbar-width: none;
+}
+.tab {
+    &[data-active="true"] {
+        color: var(--flr-pink);
+        border-color: var(--flr-pink);
+    }
+    &:not([data-active]) {
+        border-color: #D6D6D6;
+    }
+    &:hover {
+        color: var(--flr-pink);
+        border-color: var(--flr-pink);
+    }
+}

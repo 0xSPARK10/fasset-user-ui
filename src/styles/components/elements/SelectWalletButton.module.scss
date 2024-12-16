@@ -1,0 +1,38 @@
+.button {
+    border: 1px solid #242425;
+    border-radius: var(--mantine-radius-xl);
+    transition: color 250ms ease-in-out,background-color 250ms ease-in-out;
+    background: transparent;
+
+    &.isActive {
+        background-color: var(--mantine-color-black) !important;
+
+        p {
+            color: var(--mantine-color-white) !important;
+        }
+    }
+    &:hover {
+        border-color: #E62058 !important;
+        background-color: transparent !important;
+        color: #E62058 !important;
+
+        p {
+            transition: color 250ms ease-in-out,background-color 250ms ease-in-out;
+            color: #E62058 !important;
+        }
+    }
+}
+.ledger {
+    .ledgerIcon {
+        path {
+            fill: var(--mantine-color-white);
+        }
+    }
+    &:hover {
+        .ledgerIcon {
+            path {
+                fill: var(--mantine-color-black);
+            }
+        }
+    }
+}

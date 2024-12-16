@@ -1,0 +1,12 @@
+.lotsInput {
+    border-radius: 0.125rem;
+
+    &::placeholder {
+        text-transform: uppercase;
+    }
+}
+.agentRow {
+    &:hover {
+        background: linear-gradient(90deg, #FFFFFF 1.02%, #FFD8E1 96.26%);
+    }
+}

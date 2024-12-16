@@ -1,0 +1,53 @@
+.container {
+    width: clamp(768px, 96vw, 1600px);
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0;
+
+    @media (min-width: 768px) {
+        max-width: 96%;
+    }
+}
+.sticky {
+    @media (max-width: 710px) {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background-color: #fff;
+        border-right: 1px solid var(--table-border-color);
+        box-shadow: 3px 5px 13px 0px var(--table-border-color);
+    }
+}
+.stickyRight {
+    position: sticky;
+    flex-direction: column;
+    right: 0;
+    z-index: 2;
+}
+.agentNameTr {
+    width: 4rem;
+
+    @media (min-width: 385px) {
+        width: 6.5rem;
+    }
+}
+.drawer {
+    > section {
+        > div {
+            height: 100dvh !important;
+        }
+    }
+}
+.loadAll {
+    &:before {
+        margin-inline-end: 0;
+    }
+    &:after {
+        margin-inline-start: 0;
+    }
+}
+.remainingFilters {
+    &:where([data-checked]) {
+        margin-bottom: 3px;
+    }
+}

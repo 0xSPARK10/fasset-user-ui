@@ -1,0 +1,14 @@
+version: "3"
+services:
+  next:
+    # Use a custom image for nuxt
+    image: front
+    container_name: ${COMPOSE_PROJECT_NAME}-front-app
+    restart: always
+    ports:
+      - "${FRONT_PORT}:3000"
+    env_file:
+      - ../src/.env
+    volumes:
+      - ../src/.env:/app/.env
+    command: "/bin/sh -c '(npm run build) && (npm run start)'"
