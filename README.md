@@ -6,7 +6,7 @@
 ## Run with docker
 1. Move to `/src` folder.
 2. Copy `.env.example` to `.env` and fill the values.
-3. Build and run with `docker compose --env-file ../src/.env -f ../docker/docker-compose.yml up --build` or in detached mode `docker compose --env-file ../src/.env -f ../docker/docker-compose.yml up --build -d` from the `src` folder.
+3. Build and run with `docker compose --env-file ../src/.env -f ../docker/docker-compose.yml up` or in detached mode `docker compose --env-file ../src/.env -f ../docker/docker-compose.yml up -d` from the `src` folder.
 
 
 ## Installation for development

@@ -3,6 +3,9 @@ services:
   next:
     # Use a custom image for nuxt
     image: front
+    build:
+      context: ../src
+      dockerfile: ../docker/Dockerfile
     container_name: ${COMPOSE_PROJECT_NAME}-front-app
     restart: always
     ports:
