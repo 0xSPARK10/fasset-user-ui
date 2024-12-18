@@ -6,6 +6,7 @@ import UsdtIcon from "@/components/icons/UsdtIcon";
 import EthIcon from "@/components/icons/EthIcon";
 import { IPool } from "@/types";
 import { formatNumberWithSuffix, toNumber, isMaxCRValue } from "@/utils";
+import UsdxIcon from "@/components/icons/UsdxIcon";
 
 interface IVaultCollateralCard {
     pool: IPool | undefined;
@@ -23,6 +24,8 @@ export default function VaultCollateralCard({ pool }: IVaultCollateralCard) {
             return <UsdtIcon width="40" height="40" className="flex-shrink-0" />;
         } else if (pool.collateralToken.toLowerCase().includes('eth')) {
             return <EthIcon width="40" height="40" className="flex-shrink-0" />;
+        } else if (pool.collateralToken.toLowerCase().includes('usdx')) {
+            return <UsdxIcon width="40" height="40" className="flex-shrink-0" />;
         }
 
         return undefined;
@@ -30,11 +33,11 @@ export default function VaultCollateralCard({ pool }: IVaultCollateralCard) {
 
     return (
         <div>
-            <Title className="text-24 mb-4" fw={300}>{t('agent_details.collateral_label')}</Title>
+            <Title className="text-24 mb-4 px-[10px] md:px-0" fw={300}>{t('agent_details.collateral_label')}</Title>
             <div className="p-0 min-[992px]:p-4">
                 <div className="flex items-center">
                     <Title
-                        className="text-28"
+                        className="text-28 px-[10px] md:px-0"
                         fw={400}
                     >
                         {t('agent_details.vault_collateral_label')}
@@ -52,7 +55,14 @@ export default function VaultCollateralCard({ pool }: IVaultCollateralCard) {
                         </Popover.Dropdown>
                     </Popover>
                 </div>
-                <Grid className="mt-5">
+                <Grid
+                    className="mt-5"
+                    styles={{
+                        root: {
+                            '--grid-gutter': 0
+                        },
+                    }}
+                >
                     <Grid.Col span={6} className="p-4 border-t border-b border-r border-[--flr-border-color]">
                         <Text
                             className="text-12 uppercase"

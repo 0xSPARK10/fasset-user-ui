@@ -71,11 +71,22 @@ export default function AgentDetails() {
                 {t('agent_details.title')}
             </Title>
             <VaultDetailsCard pool={pool?.data} />
-            <Grid className="mt-12">
+            <Grid
+                className="mt-12"
+                styles={{
+                    root: {
+                        '--grid-gutter': 0
+                    },
+                    col: {
+                        padding: 0
+                    }
+                }}
+            >
                 <Grid.Col span={{ base: 12, md: 4 }}>
                     <VaultCapacityCard pool={pool.data} />
                 </Grid.Col>
-                <Grid.Col span={{ base: 12, md: 4 }}>
+
+                <Grid.Col span={{ base: 12, md: 4 }} className="mt-4 min-[992px]:mt-0">
                     <VaultCollateralCard pool={pool.data} />
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, md: 4 }} style={{ marginTop: '3.2rem' }}>

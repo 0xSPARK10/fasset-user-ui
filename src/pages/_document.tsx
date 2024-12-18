@@ -5,7 +5,7 @@ export default function Document() {
     return (
         <Html lang="en">
             <Head>
-                <ColorSchemeScript defaultColorScheme="auto"/>
+                <ColorSchemeScript defaultColorScheme="auto" />
                 <meta name="robots" content="noindex, nofollow" />
             </Head>
             <body>

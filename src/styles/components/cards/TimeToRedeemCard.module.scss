@@ -3,7 +3,7 @@
     50%{transform: rotate(135deg);}
 }
 
-.donutChart{
+.donutChart {
     --percentage: 0;
     width: 220px;
     height: 110px;
@@ -19,6 +19,32 @@
         width: 220px;
         height: 220px;
         border: 20px solid;
+        border-color : rgba(0,0,0,0.15) rgba(0,0,0,0.15) var(--flr-green) var(--flr-green);
+        position: absolute;
+        border-radius: 50%;
+        left: 0;
+        top: 0;
+        box-sizing : border-box;
+        transform: rotate(calc(1deg * (-45 + var(--percentage) * 1.8)));
+        animation : fillAnimation 1s ease-in;
+    }
+}
+.smallDonutChart {
+    --percentage: 0;
+    width: 32px;
+    height: 16px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    box-sizing : border-box;
+
+    &:after {
+        content: '';
+        width: 32px;
+        height: 32px;
+        border: 6px solid;
         border-color : rgba(0,0,0,0.15) rgba(0,0,0,0.15) var(--flr-green) var(--flr-green);
         position: absolute;
         border-radius: 50%;

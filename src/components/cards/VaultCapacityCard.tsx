@@ -44,7 +44,7 @@ export default function VaultCapacityCard({ pool }: IVaultCapacityCard) {
 
     return (
         <div>
-            <Title className="text-24 mb-4" fw={300}>{t('agent_details.fassets_label')}</Title>
+            <Title className="text-24 mb-4 px-[10px] md:px-0" fw={300}>{t('agent_details.fassets_label')}</Title>
             <div className="p-4 pr-0 border border-[--flr-border-color] bg-[var(--flr-lightest-gray)]">
                 <div className="flex items-center">
                     <Title

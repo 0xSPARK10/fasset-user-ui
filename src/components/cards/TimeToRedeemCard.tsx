@@ -1,13 +1,20 @@
-
+import { useRouter } from "next/router";
+import {
+    Title,
+    Text,
+    Button,
+    SimpleGrid,
+    Anchor,
+    Divider,
+    Table, Paper
+} from "@mantine/core";
 import Link from "next/link";
-import { Title, Text, Button, SimpleGrid } from "@mantine/core";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import { modals } from "@mantine/modals";
 import { IEcoSystemInfoSupplyByFasset } from "@/types";
 import { COINS } from "@/config/coin";
 import { toNumber } from "@/utils";
 import classes from "@/styles/components/cards/TimeToRedeemCard.module.scss";
-import React from "react";
 
 interface ITimeToRedeemCard {
     supplyToken: IEcoSystemInfoSupplyByFasset | undefined;
@@ -17,173 +24,338 @@ export default function TimeToRedeemCard({ supplyToken }: ITimeToRedeemCard) {
     const { t } = useTranslation();
     const token = COINS.find(coin => coin.type.toLowerCase() === supplyToken?.fasset.toLowerCase());
     const percentageMinted = 100 - toNumber(supplyToken?.mintedPercentage ?? "0");
+    const router = useRouter();
+
+    const redirectTo = async (url: string) => {
+        modals.closeAll();
+        await router.push(url);
+    }
 
     const openModal = () => {
         modals.open({
             zIndex: 3000,
             size: 950,
-            title: t('time_to_redeem_card.incentives_modal.title'),
+            title: <Text className="text-32" fw={300} c="var(--flr-black)">
+                {t('time_to_redeem_card.incentives_modal.title')}
+            </Text>,
             children: (
-                <div className="px-0 sm:px-7">
+                <div className="px-0 sm:px-10">
                     <Text
-                        className="text-20 md:text-24"
-                        fw={300}
-                        c="var(--flr-black)"
+                        className="text-28 mb-4"
+                        fw={400}
+                        c="var(--flr-dark-gray)"
                     >
-                        {t('time_to_redeem_card.incentives_modal.description_label')}
+                        {t('time_to_redeem_card.incentives_modal.total_incentives_awarded_label')}
                     </Text>
-                    <Title
-                        className="text-28 mt-6"
+                    <Trans
+                        i18nKey="time_to_redeem_card.incentives_modal.description_label"
+                        parent={Text}
                         fw={400}
-                        c="var(--flr-black)"
-                    >
-                        {t('time_to_redeem_card.incentives_modal.your_incentives_title')}
-                    </Title>
-                    <SimpleGrid
-                        cols={{ base: 1, md: 2 }}
-                        verticalSpacing="xl"
-                        spacing="xl"
-                        className="mt-4"
-                    >
-                        <div>
-                            <Title
-                                className="text-16"
-                                fw={500}
-                                c="var(--flr-black)"
-                            >
-                                {t('time_to_redeem_card.incentives_modal.pending_rewards_title')}
-                            </Title>
-                            <Text
-                                className="text-16 mt-1"
-                                fw={400}
-                                c="var(--flr-dark-gray)"
-                            >
-                                {t('time_to_redeem_card.incentives_modal.pending_rewards_description_label')}
-                            </Text>
-                        </div>
-                        <div>
-                            <Title
-                                className="text-16"
-                                fw={500}
-                                c="var(--flr-black)"
-                            >
-                                {t('time_to_redeem_card.incentives_modal.available_rewards_title')}
-                            </Title>
-                            <Text
-                                className="text-16 mt-1"
-                                fw={400}
-                                c="var(--flr-dark-gray)"
-                            >
-                                {t('time_to_redeem_card.incentives_modal.available_rewards_label')}
-                            </Text>
-                        </div>
-                    </SimpleGrid>
-                    <Title
-                        className="text-28 mt-10"
-                        fw={400}
-                        c="var(--flr-black)"
-                    >
-                        {t('time_to_redeem_card.incentives_modal.how_to_claim_title')}
-                    </Title>
-                    <SimpleGrid
-                        cols={{ base: 1, md: 2 }}
-                        verticalSpacing="xl"
-                        spacing="xl"
-                        className="mt-4"
-                    >
-                        <div>
-                            <Title
-                                className="flex items-center text-16"
-                                fw={500}
-                                c="var(--flr-black)"
-                            >
-                                <span
-                                    className="block w-[22px] h-[22px] text-center text-16 font-normal text-[var(--flr-white)] bg-[var(--flr-black)] rounded-full mr-1"
-                                >
-                                    1
-                                </span>
-                                {t('time_to_redeem_card.incentives_modal.go_to_flare_portal_label')}
-                            </Title>
-                            <Link
-                                className="block text-16 mt-1 underline font-normal text-[var(--flr-dark-gray)]"
-                                href="https://portal.flare.network/"
+                        c="var(--flr-dark-gray)"
+                        className="text-16 whitespace-break-spaces"
+                        components={{
+                            a1: <Anchor
+                                underline="always"
+                                href="https://flare.network/a-guide-to-rflr-rewards/"
                                 target="_blank"
-                            >
-                                {t('time_to_redeem_card.incentives_modal.link_here_label')}
-                            </Link>
-                        </div>
-                        <div>
-                            <Title
-                                className="flex items-center text-16"
+                                className="inline-flex"
+                                c="var(--flr-dark-gray)"
                                 fw={500}
-                                c="var(--flr-black)"
-                            >
-                                <span
-                                    className="block w-[22px] h-[22px] text-center text-16 font-normal text-[var(--flr-white)] bg-[var(--flr-black)] rounded-full mr-1"
-                                >
-                                    2
-                                </span>
-                                {t('time_to_redeem_card.incentives_modal.find_fassets_title')}
-                            </Title>
+                            />,
+                            a2: <Anchor
+                                underline="always"
+                                href="https://flare.network/incentives-for-fassets-on-songbird/"
+                                target="_blank"
+                                className="inline-flex"
+                                c="var(--flr-dark-gray)"
+                                fw={500}
+                            />,
+                        }}
+                    />
+                    <Divider
+                        c="var(--flr-border-color)"
+                        className="my-10"
+                    />
+                    <div className="flex items-center flex-wrap md:flex-nowrap">
+                        <Title
+                            className="text-24 mr-4"
+                            fw={300}
+                            c="var(--flr-black)"
+                        >
+                            <span className="mr-2">1 .</span>
+                            {t('time_to_redeem_card.incentives_modal.earn_rewards_via_redeeming_title')}
+                        </Title>
+                        <Button
+                            variant="gradient"
+                            onClick={() => redirectTo('/mint')}
+                            radius="xl"
+                            size="sm"
+                            fw={400}
+                        >
+                            {t('time_to_redeem_card.incentives_modal.redeem_button')}
+                        </Button>
+                    </div>
+                    <SimpleGrid
+                        cols={{base: 1, md: 2}}
+                        verticalSpacing="xl"
+                        spacing="xl"
+                        className="mt-6"
+                    >
+                        <div>
                             <Text
-                                className="text-16 mt-1"
+                                className="text-16 whitespace-break-spaces"
                                 fw={400}
                                 c="var(--flr-dark-gray)"
                             >
-                                {t('time_to_redeem_card.incentives_modal.find_fassets_description_label')}
+                                {t('time_to_redeem_card.incentives_modal.earn_rewards_via_redeeming_description_label')}
                             </Text>
                         </div>
                         <div>
-                            <Title
-                                className="flex items-center text-16"
-                                fw={500}
-                                c="var(--flr-black)"
-                            >
-                                <span
-                                    className="block w-[22px] h-[22px] text-center text-16 font-normal text-[var(--flr-white)] bg-[var(--flr-black)] rounded-full mr-1"
-                                >
-                                    3
-                                </span>
-                                {t('time_to_redeem_card.incentives_modal.decide_rewards_to_claim_title')}
-                            </Title>
                             <Text
-                                className="text-16 mt-1"
+                                className="text-16"
+                                fw={500}
+                                c="var(--flr-dark-gray)"
+                            >
+                                {t('time_to_redeem_card.incentives_modal.exponential_redemption_awards_label')}
+                            </Text>
+                            <Table
+                                withColumnBorders
+                                className="mt-3"
+                                classNames={{
+                                    th: '!bg-[var(--flr-lightest-gray)]'
+                                }}
+                                styles={{
+                                    table: {
+                                        '--table-border-color': 'var(--flr-border-color)'
+                                    }
+                                }}
+                            >
+                                <Table.Thead>
+                                    <Table.Tr>
+                                        <Table.Th className="w-1/2">
+                                            <Text
+                                                className="text-12 uppercase"
+                                                fw={400}
+                                                c="var(--flr-dark-gray)"
+                                            >
+                                                {t('time_to_redeem_card.incentives_modal.fassets_table.mint_utilization_label')}
+                                            </Text>
+                                        </Table.Th>
+                                        <Table.Th className="w-1/2">
+                                            <Text
+                                                className="text-12 uppercase"
+                                                fw={400}
+                                                c="var(--flr-dark-gray)"
+                                            >
+                                                {t('time_to_redeem_card.incentives_modal.fassets_table.rewards_multiplier_label')}
+                                            </Text>
+                                        </Table.Th>
+                                    </Table.Tr>
+                                </Table.Thead>
+                                <Table.Tbody>
+                                    <Table.Tr>
+                                        <Table.Td className="flex items-center">
+                                            <div className={`${classes.smallDonutChart} mr-2`}
+                                                 style={{
+                                                     //@ts-ignore
+                                                     '--percentage': 100,
+                                                 }}
+                                            />
+                                            <Text
+                                                className="text-16"
+                                                fw={400}
+                                                c="var(--flr-dark-gray)"
+                                            >
+                                                95% - 100%
+                                            </Text>
+                                        </Table.Td>
+                                        <Table.Td>
+                                            <Text
+                                                className="text-16"
+                                                fw={400}
+                                                c="var(--flr-dark-gray)"
+                                            >
+                                                20x
+                                            </Text>
+                                        </Table.Td>
+                                    </Table.Tr>
+                                    <Table.Tr>
+                                        <Table.Td className="flex items-center">
+                                            <div className={`${classes.smallDonutChart} mr-2`}
+                                                 style={{
+                                                     //@ts-ignore
+                                                     '--percentage': 95,
+                                                 }}
+                                            />
+                                            <Text
+                                                className="text-16"
+                                                fw={400}
+                                                c="var(--flr-dark-gray)"
+                                            >
+                                                90% - 95%
+                                            </Text>
+                                        </Table.Td>
+                                        <Table.Td>
+                                            <Text
+                                                className="text-16"
+                                                fw={400}
+                                                c="var(--flr-dark-gray)"
+                                            >
+                                                10x
+                                            </Text>
+                                        </Table.Td>
+                                    </Table.Tr>
+                                    <Table.Tr>
+                                        <Table.Td className="flex items-center">
+                                            <div className={`${classes.smallDonutChart} mr-2`}
+                                                 style={{
+                                                     //@ts-ignore
+                                                     '--percentage': 90,
+                                                 }}
+                                            />
+                                            <Text
+                                                className="text-16"
+                                                fw={400}
+                                                c="var(--flr-dark-gray)"
+                                            >
+                                                85% - 90%
+                                            </Text>
+                                        </Table.Td>
+                                        <Table.Td>
+                                            <Text
+                                                className="text-16"
+                                                fw={400}
+                                                c="var(--flr-dark-gray)"
+                                            >
+                                                5x
+                                            </Text>
+                                        </Table.Td>
+                                    </Table.Tr>
+                                    <Table.Tr>
+                                        <Table.Td className="flex items-center">
+                                            <div className={`${classes.smallDonutChart} mr-2`}
+                                                 style={{
+                                                     //@ts-ignore
+                                                     '--percentage': 85,
+                                                 }}
+                                            />
+                                            <Text
+                                                className="text-16"
+                                                fw={400}
+                                                c="var(--flr-dark-gray)"
+                                            >
+                                                80% - 85%
+                                            </Text>
+                                        </Table.Td>
+                                        <Table.Td>
+                                            <Text
+                                                className="text-16"
+                                                fw={400}
+                                                c="var(--flr-dark-gray)"
+                                            >
+                                                2x
+                                            </Text>
+                                        </Table.Td>
+                                    </Table.Tr>
+                                    <Table.Tr>
+                                        <Table.Td className="flex items-center">
+                                            <div className={`${classes.smallDonutChart} mr-2`}
+                                                 style={{
+                                                     //@ts-ignore
+                                                     '--percentage': 80,
+                                                 }}
+                                            />
+                                            <Text
+                                                className="text-16"
+                                                fw={400}
+                                                c="var(--flr-dark-gray)"
+                                            >
+                                                75% - 80%
+                                            </Text>
+                                        </Table.Td>
+                                        <Table.Td>
+                                            <Text
+                                                className="text-16"
+                                                fw={400}
+                                                c="var(--flr-dark-gray)"
+                                            >
+                                                1x
+                                            </Text>
+                                        </Table.Td>
+                                    </Table.Tr>
+                                </Table.Tbody>
+                            </Table>
+                        </div>
+                    </SimpleGrid>
+                    <div className="flex items-center flex-wrap md:flex-nowrap mt-10">
+                        <Title
+                            className="text-24 mr-4"
+                            fw={300}
+                            c="var(--flr-black)"
+                        >
+                            <span className="mr-2">2 .</span>
+                            {t('time_to_redeem_card.incentives_modal.earn_rewards_via_pools_title')}
+                        </Title>
+                        <Button
+                            variant="gradient"
+                            onClick={() => redirectTo('/pools')}
+                            radius="xl"
+                            size="sm"
+                            fw={400}
+                        >
+                            {t('time_to_redeem_card.incentives_modal.view_pools_button')}
+                        </Button>
+                    </div>
+                    <SimpleGrid
+                        cols={{base: 1, md: 2}}
+                        verticalSpacing="xl"
+                        spacing="xl"
+                        className="mt-6"
+                    >
+                        <div>
+                            <Text
+                                className="text-16 whitespace-break-spaces"
                                 fw={400}
                                 c="var(--flr-dark-gray)"
                             >
-                                {t('time_to_redeem_card.incentives_modal.decide_rewards_to_claim_description_label')}
+                                {t('time_to_redeem_card.incentives_modal.earn_rewards_via_pools_description_label')}
                             </Text>
                         </div>
                         <div>
-                            <Title
-                                className="flex items-center text-16"
-                                fw={500}
-                                c="var(--flr-black)"
-                            >
-                                <span
-                                    className="block w-[22px] h-[22px] text-center text-16 font-normal text-[var(--flr-white)] bg-[var(--flr-black)] rounded-full mr-1"
-                                >
-                                    4
-                                </span>
-                                {t('time_to_redeem_card.incentives_modal.claim_rewards_title')}
-                            </Title>
                             <Text
-                                className="text-16 mt-1"
+                                className="text-16 whitespace-break-spaces"
                                 fw={400}
                                 c="var(--flr-dark-gray)"
                             >
-                                {t('time_to_redeem_card.incentives_modal.claim_rewards_description_label')}
+                                {t('time_to_redeem_card.incentives_modal.each_distribution_period_description_label')}
                             </Text>
                         </div>
                     </SimpleGrid>
+                    <Divider
+                        c="var(--flr-border-color)"
+                        className="my-10 -mx-4 sm:-mx-14"
+                    />
+                    <Text
+                        className="text-14"
+                        fw={400}
+                        c="var(--flr-dark-gray)"
+                    >
+                        {t('time_to_redeem_card.incentives_modal.sponsored_description_label')}
+                    </Text>
+                    <Divider
+                        c="var(--flr-border-color)"
+                        className="my-10 -mx-4 sm:-mx-14"
+                    />
                     <Button
-                        onClick={() => { modals.closeAll() }}
+                        onClick={() => {
+                            modals.closeAll()
+                        }}
                         variant="filled"
                         color="black"
                         radius="xl"
                         size="sm"
                         fullWidth
-                        className="hover:text-white font-normal mt-16"
+                        className="hover:text-white font-normal mb-5"
                     >
                         {t('time_to_redeem_card.incentives_modal.done_button')}
                     </Button>

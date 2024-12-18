@@ -17,7 +17,7 @@ export default function PoolCollateralCard({ pool }: IPoolCollateralCard) {
         <div className="p-0 min-[992px]:p-4">
             <div className="flex items-center">
                 <Title
-                    className="text-28"
+                    className="text-28 px-[10px] md:px-0"
                     fw={400}
                 >
                     {t('agent_details.pool_collateral_label')}
@@ -35,7 +35,14 @@ export default function PoolCollateralCard({ pool }: IPoolCollateralCard) {
                     </Popover.Dropdown>
                 </Popover>
             </div>
-            <Grid className="mt-5">
+            <Grid
+                className="mt-5"
+                styles={{
+                    root: {
+                        '--grid-gutter': 0
+                    },
+                }}
+            >
                 <Grid.Col span={6} className="p-4 border-t border-b border-r border-[--flr-border-color]">
                     <Text
                         className="text-12 uppercase"
