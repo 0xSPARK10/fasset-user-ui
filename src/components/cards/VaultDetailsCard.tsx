@@ -121,7 +121,7 @@ export default function VaultDetailsCard({ pool }: IVaultDetailsCard) {
                         >
                             {t('agent_details.terms_of_use_label')}
                         </Text>
-                        {pool && pool?.infoUrl?.length > 0
+                        {pool && pool?.infoUrl?.replace(/\s/g, '')?.length > 0
                             ? <Anchor
                                 underline="always"
                                 href={poolUrl}

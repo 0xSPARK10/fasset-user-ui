@@ -1,17 +1,109 @@
 import { Grid, rem, Stepper, Text, Title, Popover } from "@mantine/core";
 import { IconArrowDown, IconArrowUp, IconInfoHexagon } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
+import { orderBy } from "lodash-es";
 import { IPool } from "@/types";
-import {formatNumberWithSuffix, isMaxCRValue, toNumber} from "@/utils";
+import { formatNumberWithSuffix, isMaxCRValue, toNumber } from "@/utils";
 import { useWeb3 } from "@/hooks/useWeb3";
 
 interface IPoolCollateralCard {
     pool: IPool | undefined;
 }
 
+interface ICr {
+    key: string;
+    label: string;
+    amount: number;
+    iconName: string;
+    iconColor: string;
+}
+
 export default function PoolCollateralCard({ pool }: IPoolCollateralCard) {
     const { t } = useTranslation();
     const { mainToken } = useWeb3();
+
+    const cr: ICr[] = orderBy([
+        {
+            key: 'poolExitCR',
+            label: t('agent_details.exit_cr_label', { amount: pool?.poolExitCR }),
+            amount: toNumber(pool?.poolExitCR ?? '0'),
+            iconName: 'IconArrowUp',
+            iconColor: '!bg-[var(--flr-green)] border-[var(--flr-green)]'
+        },
+        {
+            key: 'mintingPoolCR',
+            label: t('agent_details.minting_cr_label', { amount: pool?.mintingPoolCR }),
+            amount: toNumber(pool?.mintingPoolCR ?? '0'),
+            iconName: 'IconArrowUp',
+            iconColor: '!bg-[var(--flr-green)] border-[var(--flr-green)]'
+        },
+        {
+            key: 'poolTopupCR',
+            label: t('agent_details.topup_cr_label', { amount: pool?.poolTopupCR }),
+            amount: toNumber(pool?.poolTopupCR ?? '0'),
+            iconName: 'IconArrowUp',
+            iconColor: '!bg-[var(--flr-warning)] border-[var(--flr-warning)]'
+        },
+        {
+            key: 'poolSafetyCR',
+            label: t('agent_details.safety_cr_label', {amount: pool?.poolSafetyCR }),
+            amount: toNumber(pool?.poolSafetyCR ?? '0'),
+            iconName: 'IconArrowDown',
+            iconColor: '!bg-[var(--flr-warning)] border-[var(--flr-warning)]'
+        },
+        {
+            key: 'poolMinCR',
+            label: t('agent_details.minimum_cr_label', {amount: pool?.poolMinCR }),
+            amount: toNumber(pool?.poolMinCR ?? '0'),
+            iconName: 'IconArrowDown',
+            iconColor: '!bg-[var(--flr-red)] border-[var(--flr-red)]'
+        },
+        {
+            key: 'poolCCBCR',
+            label: t('agent_details.ccb_cr_label', {amount: pool?.poolCCBCR }),
+            amount: toNumber(pool?.poolCCBCR ?? '0'),
+            iconName: 'IconArrowDown',
+            iconColor: '!bg-[var(--flr-red)] border-[var(--flr-red)]'
+        }
+    ], ['amount'], ['desc']);
+
+
+    const getSelectedCr = () => {
+        const amount = toNumber(pool?.poolCR ?? '0');
+
+        for (let index = 0; index < cr.length; index++) {
+            const currentCR = cr[index];
+            const prevCR = index > 0 ? cr[index - 1] : undefined;
+            const nextCR = index < cr.length - 1 ? cr[index + 1] : undefined;
+
+            if (index === 0 && amount >= currentCR.amount) {
+                return [currentCR.key];
+            } else if (index === cr.length - 1 && amount <= currentCR.amount) {
+                return [currentCR.key];
+            }
+
+            if (prevCR !== undefined && nextCR !== undefined) {
+                if (currentCR.iconName === 'IconArrowUp' && amount >= currentCR.amount && amount < prevCR?.amount!) {
+                    return [currentCR.key];
+                } else if (currentCR.iconName === 'IconArrowDown' && amount > nextCR?.amount! && amount <= currentCR.amount) {
+                    return [currentCR.key];
+                }
+            }
+        }
+
+        return cr
+            .map(range => {
+                return {
+                    ...range,
+                    value: Math.abs(amount - range.amount)
+                };
+            })
+            .sort((a, b) => a.value - b.value)
+            .splice(0, 2)
+            .map(range => range.key);
+    }
+
+    const selectedCr = getSelectedCr();
 
     return (
         <div className="p-0 min-[992px]:p-4">
@@ -122,154 +214,41 @@ export default function PoolCollateralCard({ pool }: IPoolCollateralCard) {
                             }
                         }}
                     >
-                        <Stepper.Step
-                            icon={
-                                <IconArrowUp
-                                    color={toNumber(pool?.poolCR ?? '0') >= 2.6
-                                        ? 'var(--flr-white)'
-                                        : 'var(--flr-black)'
-                                    }
-                                />
-                            }
-                            withIcon
-                            label={
-                                <Text
-                                    className="text-12"
-                                    c="var(--flr-gray)"
-                                >
-                                    {t('agent_details.exit_cr_label', { amount: 2.6 })}
-                                </Text>
-                            }
-                            classNames={{
-                                stepIcon: toNumber(pool?.poolCR ?? '0') >= 2.6
-                                    ? '!bg-[var(--flr-green)] !border-[var(--flr-green)]'
-                                    : 'bg-transparent'
-                            }}
-                        />
-                        <Stepper.Step
-                            icon={
-                                <IconArrowUp
-                                    color={toNumber(pool?.poolCR ?? '0') >= 2.4 && toNumber(pool?.poolCR ?? '0') < 2.6
-                                        ? 'var(--flr-white)'
-                                        : 'var(--flr-black)'
-                                    }
-                                />
-                            }
-                            withIcon
-                            label={
-                                <Text
-                                    className="text-12"
-                                    c="var(--flr-gray)"
-                                >
-                                    {t('agent_details.minting_cr_label', { amount: 2.4 })}
-                                </Text>
-                            }
-                            classNames={{
-                                stepIcon: toNumber(pool?.poolCR ?? '0') >= 2.4 && toNumber(pool?.poolCR ?? '0') < 2.6
-                                    ? '!bg-[var(--flr-green)] border-[var(--flr-green)]'
-                                    : 'bg-transparent'
-                            }}
-                        />
-                        <Stepper.Step
-                            icon={
-                                <IconArrowUp
-                                    color={toNumber(pool?.poolCR ?? '0') >= 2.2 && toNumber(pool?.poolCR ?? '0') < 2.4
-                                        ? 'var(--flr-white)'
-                                        : 'var(--flr-black)'
-                                    }
-                                />
-                            }
-                            color="transparent"
-                            withIcon
-                            label={
-                                <Text
-                                    className="text-12"
-                                    c="var(--flr-gray)"
-                                >
-                                    {t('agent_details.topup_cr_label', { amount: 2.2 })}
-                                </Text>
-                            }
-                            classNames={{
-                                stepIcon: toNumber(pool?.poolCR ?? '0') >= 2.2 && toNumber(pool?.poolCR ?? '0') < 2.4
-                                    ? '!bg-[var(--flr-warning)] border-[var(--flr-warning)]'
-                                    : 'bg-transparent'
-                            }}
-                        />
-                        <Stepper.Step
-                            icon={
-                                <IconArrowUp
-                                    color={toNumber(pool?.poolCR ?? '0') >= 2.1 && toNumber(pool?.poolCR ?? '0') < 2.2
-                                        ? 'var(--flr-white)'
-                                        : 'var(--flr-black)'
-                                    }
-                                />
-                            }
-                            color="transparent"
-                            withIcon
-                            label={
-                                <Text
-                                    className="text-12"
-                                    c="var(--flr-gray)"
-                                >
-                                    {t('agent_details.safety_cr_label', {amount: 2.1 })}
-                                </Text>
-                            }
-                            classNames={{
-                                stepIcon: toNumber(pool?.poolCR ?? '0') >= 2.1 && toNumber(pool?.poolCR ?? '0') < 2.2
-                                    ? '!bg-[var(--flr-warning)] border-[var(--flr-warning)]'
-                                    : 'bg-transparent'
-                            }}
-                        />
-                        <Stepper.Step
-                            icon={
-                                <IconArrowDown
-                                    color={toNumber(pool?.poolCR ?? '0') > 1.9 && toNumber(pool?.poolCR ?? '0') <= 2.0
-                                        ? 'var(--flr-white)'
-                                        : 'var(--flr-black)'
-                                    }
-                                />
-                            }
-                            color="transparent"
-                            withIcon
-                            label={
-                                <Text
-                                    className="text-12"
-                                    c="var(--flr-gray)"
-                                >
-                                    {t('agent_details.minimum_cr_label', {amount: "2.0" })}
-                                </Text>
-                            }
-                            classNames={{
-                                stepIcon: toNumber(pool?.poolCR ?? '0') > 1.9 && toNumber(pool?.poolCR ?? '0') <= 2.0
-                                    ? '!bg-[var(--flr-red)] border-[var(--flr-red)]'
-                                    : 'bg-transparent'
-                            }}
-                        />
-                        <Stepper.Step
-                            icon={
-                                <IconArrowDown
-                                    color={toNumber(pool?.poolCR ?? '0') <= 1.9
-                                        ? 'var(--flr-white)'
-                                        : 'var(--flr-black)'
-                                    }
-                                />
-                            }
-                            color="transparent"
-                            withIcon
-                            label={
-                                <Text
-                                    className="text-12"
-                                    c="var(--flr-gray)"
-                                >
-                                    {t('agent_details.ccb_cr_label', {amount: 1.9 })}
-                                </Text>
-                            }
-                            classNames={{
-                                stepIcon: toNumber(pool?.poolCR ?? '0') <= 1.9
-                                    ? '!bg-[var(--flr-red)] border-[var(--flr-red)]'
-                                    : 'bg-transparent'
-                            }}
-                        />
+                        {cr.map((item, index) => (
+                            <Stepper.Step
+                                key={index}
+                                label={
+                                    <Text
+                                        className="text-12"
+                                        c="var(--flr-gray)"
+                                    >
+                                        {item.label}
+                                    </Text>
+                                }
+                                color="transparent"
+                                classNames={{
+                                    stepIcon: selectedCr.includes(item.key)
+                                        ? item.iconColor
+                                        : 'bg-transparent'
+                                }}
+                                withIcon
+                                icon={
+                                    item.iconName === 'IconArrowUp'
+                                        ? <IconArrowUp
+                                            color={selectedCr.includes(item.key)
+                                                ? 'var(--flr-white)'
+                                                : 'var(--flr-black)'
+                                            }
+                                        />
+                                        : <IconArrowDown
+                                                color={selectedCr.includes(item.key)
+                                                    ? 'var(--flr-white)'
+                                                    : 'var(--flr-black)'
+                                                }
+                                        />
+                                }
+                            />
+                        ))}
                 </Stepper>
                 </Grid.Col>
             </Grid>

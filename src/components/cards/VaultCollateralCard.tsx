@@ -15,6 +15,57 @@ interface IVaultCollateralCard {
 export default function VaultCollateralCard({ pool }: IVaultCollateralCard) {
     const { t } = useTranslation();
 
+    const selectedCr = () => {
+        const vaultCR = toNumber(pool?.vaultCR ?? '0');
+        const mintingVaultCR = toNumber(pool?.mintingVaultCR ?? '0');
+        const vaultSafetyCR = toNumber(pool?.vaultSafetyCR ?? '0');
+        const vaultMinCR = toNumber(pool?.vaultMinCR ?? '0');
+        const vaultCCBCR = toNumber(pool?.vaultCCBCR ?? '0');
+
+        if (vaultCR >= mintingVaultCR) {
+            return ['mintingVaultCR'];
+        }
+        if (vaultCR >= vaultSafetyCR && vaultCR < mintingVaultCR) {
+            return ['vaultSafetyCR'];
+        }
+        if (vaultCR > vaultCCBCR && vaultCR <= vaultMinCR) {
+            return ['vaultMinCR'];
+        }
+        if (vaultCR <= vaultCCBCR) {
+            return ['vaultCCBCR'];
+        }
+
+        const ranges = [
+            {
+                key: 'vaultCCBCR',
+                value: vaultCCBCR
+            },
+            {
+                key: 'vaultMinCR',
+                value: vaultMinCR
+            },
+            {
+                key: 'vaultSafetyCR',
+                value: vaultSafetyCR
+            },
+            {
+                key: 'mintingVaultCR',
+                value: mintingVaultCR
+            }
+        ] as { key: string, value: number }[];
+
+        return ranges
+            .map(range => {
+                return {
+                    ...range,
+                    value: Math.abs(vaultCR - range.value)
+                };
+            })
+            .sort((a, b) => a.value - b.value)
+            .splice(0, 2)
+            .map(range => range.key);
+    }
+
     const getCollateralTokenIcon = () => {
         if (!pool) return undefined;
 
@@ -140,7 +191,7 @@ export default function VaultCollateralCard({ pool }: IVaultCollateralCard) {
                             <Stepper.Step
                                 icon={
                                     <IconArrowUp
-                                        color={toNumber(pool?.vaultCR ?? '0') >= 1.6
+                                        color={selectedCr().includes('mintingVaultCR')
                                             ? 'var(--flr-white)'
                                             : 'var(--flr-black)'
                                         }
@@ -152,11 +203,11 @@ export default function VaultCollateralCard({ pool }: IVaultCollateralCard) {
                                         className="text-12"
                                         c="var(--flr-gray)"
                                     >
-                                        {t('agent_details.minting_cr_label', { amount: 1.6 })}
+                                        {t('agent_details.minting_cr_label', { amount: pool?.mintingVaultCR })}
                                     </Text>
                                 }
                                 classNames={{
-                                    stepIcon: toNumber(pool?.vaultCR ?? '0') >= 1.6
+                                    stepIcon: selectedCr().includes('mintingVaultCR')
                                         ? '!bg-[var(--flr-green)] !border-[var(--flr-green)]'
                                         : 'bg-transparent'
                                 }}
@@ -164,7 +215,7 @@ export default function VaultCollateralCard({ pool }: IVaultCollateralCard) {
                             <Stepper.Step
                                 icon={
                                     <IconArrowUp
-                                        color={toNumber(pool?.vaultCR ?? '0') >= 1.5 && toNumber(pool?.vaultCR ?? '0') < 1.6
+                                        color={selectedCr().includes('vaultSafetyCR')
                                             ? 'var(--flr-white)'
                                             : 'var(--flr-black)'
                                         }
@@ -176,11 +227,11 @@ export default function VaultCollateralCard({ pool }: IVaultCollateralCard) {
                                         className="text-12"
                                         c="var(--flr-gray)"
                                     >
-                                        {t('agent_details.safety_cr_label', { amount: 1.5 })}
+                                        {t('agent_details.safety_cr_label', { amount: pool?.vaultSafetyCR })}
                                     </Text>
                                 }
                                 classNames={{
-                                    stepIcon: toNumber(pool?.vaultCR ?? '0') >= 1.5 && toNumber(pool?.vaultCR ?? '0') < 1.6
+                                    stepIcon: selectedCr().includes('vaultSafetyCR')
                                         ? '!bg-[var(--flr-warning)] border-[var(--flr-warning)]'
                                         : 'bg-transparent'
                                 }}
@@ -188,7 +239,7 @@ export default function VaultCollateralCard({ pool }: IVaultCollateralCard) {
                             <Stepper.Step
                                 icon={
                                     <IconArrowDown
-                                        color={toNumber(pool?.vaultCR ?? '0') > 1.3 && toNumber(pool?.vaultCR ?? '0') <= 1.4
+                                        color={selectedCr().includes('vaultMinCR')
                                             ? 'var(--flr-white)'
                                             : 'var(--flr-black)'
                                         }
@@ -201,11 +252,11 @@ export default function VaultCollateralCard({ pool }: IVaultCollateralCard) {
                                         className="text-12"
                                         c="var(--flr-gray)"
                                     >
-                                        {t('agent_details.minimum_cr_label', { amount: 1.4 })}
+                                        {t('agent_details.minimum_cr_label', { amount: pool?.vaultMinCR })}
                                     </Text>
                                 }
                                 classNames={{
-                                    stepIcon: toNumber(pool?.vaultCR ?? '0') > 1.3 && toNumber(pool?.vaultCR ?? '0') <= 1.4
+                                    stepIcon: selectedCr().includes('vaultMinCR')
                                         ? '!bg-[var(--flr-red)] border-[var(--flr-red)]'
                                         : 'bg-transparent'
                                 }}
@@ -213,7 +264,7 @@ export default function VaultCollateralCard({ pool }: IVaultCollateralCard) {
                             <Stepper.Step
                                 icon={
                                     <IconArrowDown
-                                        color={toNumber(pool?.vaultCR ?? '0') <= 1.3
+                                        color={selectedCr().includes('vaultCCBCR')
                                             ? 'var(--flr-white)'
                                             : 'var(--flr-black)'
                                         }
@@ -227,11 +278,11 @@ export default function VaultCollateralCard({ pool }: IVaultCollateralCard) {
                                         className="text-12"
                                         c="var(--flr-gray)"
                                     >
-                                        {t('agent_details.ccb_cr_label', { amount: 1.3 })}
+                                        {t('agent_details.ccb_cr_label', { amount: pool?.vaultCCBCR })}
                                     </Text>
                                 }
                                 classNames={{
-                                    stepIcon:toNumber(pool?.vaultCR ?? '0') <= 1.3
+                                    stepIcon: selectedCr().includes('vaultCCBCR')
                                         ? '!bg-[var(--flr-red)] border-[var(--flr-red)]'
                                         : 'bg-transparent'
                                 }}
