@@ -15,7 +15,8 @@ import {
     NumberInput,
     Popover,
     Text,
-    FocusTrap
+    FocusTrap,
+    SimpleGrid
 } from "@mantine/core";
 import CryptoJS from "crypto-js";
 import { useForm, UseFormReturnType } from "@mantine/form";
@@ -45,11 +46,14 @@ interface IMintForm {
     lots: number | undefined;
     fAssetCoin: IFAssetCoin;
     refreshBalance: () => void;
+    setHighMintingFee: (fee: number | undefined) => void;
 }
 
 export type FormRef = {
     form: () => UseFormReturnType<any>;
 }
+
+const MINTING_FEE_LIMIT = 2;
 
 const MintForm = forwardRef<FormRef, IMintForm>(
     ({
@@ -59,7 +63,8 @@ const MintForm = forwardRef<FormRef, IMintForm>(
          lots,
          setLots,
          fAssetCoin,
-         refreshBalance
+         refreshBalance,
+         setHighMintingFee
     }: IMintForm, ref) => {
     const [maxLots, setMaxLots] = useState<number>();
     const [transfer, setTransfer] = useState<number>();
@@ -85,6 +90,11 @@ const MintForm = forwardRef<FormRef, IMintForm>(
         transfer && mintingFee ? toSatoshi(transfer + mintingFee) : 0,
         false
     );
+
+    const mintFeePercentage = mintingFee !== undefined && transfer !== undefined
+        ? (mintingFee / transfer) * 100
+        : 0;
+    const isMintingFeeHigh = mintFeePercentage > MINTING_FEE_LIMIT;
 
     const connectedCoin = connectedCoins.find(coin => coin.type == fAssetCoin.type);
     const underlyingBalance = useUnderlyingBalance(
@@ -211,6 +221,14 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 
         fetch();
     }, [mintingFee, selectedAgent]);
+
+    useEffect(() => {
+        if (isMintingFeeHigh) {
+            setHighMintingFee(mintingFee);
+        } else {
+            setHighMintingFee(undefined);
+        }
+    }, [mintingFee, isMintingFeeHigh]);
 
     useEffect(() => {
         if (lots) {
@@ -380,7 +398,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
         return (
             <div className="inline-block">
                 <Text
-                    className="text-12 uppercase mt-3"
+                    className="text-12 uppercase"
                     fw={400}
                     c="var(--flr-gray)"
                 >
@@ -520,8 +538,10 @@ const MintForm = forwardRef<FormRef, IMintForm>(
                     }
                 }}
             />
-            <div className="flex flex-col sm:flex-row justify-between">
-                <div className="mb-2 sm:mb-0">
+            <SimpleGrid
+                cols={{base: 1, xs: 3 }}
+            >
+                <div>
                     <Text
                         c="var(--flr-gray)"
                         className="text-12 uppercase"
@@ -533,7 +553,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
                         className="text-16"
                     >
                         {!isManualSelectedAgent && bestAgent.isPending
-                            ? <Loader size={14} />
+                            ? <Loader size={14}/>
                             : (
                                 (lots || isManualSelectedAgent) && selectedAgent?.name
                                     ? selectedAgent?.name
@@ -542,7 +562,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
                         }
                     </Text>
                 </div>
-                <div className="mb-2 sm:mb-0">
+                <div>
                     <Text
                         c="var(--flr-gray)"
                         className="text-12 uppercase"
@@ -571,40 +591,57 @@ const MintForm = forwardRef<FormRef, IMintForm>(
                         }
                     </div>
                 </div>
-                <div className="inline-block sm:hidden mb-2 sm:mb-0">
-                    <HandshakeBlock
-                        agent={selectedAgent}
-                    />
+                <div className="max-[576px]:order-2">
+                    <Popover
+                        width={popoverSize.width + 15}
+                        opened={isAgentPopoverActive}
+                        onChange={() => setIsAgentPopoverActive(!isAgentPopoverActive)}
+                        position={isMobile ? 'bottom' : 'bottom-end'}
+                    >
+                        <Popover.Target>
+                            <Button
+                                variant="gradient"
+                                radius="xl"
+                                onClick={() => setIsAgentPopoverActive(!isAgentPopoverActive)}
+                                disabled={(!isManualSelectedAgent && !lots) || isDisabled}
+                                className="max-[576px]:w-full"
+                            >
+                                {t('mint_modal.form.change_agent_button')}
+                            </Button>
+                        </Popover.Target>
+                        <Popover.Dropdown className="p-2 md:p-3">
+                            <AgentsList
+                                agents={agents}
+                                setAgent={setAgent}
+                            />
+                        </Popover.Dropdown>
+                    </Popover>
                 </div>
-                <Popover
-                    width={popoverSize.width + 15}
-                    opened={isAgentPopoverActive}
-                    onChange={() => setIsAgentPopoverActive(!isAgentPopoverActive)}
-                    position={isMobile ? 'bottom' : 'bottom-end'}
-                >
-                    <Popover.Target>
-                        <Button
-                            variant="gradient"
-                            radius="xl"
-                            onClick={() => setIsAgentPopoverActive(!isAgentPopoverActive)}
-                            disabled={(!isManualSelectedAgent && !lots) || isDisabled}
-                        >
-                            {t('mint_modal.form.change_agent_button')}
-                        </Button>
-                    </Popover.Target>
-                    <Popover.Dropdown className="p-2 md:p-3">
-                        <AgentsList
-                            agents={agents}
-                            setAgent={setAgent}
-                        />
-                    </Popover.Dropdown>
-                </Popover>
-            </div>
-            <div className="hidden sm:inline-block">
                 <HandshakeBlock
                     agent={selectedAgent}
                 />
-            </div>
+                <div>
+                    <Text
+                        c={isMintingFeeHigh ? 'var(--flr-red)' : 'var(--flr-gray)'}
+                        className="text-12 uppercase"
+                    >
+                        {t('mint_modal.form.minting_fee_label')}
+                    </Text>
+                    <Text
+                        c={isMintingFeeHigh ? 'var(--flr-red)' : 'var(--flr-black)'}
+                        className="text-16"
+                    >
+                        {bestAgent.isPending
+                            ? <Loader size={14} />
+                            : (
+                                lots
+                                    ? `${mintFeePercentage}%`
+                                    : <span>&mdash;</span>
+                            )
+                        }
+                    </Text>
+                </div>
+            </SimpleGrid>
             <Divider
                 className="my-8"
                 styles={{

@@ -6,11 +6,15 @@
 ## Run with docker
 1. Move to `/src` folder.
 2. Copy `.env.example` to `.env` and fill the values.
-3. Build and run with `docker compose --env-file ../src/.env -f ../docker/docker-compose.yml up` or in detached mode `docker compose --env-file ../src/.env -f ../docker/docker-compose.yml up -d` from the `src` folder.
+3. Move to `/docker` folder.
+4. Pull the image with `docker compose --env-file ../src/.env pull`.
+5. Run with `sudo docker compose --env-file ../src/.env up` or in detached mode `sudo docker compose --env-file ../src/.env up -d`
 
 ## Updating new versions
 1. Pull with `git pull`.
-2. `docker compose --env-file ../src/.env -f ../docker/docker-compose.yml up -d --build` or `docker compose --env-file ../src/.env -f ../docker/docker-compose.yml up --build`.
+3. Move to `/docker` folder.
+4. Pull the image with `docker compose --env-file ../src/.env pull`.
+5. Run with `sudo docker compose --env-file ../src/.env up` or in detached mode `sudo docker compose --env-file ../src/.env up -d`
 
 
 ## Installation for development

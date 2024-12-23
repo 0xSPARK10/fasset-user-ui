@@ -311,6 +311,13 @@
         "view_pools_button": "View Pools",
         "wallets_holding_fassets_label": "Wallets holding FAssets"
     },
+    "high_minting_fee_modal": {
+        "cancel_button": "Cancel",
+        "confirm_button": "I understand",
+        "description_label": "Are you sure you want to proceed with minting?",
+        "understand_label": "I understand that total fees for this transaction are estimated to be {{fee}} {{tokenName}} and exceeds 2%.",
+        "title": "High Minting Fee"
+    },
     "latest_transactions_card": {
         "completed_label": "Completed",
         "empty_label": "No transactions available",
@@ -405,6 +412,7 @@
         },
         "handshake_step_description_label": "The agent performs a handshake to verify the identity.",
         "handshake_step_label": "{{stepIndex}}. Handshake",
+        "minting_fee_high_warning_label": "Please note! Minting fee is high.",
         "next_button": "Next",
         "ok_button": "Ok",
         "return_to_home_button": "OK",

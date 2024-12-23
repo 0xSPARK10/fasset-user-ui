@@ -2,10 +2,7 @@ version: "3"
 services:
   next:
     # Use a custom image for nuxt
-    image: front
-    build:
-      context: ../src
-      dockerfile: ../docker/Dockerfile
+    image: ghcr.io/0xspark10/fasset-user-ui:main
     container_name: ${COMPOSE_PROJECT_NAME}-front-app
     restart: always
     ports:
