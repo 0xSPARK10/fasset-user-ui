@@ -39,15 +39,14 @@ export default function Agents() {
 
     useEffect(() => {
         if (walletConnectConnector.isInitializing || !walletConnectConnector.hasCheckedPersistedSession) return;
-
         fetchPools();
     }, [walletConnectConnector, isConnected]);
 
     useEffect(() => {
         if (isConnected) {
-            setPools(userPools.data ?? []);
+            setPools(userPools.data ?? allPools);
         } else {
-            setPools(pools.data ?? []);
+            setPools(pools.data ?? allPools);
         }
     }, [userPools.data, pools.data, allPools]);
 

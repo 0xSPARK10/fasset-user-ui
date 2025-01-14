@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { IconInfoHexagon } from "@tabler/icons-react";
 import Link from "next/link";
 import { Text, Badge, Table, rem, Popover, lighten } from "@mantine/core";
-import {useInterval, useMediaQuery} from "@mantine/hooks";
+import { useInterval, useMediaQuery } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
 import moment from "moment";
 import FAssetTable, { IFAssetColumn } from "@/components/elements/FAssetTable";
@@ -42,7 +42,7 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
     }, USER_PROGRESS_FETCH_INTERVAL);
 
     const userProgress = useUserProgress(mainToken?.address ?? '', mainToken !== undefined);
-    const mediaQueryMatches = useMediaQuery('(max-width: 640px)');
+    const isMobile = useMediaQuery('(max-width: 768px)');
 
     useEffect(() => {
         if (!userProgress.data) return;
@@ -171,7 +171,7 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
                 </Text>
             }
             {progress.remainingLots === null &&
-                <Text className="text-14 mb-2" fw={400}>
+                <Text className="text-14 md:mb-2" fw={400}>
                     {t('latest_transactions_card.redeem_label')}
                 </Text>
             }
@@ -209,7 +209,7 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
         }
 
         return <div className="flex flex-col">
-            <div className="flex items-center md:justify-end mb-2">
+            <div className="flex items-center md:justify-end md:mb-2">
                 <Text className="text-14 mr-1" fw={400}>{progress.amount}</Text>
                 <Text
                     c="var(--flr-gray)"
@@ -272,6 +272,7 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
                     size="md"
                     style={{ marginBottom: index < progress.tickets.length - 1 ? '0.3rem' : '0' }}
                     key={`${ticket.ticketId}-${index}`}
+                    className="flex"
                 >
                     <div className="flex items-center">
                         <span
@@ -320,9 +321,12 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
         },
         {
             id: 'amount',
-            label: <div className="md:flex"><Text className="text-12">
-                {t('latest_transactions_card.table.amount_label')}</Text><div className="md:w-16" />
-            </div>,
+            label:
+                <div className="md:flex">
+                    <Text className="text-12">
+                        {t('latest_transactions_card.table.amount_label')}</Text>
+                    <div className="md:w-16" />
+                </div>,
             thClass: `${classes.fitWidth} !text-12`,
             tdClass: classes.fitWidth,
             thInnerClass: 'justify-end',
@@ -423,13 +427,13 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
         <FAssetTable
             items={transactions ?? []}
             loading={userProgress.isPending}
-            columns={mediaQueryMatches ? mobileColumns : columns}
+            columns={isMobile ? mobileColumns : columns}
             style={{ maxWidth: '1080px' }}
             emptyLabel={t('latest_transactions_card.empty_label')}
             pagination={true}
             perPage={10}
             scrollContainerWidth={500}
-            mobileBreakPoint={640}
+            mobileBreakPoint={768}
             appendColumn={(item: ITransaction) => {
                 if (item.action.toLowerCase() === ACTION_TYPE_MINT) {
                     return <Table.Tr>

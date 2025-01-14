@@ -28,7 +28,6 @@ import { isError } from "ethers";
 import { ErrorDecoder } from "ethers-decode-error";
 import { CollateralPoolTokenAbi } from "@/abi";
 import { useWeb3 } from "@/hooks/useWeb3";
-import { useConnectWalletModal } from "@/hooks/useWeb3Modal";
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { POOL_KEY, useUserPool } from "@/api/pool";
 import { WALLET } from "@/constants";
@@ -58,6 +57,7 @@ export default function SendCPTsModal({ opened, onClose, collateralPool }: ISend
     const [isFormDisabled, setIsFormDisabled] = useState<boolean>(false);
     const [formValues, setFormValues] = useState<any>();
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
 
     const transferCollateralPoolToken = useTransferCollateralPoolToken();
     const { t } = useTranslation();
@@ -76,8 +76,8 @@ export default function SendCPTsModal({ opened, onClose, collateralPool }: ISend
         const response = await pool.refetch();
         queryClient.setQueriesData({
             queryKey: [POOL_KEY.USER_POOLS, mainToken?.address!, COINS.filter(coin => coin.isFAssetCoin && coin.enabled).map(coin => coin.type).join()]
-        }, updater => {
-            return (updater as IPool[]).map((pool: IPool) => {
+        }, (updater: IPool[] | undefined) => {
+            return updater?.map((pool: IPool) => {
                 return pool.pool === response?.data?.pool ? { ...response.data } : pool
             });
         });
@@ -86,6 +86,7 @@ export default function SendCPTsModal({ opened, onClose, collateralPool }: ISend
     const requestTransferCollateralPoolToken = async (values?: any) => {
         try {
             setIsLoading(true);
+            setIsLedgerButtonDisabled(true);
             await transferCollateralPoolToken.mutateAsync({
                 userAddress: values?.account || formValues.account,
                 poolAddress: collateralPool?.tokenAddress!,
@@ -112,6 +113,7 @@ export default function SendCPTsModal({ opened, onClose, collateralPool }: ISend
             modals.closeAll();
         } finally {
             setIsLoading(false);
+            setIsLedgerButtonDisabled(false);
         }
     }
 
@@ -326,6 +328,7 @@ export default function SendCPTsModal({ opened, onClose, collateralPool }: ISend
                                 appName={mainToken?.network?.ledgerApp!}
                                 onClick={() => requestTransferCollateralPoolToken()}
                                 isLoading={isLoading}
+                                isDisabled={isLedgerButtonDisabled}
                             />
                         </>
                     }

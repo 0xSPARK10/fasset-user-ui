@@ -28,6 +28,7 @@ import { useUserPools } from "@/api/pool";
 import { COINS } from "@/config/coin";
 import { toNumber } from "@/utils";
 import classes from "@/styles/pages/Home.module.scss";
+import { useRewards } from "@/api/rewards";
 
 const TIME_TO_REDEEM_CARD_LIMIT = 25;
 
@@ -42,6 +43,7 @@ export default function Home() {
     const timeData = useTimeData(activeFilter as string);
     const balance = useNativeBalance(mainToken?.address!, mainToken?.address !== undefined);
     const userPools = useUserPools(mainToken?.address!, COINS.filter(coin => coin.isFAssetCoin && coin.enabled).map(coin => coin.type), fetchPools);
+    const rewards = useRewards(mainToken?.address ?? '', mainToken?.address !== undefined);
     const isMounted = useMounted();
 
     const zeroBalanceAssets = balance.data?.filter(balance => balance.balance === '0' && 'lots' in balance).length;
@@ -56,6 +58,7 @@ export default function Home() {
             setFetchPools(true);
         }
     }, [isMounted, isConnected]);
+
 
     const supplyTokensToRedeem = ecoSystemInfo.data?.supplyByFasset
         ?.filter(supply => toNumber(supply.mintedPercentage) <= TIME_TO_REDEEM_CARD_LIMIT);
@@ -129,26 +132,9 @@ export default function Home() {
                     </Grid.Col>
                 </Grid>
             </Container>
-            <Grid
-                styles={{
-                    root: {
-                        '--grid-col-padding': isMobile ? '0px' : '10px',
-                        '--grid-gutter': 0
-                    }
-                }}
-            >
-                {supplyTokensToRedeem?.map(supplyToken => (
-                    <Grid.Col
-                        span={12}
-                        key={supplyToken.fasset}
-                        className="px-0 border-y border-[var(--flr-border-color)] bg-[var(--flr-lightest-gray)]"
-                    >
-                        <Container fluid className={classes.container}>
-                            <TimeToRedeemCard supplyToken={supplyToken} />
-                        </Container>
-                    </Grid.Col>
-                ))}
-            </Grid>
+            <TimeToRedeemCard
+                tokens={supplyTokensToRedeem}
+            />
             <Container fluid className={classes.container}>
                 <Grid
                     styles={{
@@ -180,6 +166,7 @@ export default function Home() {
                                         <Grid.Col span={{ base: 12, xl: 6 }} className="mt-5 md:mt-0 pl-0 max-[1482px]:pr-0">
                                             <FAssetPositionCard
                                                 balance={balance.data}
+                                                rewards={rewards.data}
                                                 isLoading={balance.isPending}
                                             />
                                         </Grid.Col>

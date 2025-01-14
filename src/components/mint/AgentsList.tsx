@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { UseQueryResult } from "@tanstack/react-query";
 import { Avatar, Group, lighten, LoadingOverlay, ScrollArea, Text } from "@mantine/core";
 import CopyIcon from "@/components/icons/CopyIcon";
-import { truncateString } from "@/utils";
+import { toNumber, truncateString } from "@/utils";
 import { IAgent } from "@/types";
 import { useMediaQuery } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
@@ -11,11 +11,13 @@ import classes from "@/styles/components/forms/MintForm.module.scss";
 interface IAgentList {
     agents: UseQueryResult<IAgent[], Error>,
     setAgent: (event: React.MouseEvent<HTMLDivElement>, agent: IAgent) => void;
+    lots: number | undefined;
 }
 
-export default function AgentsList({ agents, setAgent }: IAgentList) {
+export default function AgentsList({ agents, setAgent, lots }: IAgentList) {
     const { t } = useTranslation();
     const isMobile = useMediaQuery('(max-width: 640px)');
+    const availableAgents = agents.data?.filter(agent => toNumber(agent.freeLots) >= (lots ?? 0));
 
     return (
         <ScrollArea
@@ -28,11 +30,11 @@ export default function AgentsList({ agents, setAgent }: IAgentList) {
                 {!agents.isPending && agents.data && agents?.data?.length === 0 &&
                     <Text>{t('mint_modal.form.change_agent_table.no_agents_available_label')}</Text>
                 }
-                {agents?.data?.map((agent, index) => (
+                {availableAgents?.map((agent, index) => (
                     <Group
                         onClick={(event) => setAgent(event, agent)}
                         classNames={{
-                            root: `py-3 items-baseline cursor-pointer rounded-3xl justify-between ${agents.data.length > 1 && agents.data.length - 1 < index ? 'mb-4' : ''} ${classes.agentRow}`
+                            root: `py-3 items-baseline cursor-pointer rounded-3xl justify-between ${availableAgents.length > 1 && availableAgents.length - 1 < index ? 'mb-4' : ''} ${classes.agentRow}`
                         }}
                         key={agent.vault}
                         grow

@@ -14,9 +14,10 @@ import { COINS } from "@/config/coin";
 import { useSubmitTx } from "@/api/minting";
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { useConnectedCoin } from "@/store/coin";
-import { XRP_NAMESPACE } from "@/config/networks";
+import { BTC_NAMESPACE, NETWORK_BTC, NETWORK_DOGE, XRP_NAMESPACE } from "@/config/networks";
 import { INetwork } from "@/types";
 import { toNumber } from "@/utils";
+import { Network } from "bitcoinjs-lib/src/networks";
 
 export interface ILedgerConnector {
     connect: (network: INetwork) => Promise<boolean>;
@@ -64,6 +65,19 @@ export default function LedgerConnector(): ILedgerConnector {
 
         try {
             if (network.ledgerApp === LEDGER_APP.FLARE) {
+                const address = await execute(async (transport: Transport) => {
+                    const eth = new AppEth(transport);
+                    const { address } = await eth.getAddress(coin?.bipPath!);
+                    return address;
+                }, network.ledgerApp)
+
+                addConnectedCoin({
+                    type: coin?.type!,
+                    address: ethers.getAddress(address),
+                    connectedWallet: WALLET.LEDGER
+                });
+                return true;
+            } else if (network.ledgerApp === LEDGER_APP.ETH) {
                 const address = await execute(async (transport: Transport) => {
                     const eth = new AppEth(transport);
                     const { address } = await eth.getAddress(coin?.bipPath!);
@@ -135,6 +149,7 @@ export default function LedgerConnector(): ILedgerConnector {
 
             const serializedTx = EtherTransaction.from(unsignedTx).unsignedSerialized.slice(2);
             const resolution = await ledgerService.resolveTransaction(serializedTx, {}, {});
+
             const signature: any = await execute(async (transport: Transport) => {
                 const eth = new AppEth(transport);
                 return eth!.signTransaction(coin?.bipPath!, serializedTx, resolution);
@@ -156,7 +171,10 @@ export default function LedgerConnector(): ILedgerConnector {
         const connectedCoin = localConnectedCoins.find(localCoin => localCoin.address === params.Account);
         const coin = COINS.find(coin => coin.type === connectedCoin?.type!);
 
-        const client = new Client('wss://s.altnet.rippletest.net:51233');
+        const server = coin?.network?.mainnet
+            ? 'wss://s1.ripple.com'
+            : 'wss://s.altnet.rippletest.net:51233';
+        const client = new Client(server);
         await client.connect();
 
         const addressInfo = await execute(async (transport: Transport) => {
@@ -186,7 +204,8 @@ export default function LedgerConnector(): ILedgerConnector {
     const btcRequest = async (params: any) => {
         return await execute(async (transport: Transport) => {
             const btc = new AppBtc({ transport: transport });
-            const coin = localConnectedCoins.find(coin => coin.address === params.account);
+            const connectedCoin = localConnectedCoins.find(coin => coin.address === params.account);
+            const coin = COINS.find(coin => coin.type === connectedCoin?.type!);
 
             const recipientAddress = params.recipientAddress;
             const senderAddress = params.account;
@@ -287,7 +306,7 @@ export default function LedgerConnector(): ILedgerConnector {
                             null
                         ]
                     }),
-                    changePath: BIP44_PATH.TESTNET.BTC,
+                    changePath: coin?.network?.mainnet ? BIP44_PATH.MAINNET.BTC : BIP44_PATH.TESTNET.BTC,
                     associatedKeysets: inputs.map(input => input.utxo.path),
                     outputScriptHex: outputScript.toString('hex'),
                     additionals: []
@@ -301,7 +320,102 @@ export default function LedgerConnector(): ILedgerConnector {
                 throw error;
             }
         }, LEDGER_APP.BTC);
+    }
 
+    const dogeRequest = async(params: any) => {
+        return await execute(async (transport: Transport) => {
+            const btc = new AppBtc({ transport: transport });
+            const connectedCoin = localConnectedCoins.find(coin => coin.address === params.account);
+            const coin = COINS.find(coin => coin.type === connectedCoin?.type!);
+
+            const recipientAddress = params.recipientAddress;
+            const senderAddress = params.account;
+            const amountToSend = toNumber(params.amount);
+            const utxos = params.utxos;
+            const estimatedFee = params.estimatedFee;
+
+            const network: Network = {
+                messagePrefix: '\x19Dogecoin Signed Message:\n',
+                bech32: 'doge',
+                bip32: {
+                    public: 0x02facafd,
+                    private: 0x02fac398
+                },
+                pubKeyHash: 0x1e,
+                scriptHash: 0x16,
+                wif: 0x9e
+            };
+
+            const psbt = new bitcoin.Psbt({ network: network });
+            psbt.setMaximumFeeRate(100);
+
+            try {
+                let totalAmountAvailable = 0;
+                const inputs: any[] = [];
+                for (const utxo of utxos) {
+                    totalAmountAvailable += toNumber(utxo.value);
+                    const ledgerTx = btc.splitTransaction(utxo.hexTx, false);
+
+                    psbt.addInput({
+                        hash: utxo.txid,
+                        index: utxo.vout,
+                        nonWitnessUtxo: Buffer.from(utxo.hexTx, 'hex'),
+                    });
+                    inputs.push({ utxo, ledgerTx });
+                }
+
+                psbt.addOutput({
+                    address: recipientAddress,
+                    value: amountToSend,
+                });
+
+                const embedMemo = bitcoin.payments.embed({
+                    data: [Buffer.from(params.memo, 'hex')],
+                    network: network
+                });
+                psbt.addOutput({
+                    script: embedMemo.output!,
+                    value: 0
+                });
+
+                const change = totalAmountAvailable - amountToSend - estimatedFee;
+                if (change > 0) {
+                    psbt.addOutput({
+                        address: senderAddress,
+                        value: change,
+                    });
+                }
+
+                //@ts-ignore
+                const newTx = psbt.__CACHE.__TX;
+
+                const outLedgerTx = btc.splitTransaction(newTx.toHex(), true);
+                const outputScript = btc.serializeTransactionOutputs(outLedgerTx);
+
+                const signedTxHex = await btc.createPaymentTransaction({
+                    inputs: inputs.map(input => {
+                        const { utxo, ledgerTx } = input;
+
+                        return  [
+                            ledgerTx,
+                            utxo.vout,
+                            null,
+                            null
+                        ]
+                    }),
+                    associatedKeysets: inputs.map(input => input.utxo.path),
+                    outputScriptHex: outputScript.toString('hex'),
+                    additionals: []
+                })
+
+                const response = await submitTx.mutateAsync({ fAsset: coin?.type!, hex: signedTxHex });
+                return {
+                    txid: response?.hash
+                };
+            } catch (error: any) {
+                throw error;
+            }
+        }, LEDGER_APP.DOGE);
     }
 
     const request = async({ chainId, method, params }: { chainId: string, method: string, params: any }) => {
@@ -309,9 +423,13 @@ export default function LedgerConnector(): ILedgerConnector {
 
         if (namespace === XRP_NAMESPACE) {
             return await xrpRequest(params);
+        } else if (namespace === BTC_NAMESPACE && id === NETWORK_BTC.chainId) {
+            return await btcRequest(params);
+        } else if (namespace === BTC_NAMESPACE && id === NETWORK_DOGE.chainId) {
+            return await dogeRequest(params);
         }
 
-        return await btcRequest(params);
+        throw Error("Unsupported");
     }
 
     return {

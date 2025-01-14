@@ -161,7 +161,7 @@ export default function CollateralPoolsCard({ ecoSystemInfo, timeData }: ICollat
                                 {t('collateral_pools_card.asset_type_label')}
                             </Text>
                         </Table.Th>
-                        <Table.Th className="w-4/12 !px-[15px] lg:!px-6 !py-3 !bg-[var(--flr-white)] border-t border-[var(--flr-border-color)]">
+                        <Table.Th className="w-6/12 min-[403px]:w-4/12 !px-[15px] lg:!px-6 !py-3 !bg-[var(--flr-white)] border-t border-[var(--flr-border-color)]">
                             <Text
                                 className="text-12 uppercase text-right min-[403px]:text-left"
                                 fw={400}
@@ -184,7 +184,7 @@ export default function CollateralPoolsCard({ ecoSystemInfo, timeData }: ICollat
                 <Table.Tbody>
                     {bestPools?.map((pool, index) => (
                         <Table.Tr key={index}>
-                            <Table.Td className={`w-3/12 !px-[15px] lg:!px-6 !py-3 !bg-[var(--flr-lightest-gray)] ${index === bestPools?.length - 1 ? '!border-b-0' : ''}`}>
+                            <Table.Td className={`!px-[15px] lg:!px-6 !py-3 !bg-[var(--flr-lightest-gray)] ${index === bestPools?.length - 1 ? '!border-b-0' : ''}`}>
                                 <div className="flex items-center">
                                     {pool.token?.nativeIcon && pool.token?.nativeIcon({
                                         width: isMobile ? "32" : "50",
@@ -211,8 +211,8 @@ export default function CollateralPoolsCard({ ecoSystemInfo, timeData }: ICollat
                                     </Text>
                                 </div>
                             </Table.Td>
-                            <Table.Td className={`w-4/12 !px-[15px] lg:!px-6 !py-3 !bg-[var(--flr-lightest-gray)] text-right min-[403px]:text-left ${index === bestPools?.length - 1 ? '!border-b-0' : ''}`}>
-                                <div className="flex max-[373px]:flex-col min-[403px]:flex-col max-[373px]:items-end max-[403px]:items-center">
+                            <Table.Td className={`!px-[15px] lg:!px-6 !py-3 !bg-[var(--flr-lightest-gray)] text-right min-[403px]:text-left ${index === bestPools?.length - 1 ? '!border-b-0' : ''}`}>
+                                <div className="flex max-[373px]:flex-col min-[403px]:flex-col max-[373px]:items-end max-[403px]:items-center max-[403px]:justify-end">
                                     <Text
                                         className="text-16"
                                         fw={400}
@@ -240,7 +240,7 @@ export default function CollateralPoolsCard({ ecoSystemInfo, timeData }: ICollat
                                     </Badge>
                                 </div>
                             </Table.Td>
-                            <Table.Td className={`w-4/12 !px-[15px] lg:!px-6 !py-3 text-right hidden min-[403px]:table-cell !bg-[var(--flr-lightest-gray)] ${index === bestPools?.length - 1 ? '!border-b-0' : ''}`}>
+                            <Table.Td className={`!px-[15px] lg:!px-6 !py-3 text-right hidden min-[403px]:table-cell !bg-[var(--flr-lightest-gray)] ${index === bestPools?.length - 1 ? '!border-b-0' : ''}`}>
                                 <Text
                                     className="text-16"
                                     fw={400}

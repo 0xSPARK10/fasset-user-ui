@@ -9,7 +9,7 @@ export const WALLET = {
 export const BIP44_PATH = {
     TESTNET: {
         BTC: "m/44'/1'/0'/0/0",
-        DOGE: "m/44'/3'/0'/0/0",
+        DOGE: "m/44'/1'/0'/0/0",
         ETH: "m/44'/60'/0'/0/0",
         XRP: "m/44'/144'/0'/0/0"
     },

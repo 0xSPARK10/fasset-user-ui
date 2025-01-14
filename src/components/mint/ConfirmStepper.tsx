@@ -65,6 +65,7 @@ export default function ConfirmStepper({
     const [transferredAssetAmount, setTransferredAssetAmount] = useState<number>();
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isHandshakeRejected, setIsHandshakeRejected] = useState<boolean>(false);
+    const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
     const crStatus = useRef<ICrStatus>();
 
     const { t } = useTranslation();
@@ -100,6 +101,7 @@ export default function ConfirmStepper({
         try {
             const response = crStatus.current ?? (await crEvent.refetch()).data;
             setIsLoading(true);
+            setIsLedgerButtonDisabled(true);
 
             let signTransactionResponse: any;
             if (hasHandShake && fAssetCoin.network.namespace === BTC_NAMESPACE && fAssetCoin.connectedWallet !== WALLET.LEDGER) {
@@ -189,12 +191,14 @@ export default function ConfirmStepper({
             }
         } finally {
             setIsLoading(false);
+            setIsLedgerButtonDisabled(false);
         }
     }
 
     const reserve = async () => {
         try {
             setIsLoading(true);
+            setIsLedgerButtonDisabled(true);
             setTransferredAssetAmount(fromLots(parseInt(formValues.lots), fAssetCoin.lotSize) as number);
             const executorResponse = await executor.refetch();
             const assetManagerResponse = await assetManagerAddress.refetch();
@@ -235,6 +239,7 @@ export default function ConfirmStepper({
             }
         } finally {
             setIsLoading(false);
+            setIsLedgerButtonDisabled(false);
         }
     }
 
@@ -444,6 +449,7 @@ export default function ConfirmStepper({
                             : fAssetCoin?.network?.ledgerApp!}
                         onClick={currentStep === STEP_WALLET_RESERVATION ? reserve : mintRequest}
                         isLoading={isLoading}
+                        isDisabled={isLedgerButtonDisabled}
                     />
                 </>
             }

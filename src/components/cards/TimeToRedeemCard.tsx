@@ -1,3 +1,4 @@
+import React from "react";
 import { useRouter } from "next/router";
 import {
     Title,
@@ -6,7 +7,9 @@ import {
     SimpleGrid,
     Anchor,
     Divider,
-    Table, Paper
+    Table,
+    Container,
+    Grid
 } from "@mantine/core";
 import Link from "next/link";
 import { useTranslation, Trans } from "react-i18next";
@@ -14,16 +17,27 @@ import { modals } from "@mantine/modals";
 import { IEcoSystemInfoSupplyByFasset } from "@/types";
 import { COINS } from "@/config/coin";
 import { toNumber } from "@/utils";
+import homeClasses from "@/styles/pages/Home.module.scss";
 import classes from "@/styles/components/cards/TimeToRedeemCard.module.scss";
 
 interface ITimeToRedeemCard {
-    supplyToken: IEcoSystemInfoSupplyByFasset | undefined;
+    tokens: IEcoSystemInfoSupplyByFasset[] | undefined;
 }
 
-export default function TimeToRedeemCard({ supplyToken }: ITimeToRedeemCard) {
+export default function TimeToRedeemCard({ tokens }: ITimeToRedeemCard) {
     const { t } = useTranslation();
-    const token = COINS.find(coin => coin.type.toLowerCase() === supplyToken?.fasset.toLowerCase());
-    const percentageMinted = 100 - toNumber(supplyToken?.mintedPercentage ?? "0");
+
+    const localTokens: (IEcoSystemInfoSupplyByFasset & { icon: any; percentageMinted: number })[] = (tokens || [])?.map(token => {
+        const coin = COINS.find(coin => coin.type.toLowerCase() === token?.fasset.toLowerCase());
+        const percentageMinted = 100 - toNumber(token?.mintedPercentage ?? "0");
+
+        return {
+            icon: coin?.icon,
+            percentageMinted: percentageMinted,
+            ...token
+        }
+    })
+
     const router = useRouter();
 
     const redirectTo = async (url: string) => {
@@ -365,71 +379,82 @@ export default function TimeToRedeemCard({ supplyToken }: ITimeToRedeemCard) {
     }
 
     return (
-        <div
-            className="flex flex-col md:flex-row items-center justify-between py-6 px-[15px] lg:pr-[10px]">
-            <div className="flex items-center">
-                {token?.icon && token.icon({width: '88', height: '88', className: 'flex-shrink-0 mr-4'})}
-                <div>
-                    <Title
-                        className="text-28 mb-1"
-                        fw={400}
-                        c="var(--flr-black)"
-                    >
-                        {t('time_to_redeem_card.title')}
-                    </Title>
-                    <Text
-                        className="text-18 underline cursor-pointer"
-                        fw={400}
-                        c="var(--flr-black)"
-                        onClick={openModal}
-                    >
-                        {t('time_to_redeem_card.how_it_works_label')}
-                    </Text>
-                </div>
-                <Button
-                    variant="outline"
-                    component={Link}
-                    href="/mint"
-                    color="var(--flr-pink)"
-                    h={72}
-                    rightSection={token?.icon && token.icon({width: '44', height: '44', className: 'ml-2'})}
-                    className="hidden lg:block ml-5"
-                    fw={400}
-                    classNames={{
-                        root: 'rounded-[48px] px-[14px] hover-gradient',
-                        label: 'text-20',
-                        section: 'ml-5'
-                    }}
-                >
-                    {t('time_to_redeem_card.redeem_button')}
-                </Button>
-            </div>
-            <div className={`${classes.donutChart} mt-6 md:mt-0`}
-                 style={{
-                     //@ts-ignore
-                     '--percentage': percentageMinted,
-                 }}
-            >
-                <div className="flex flex-col items-center">
-                    <Text
-                        className="text-48 -mb-2"
-                        fw={300}
-                        c="var(--flr-black)"
-                    >
-                        {percentageMinted.toFixed(0)}%
-                    </Text>
-                    <div className="flex items-center">
-                        {token?.icon && token.icon({width: '20', height: '20', className: 'flex-shrink-0 mr-2' })}
-                        <Text
-                            className="text-16 uppercase"
+        <div className="min-[767px]:border-t border-b border-[var(--flr-border-color)] bg-[var(--flr-lightest-gray)]">
+            <Container fluid className={`${homeClasses.container}`}>
+                <div className={`flex flex-row justify-between flex-col lg:flex-row lg:items-center py-6 px-[10px]`}>
+                    <div>
+                        <Title
+                            className="text-28 mb-1"
                             fw={400}
-                            c="var(--flr-dark-gray)"
+                            c="var(--flr-black)"
                         >
-                            {t('time_to_redeem_card.minted_label')}
+                            {t('time_to_redeem_card.title')}
+                        </Title>
+                        <Text
+                            className="text-18 underline cursor-pointer"
+                            fw={400}
+                            c="var(--flr-black)"
+                            onClick={openModal}
+                        >
+                            {t('time_to_redeem_card.how_it_works_label')}
                         </Text>
                     </div>
+                    {localTokens?.map((token, index) => (
+                        <div
+                            key={index}
+                            className={`flex items-center justify-center flex-wrap ${index < localTokens.length - 1 ? 'mb-5 md:mb-0' : ''}`}
+                        >
+                            <Button
+                                variant="outline"
+                                component={Link}
+                                href="/mint"
+                                color="var(--flr-pink)"
+                                h={72}
+                                rightSection={token?.icon && token.icon({width: '40', height: '40'})}
+                                fw={400}
+                                classNames={{
+                                    root: 'rounded-[48px] px-[14px] hover-gradient',
+                                    label: 'text-20',
+                                    section: 'ml-5'
+                                }}
+                                className="m-3"
+                            >
+                                {t('time_to_redeem_card.redeem_button', {fAsset: token.fasset})}
+                            </Button>
+                            <div className={`${classes.donutChart} m-3`}
+                                 style={{
+                                     //@ts-ignore
+                                     '--percentage': token.percentageMinted,
+                                 }}
+                            >
+                                <div className="flex flex-col items-center">
+                                    <Text
+                                        className="text-48 -mb-2"
+                                        fw={300}
+                                        c="var(--flr-black)"
+                                    >
+                                        {token.percentageMinted.toFixed(0)}%
+                                    </Text>
+                                    <div className="flex items-center">
+                                        {token?.icon && token.icon({
+                                            width: '20',
+                                            height: '20',
+                                            className: 'flex-shrink-0 mr-2'
+                                        })}
+                                        <Text
+                                            className="text-16 uppercase"
+                                            fw={400}
+                                            c="var(--flr-dark-gray)"
+                                        >
+                                            {t('time_to_redeem_card.minted_label')}
+                                        </Text>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
-            </div>
+            </Container>
         </div>
     );
 }

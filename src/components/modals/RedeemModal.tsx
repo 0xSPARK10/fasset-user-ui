@@ -71,6 +71,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin, flareCoin }: 
     const [formValues, setFormValues] = useState<any>();
     const [redeemedLots, setRedeemedLots] = useState<number>();
     const [isNextButtonDisabled, setIsNextButtonDisabled] = useState<boolean>(false);
+    const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
 
     const assetManagerAddress = useAssetManagerAddress(fAssetCoin.type, opened);
     const redeem = useRedeem();
@@ -126,6 +127,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin, flareCoin }: 
 
     const requestRedeem = async (values?: any) => {
         try {
+            setIsLedgerButtonDisabled(true);
             const lots = values?.lots || formValues.lots;
             setRedeemLots(lots);
 
@@ -167,6 +169,8 @@ export default function RedeemModal({ opened, onClose, fAssetCoin, flareCoin }: 
                 setErrorMessage(error?.error?.message || decodedError.reason as string);
             }
             modals.closeAll();
+        } finally {
+            setIsLedgerButtonDisabled(false);
         }
     }
 
@@ -454,6 +458,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin, flareCoin }: 
                                 appName={flareCoin?.network?.ledgerApp!}
                                 onClick={() => requestRedeem()}
                                 isLoading={redeem.isPending}
+                                isDisabled={isLedgerButtonDisabled}
                             />
                         </>
                     }

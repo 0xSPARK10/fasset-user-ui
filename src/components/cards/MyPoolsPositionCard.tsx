@@ -6,10 +6,9 @@ import FXrpIcon from "@/components/icons/FXrpIcon";
 import FBtcIcon from "@/components/icons/FBtcIcon";
 import FDogeIcon from "@/components/icons/FDogeIcon";
 import { useMediaQuery } from "@mantine/hooks";
-import { useLifetimeClaimed } from "@/api/user";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { formatNumberWithSuffix, toNumber } from "@/utils";
-import {IPool} from "@/types";
+import { IPool } from "@/types";
 
 interface IMyPoolsPositionCard {
     pools: IPool[] | undefined;
@@ -19,7 +18,9 @@ interface IMyPoolsPositionCard {
 interface IReward {
     type: string;
     icon: React.ReactNode | undefined;
-    total: number;
+    claimable: number;
+    claimed: number;
+    claimedUSD: number;
 }
 
 interface IPosition {
@@ -33,11 +34,6 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
     const { t } = useTranslation();
     const { mainToken } = useWeb3();
     const isMobile = useMediaQuery('(max-width: 767px)');
-    const lifetimeClaimed = useLifetimeClaimed(mainToken?.address ?? '', mainToken !== undefined);
-
-    const totalLifetimeClaimed = lifetimeClaimed.data?.reduce((accumulator, lifetimeClaimed) => {
-        return accumulator + toNumber(lifetimeClaimed.claimed);
-    }, 0);
 
     const position: IPosition | undefined = pools
         ?.reduce((accumulator, pool) => {
@@ -68,25 +64,30 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
 
             const existingReward = accumulator['rewards'].find((reward: IReward) => reward.type === pool.vaultType) as IReward | undefined;
             if (existingReward) {
-                existingReward.total += toNumber(pool.userPoolFees!);
+                existingReward.claimable += toNumber(pool.userPoolFees!);
             } else {
                 accumulator['rewards'].push({
                     type: pool.vaultType,
                     icon: icon,
-                    total: toNumber(pool.userPoolFees!)
+                    claimable: toNumber(pool.userPoolFees!),
+                    claimed: toNumber(pool.userPoolFees!) + toNumber(pool.lifetimeClaimedPoolFormatted!),
+                    claimedUSD: toNumber(pool.userPoolFeesUSD!) + toNumber(pool.lifetimeClaimedPoolUSDFormatted!),
                 });
             }
 
             return accumulator;
         }, { totalFassets: 0, totalFassetsUSD: 0, totalRewardsUSD: 0, rewards: [] }  as IPosition);
 
+    const totalClaimed = position?.rewards.reduce((accumulator, reward) => {
+        return accumulator + reward.claimedUSD;
+    }, 0);
     const hasNoAssets = position?.totalFassets === 0;
     const isClaimRewardsButtonDisabled = position?.totalRewardsUSD.toFixed(2) === "0.00";
 
     return (
-        <div className="flex flex-col border-x-0 md:border-x md:border-y border-[var(--flr-border-color)] h-full relative">
+        <div className="flex flex-col border-x-0 md:border-x md:border-y border-[var(--flr-border-color)] relative h-full">
             <LoadingOverlay visible={isLoading} />
-            <div className="flex flex-wrap items-center max-[430px]:mb-2 min-[430px]:items-center justify-between px-[15px] lg:px-6 py-2 min-h-14 h-full">
+            <div className="flex flex-wrap items-center max-[430px]:mb-2 min-[430px]:items-center justify-between px-[15px] lg:px-6 py-2">
                 <Title
                     className="text-16 uppercase"
                     fw={400}
@@ -119,10 +120,11 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
                 </div>
             </div>
             <div
-                className="flex flex-wrap bg-[var(--flr-lightest-gray)] border-t border-b md:border-b-0 border-[var(--flr-border-color)] h-full">
+                className="flex flex-wrap bg-[var(--flr-lightest-gray)] border-t border-b md:border-b-0 border-[var(--flr-border-color)] h-full"
+            >
                 {!isLoading && hasNoAssets &&
                     <div className="px-[15px] lg:px-5 py-5 md:hidden">
-                    <Text
+                        <Text
                             className="text-16"
                             fw={400}
                             c="var(--flr-gray)"
@@ -132,10 +134,10 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
                     </div>
                 }
                 <div
-                    className={`${hasNoAssets ? 'hidden md:flex' : 'flex'} flex-col basis-full min-[430px]:basis-6/12 px-[15px] lg:px-6 py-6 grow md:border-r border-[var(--flr-border-color)]`}
+                    className={`${hasNoAssets ? 'hidden md:flex' : 'flex'} flex-col basis-full min-[430px]:basis-6/12 px-[15px] lg:px-6 py-12 grow min-[430px]:border-r border-b border-[var(--flr-border-color)]`}
                 >
                     <Text
-                        className={`text-16 uppercase ${isLoading ? '' : 'mt-0 xl:mt-4'}`}
+                        className={`text-16 uppercase`}
                         fw={400}
                         c="var(--flr-dark-gray)"
                     >
@@ -169,9 +171,9 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
                         </div>
                     }
                 </div>
-                <div className={`${hasNoAssets ? 'hidden md:flex' : 'flex'} flex-col basis-full min-[430px]:basis-6/12 px-[15px] lg:px-6 py-6 grow border-t md:border-t-0 border-[var(--flr-border-color)]`}>
+                <div className={`${hasNoAssets ? 'hidden md:flex' : 'flex'} flex-col basis-full min-[430px]:basis-6/12 px-[15px] lg:px-6 py-12 grow border-b md:border-t-0 border-[var(--flr-border-color)]`}>
                     <Text
-                        className={`text-16 uppercase ${isLoading ? '' : 'mt-0 xl:mt-4'}`}
+                        className={`text-16 uppercase`}
                         fw={400}
                         c="var(--flr-dark-gray)"
                     >
@@ -205,21 +207,40 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
                                         fw={400}
                                         c="var(--flr-dark-gray)"
                                     >
-                                        {formatNumberWithSuffix(reward.total, reward.type.toLowerCase().includes('btc') ? 5 : 2)}
+                                        {formatNumberWithSuffix(reward.claimable, reward.type.toLowerCase().includes('btc') ? 5 : 2)}
                                     </Text>
                                 </div>
                             ))}
                         </div>
                     }
-                    {!hasNoAssets &&
+                </div>
+                <div className="flex flex-col justify-center px-[15px] lg:px-6 py-3 min-h-[71px]">
+                    <Text
+                        className="text-12 uppercase"
+                        c="var(--flr-gray)"
+                        fw={400}
+                    >
+                        {t('my_pools_position_card.pools_rewards_earned_label')}
+                    </Text>
+                    <div className="flex items-center mt-1">
                         <Text
-                            className="text-12 mt-2"
-                            fw={400}
+                            className="text-16 mr-3"
                             c="var(--flr-dark-gray)"
                         >
-                            {t('my_pools_position_card.rewards_earned_to_date_label', {amount: formatNumberWithSuffix(totalLifetimeClaimed ?? 0)})}
+                            ${formatNumberWithSuffix(totalClaimed ?? 0)}
                         </Text>
-                    }
+                        (<div className="mx-2 flex items-center">
+                            {position?.rewards?.map((reward, index) => (
+                                <div
+                                    className={`flex items-center ${index < position.rewards.length - 1 ? 'mr-5' : ''}`}
+                                    key={index}
+                                >
+                                    {reward.icon !== undefined && reward.icon}
+                                    <span className="ml-1">{formatNumberWithSuffix(reward.claimed)}</span>
+                                </div>
+                            ))}
+                        </div>)
+                    </div>
                 </div>
             </div>
         </div>

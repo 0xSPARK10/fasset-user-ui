@@ -1,14 +1,13 @@
 import {
     Stack,
     Text,
-    Group,
     Accordion,
     Table,
     rem
 } from "@mantine/core";
 import React, { useState } from "react";
 import { IconMinus, IconPlus, IconCheck } from "@tabler/icons-react";
-import { useTranslation, Trans } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { wallets } from "@/config/connectors";
 import SelectWalletButton from "@/components/elements/SelectWalletButton";
 import FAssetModal from "@/components/modals/FAssetModal";
@@ -25,7 +24,6 @@ export default function ConnectWalletModal({ opened, onClose }: IConnectWalletMo
     const { t } = useTranslation();
     const coins = COINS.filter(coin => coin.enabled && !coin?.isStableCoin);
     const enabledWallets = filter(wallets, wallet => wallet.enabled);
-    const termsOfServiceUrl = process.env.TERM_OF_SERVICE_URL;
 
     return (
         <>

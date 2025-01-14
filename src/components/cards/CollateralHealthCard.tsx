@@ -270,7 +270,7 @@ export default function CollateralHealthCard({ ecoSystemInfo, timeData }: IColla
                                 <Text
                                     className="text-14"
                                     fw={400}
-                                    c={timeData?.totalCollateralDiff ? 'var(--flr-green)' : 'var(--flr-red)'}
+                                    c={timeData?.isPositiveCollateralDiff ? 'var(--flr-green)' : 'var(--flr-red)'}
                                 >
                                     {timeData?.totalCollateralDiff}%
                                 </Text>

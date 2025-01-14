@@ -207,7 +207,7 @@ export enum CoinEnum {
     FTestBTC = 'FTestBTC',
     FBTC = 'FBTC',
     FTestDOGE = 'FTestDOGE',
-    FDoge = 'FDoge',
+    FDoge = 'FDOGE',
     TestUSDC = 'testUSDC',
     TestUSDT = 'testUSDT',
     TestETH = 'testETH',
@@ -402,4 +402,14 @@ export interface ITrailingFee {
 export interface IFassetState {
     fasset: string;
     state: boolean;
+}
+
+export interface IReward {
+    claimedRflr: string;
+    claimedUsd: string;
+    claimableRflr: string;
+    claimableUsd: string;
+    points: string;
+    share: string;
+    shareUsd: string;
 }

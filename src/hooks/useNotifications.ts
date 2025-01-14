@@ -1,5 +1,6 @@
 import { notifications } from '@mantine/notifications';
 import i18next  from '@/config/i18n';
+
 export function showSucessNotification(message: string) {
     notifications.show({
         title: i18next.t('notifications.success_title'),

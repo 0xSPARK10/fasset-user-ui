@@ -48,6 +48,8 @@ export default function DepositToPoolModal({ opened, onClose, collateralPool }: 
     const enterCollateralPool = useEnterCollateralPool();
     const [isFormDisabled, setIsFormDisabled] = useState<boolean>(false);
     const [formValues, setFormValues] = useState<any>();
+    const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
+
     const userPool = useUserPool(collateralPool?.vaultType!, mainToken?.address!, collateralPool?.pool!, false);
     const queryClient = useQueryClient();
 
@@ -67,8 +69,8 @@ export default function DepositToPoolModal({ opened, onClose, collateralPool }: 
         const response = await userPool.refetch();
         queryClient.setQueriesData({
             queryKey: [POOL_KEY.USER_POOLS, mainToken?.address!, COINS.filter(coin => coin.isFAssetCoin && coin.enabled).map(coin => coin.type).join()]
-        }, (updater: any) => {
-            return (updater as IPool[]).map((pool: IPool) => {
+        }, (updater: IPool[] | undefined) => {
+            return updater?.map((pool: IPool) => {
                 return pool.pool === response?.data?.pool ? { ...response.data } : pool
             });
         });
@@ -76,6 +78,7 @@ export default function DepositToPoolModal({ opened, onClose, collateralPool }: 
 
     const requestEnterCollateral = async (values?: any) => {
         try {
+            setIsLedgerButtonDisabled(true);
             await enterCollateralPool.mutateAsync({
                 userAddress: mainToken?.address!,
                 poolAddress: collateralPool?.pool!,
@@ -103,6 +106,8 @@ export default function DepositToPoolModal({ opened, onClose, collateralPool }: 
                 setErrorMessage(error?.error?.message || decodedError.reason as string);
             }
             modals.closeAll();
+        } finally {
+            setIsLedgerButtonDisabled(false);
         }
     }
 
@@ -310,6 +315,7 @@ export default function DepositToPoolModal({ opened, onClose, collateralPool }: 
                             appName={mainToken?.network?.ledgerApp!}
                             onClick={() => requestEnterCollateral()}
                             isLoading={enterCollateralPool.isPending}
+                            isDisabled={isLedgerButtonDisabled}
                         />
                     </>
                 }

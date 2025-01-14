@@ -5,8 +5,8 @@
 
 .donutChart {
     --percentage: 0;
-    width: 220px;
-    height: 110px;
+    width: 210px;
+    height: 100px;
     position: relative;
     overflow: hidden;
     display: flex;
@@ -16,9 +16,9 @@
 
     &:after {
         content: '';
-        width: 220px;
-        height: 220px;
-        border: 20px solid;
+        width: 210px;
+        height: 210px;
+        border: 10px solid;
         border-color : rgba(0,0,0,0.15) rgba(0,0,0,0.15) var(--flr-green) var(--flr-green);
         position: absolute;
         border-radius: 50%;

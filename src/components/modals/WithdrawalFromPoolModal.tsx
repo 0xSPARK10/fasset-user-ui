@@ -55,6 +55,7 @@ export default function WithdrawalFromPoolModal({ opened, onClose, collateralPoo
     const [currentWalletStep, setCurrentWalletStep] = useState<number>(STEP_WALLET_WITHDRAWAL);
     const [errorMessage, setErrorMessage] = useState<string>();
     const [formValues, setFormValues] = useState<any>();
+    const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
 
     const { t } = useTranslation();
     const formRef = useRef<FormRef>(null);
@@ -80,8 +81,8 @@ export default function WithdrawalFromPoolModal({ opened, onClose, collateralPoo
         const response = await userPool.refetch();
         queryClient.setQueriesData({
             queryKey: [POOL_KEY.USER_POOLS, mainToken?.address!, COINS.filter(coin => coin.isFAssetCoin && coin.enabled).map(coin => coin.type).join()]
-        }, (updater: any) => {
-            return (updater as IPool[]).map((pool: IPool) => {
+        }, (updater: IPool[] | undefined) => {
+            return updater?.map((pool: IPool) => {
                 return pool.pool === response?.data?.pool ? { ...response.data } : pool
             });
         });
@@ -89,6 +90,7 @@ export default function WithdrawalFromPoolModal({ opened, onClose, collateralPoo
 
     const requestExitCollateral = async (values?: any) => {
         try {
+            setIsLedgerButtonDisabled(true);
             await exitCollateralPool.mutateAsync({
                 userAddress: mainToken?.address!,
                 poolAddress: collateralPool?.pool!,
@@ -115,6 +117,8 @@ export default function WithdrawalFromPoolModal({ opened, onClose, collateralPoo
                 setErrorMessage(error?.error?.message || decodedError.reason as string);
             }
             modals.closeAll();
+        } finally {
+            setIsLedgerButtonDisabled(false);
         }
     }
     const onNextStepClick = async() => {
@@ -326,6 +330,7 @@ export default function WithdrawalFromPoolModal({ opened, onClose, collateralPoo
                             appName={mainToken?.network?.ledgerApp!}
                             onClick={() => requestExitCollateral()}
                             isLoading={exitCollateralPool.isPending}
+                            isDisabled={isLedgerButtonDisabled}
                         />
                     </>
                 }

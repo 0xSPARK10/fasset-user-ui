@@ -55,7 +55,7 @@ export function useUserPools(address: string, fAssets: string[] = [], enabled: b
             return data.map(pool => {
                 return {
                     ...pool,
-                    agentName: pool.agentName.length === 0 ? 'Not defined' : pool.agentName,
+                    agentName: pool.agentName.length === 0 ? 'Not defined' : pool.agentName
                 }
             });
         },

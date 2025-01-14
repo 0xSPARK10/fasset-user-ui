@@ -91,7 +91,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
         false
     );
 
-    const mintFeePercentage = mintingFee !== undefined && transfer !== undefined
+    const mintFeePercentage = mintingFee !== undefined && transfer !== undefined && transfer !== 0
         ? (mintingFee / transfer) * 100
         : 0;
     const isMintingFeeHigh = mintFeePercentage > MINTING_FEE_LIMIT;
@@ -404,7 +404,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
                 >
                     {t('mint_modal.form.handshake_required_label')}
                 </Text>
-                <div className="mt-2 flex justify-between">
+                <div className="flex justify-between">
                     <Text
                         className="text-16"
                         fw={400}
@@ -613,6 +613,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
                             <AgentsList
                                 agents={agents}
                                 setAgent={setAgent}
+                                lots={lots}
                             />
                         </Popover.Dropdown>
                     </Popover>
@@ -635,7 +636,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
                             ? <Loader size={14} />
                             : (
                                 lots
-                                    ? `${mintFeePercentage}%`
+                                    ? `${formatNumber(mintFeePercentage, 2)}%`
                                     : <span>&mdash;</span>
                             )
                         }

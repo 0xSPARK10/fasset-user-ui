@@ -186,7 +186,7 @@ export const FDOGE: ICoin = {
     network: NETWORK_DOGE,
     enabled: isMainnet && enabledUnderlyingFassets.includes(CoinEnum.FDoge.toLowerCase()),
     isFAssetCoin: true,
-    supportedWallets: [WALLET.WALLET_CONNECT],
+    supportedWallets: [WALLET.WALLET_CONNECT, WALLET.LEDGER],
     decimals: 2,
     bipPath: BIP44_PATH.MAINNET.DOGE
 }

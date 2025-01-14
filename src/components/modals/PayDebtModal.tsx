@@ -57,6 +57,7 @@ export default function PayDebtModal({ opened, onClose, collateralPool }: IPayDe
     const [formValues, setFormValues] = useState<any>();
     const [isFinishedModalActive, setIsFinishedModalActive] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
     const formRef = useRef<FormRef>(null);
 
     const { t } = useTranslation();
@@ -83,8 +84,8 @@ export default function PayDebtModal({ opened, onClose, collateralPool }: IPayDe
         const response = await pool.refetch();
         queryClient.setQueriesData({
             queryKey: [POOL_KEY.USER_POOLS, mainToken?.address!, COINS.filter(coin => coin.isFAssetCoin && coin.enabled).map(coin => coin.type).join()]
-        }, updater => {
-            return (updater as IPool[]).map((pool: IPool) => {
+        }, (updater: IPool[] | undefined) => {
+            return updater?.map((pool: IPool) => {
                 return pool.pool === response?.data?.pool ? { ...response.data } : pool
             });
         });
@@ -94,6 +95,7 @@ export default function PayDebtModal({ opened, onClose, collateralPool }: IPayDe
         try {
             const amount = parseUnits(values?.debtAmount || formValues.debtAmount, ['DOGE', 'BTC'].includes(fAssetCoin?.nativeName!) ? 8 : 6).toString();
             setIsLoading(true);
+            setIsLedgerButtonDisabled(true);
 
             await freeCptApprove.mutateAsync({
                 spenderAddress: collateralPool?.pool!,
@@ -121,12 +123,14 @@ export default function PayDebtModal({ opened, onClose, collateralPool }: IPayDe
             modals.closeAll();
         } finally {
             setIsLoading(false);
+            setIsLedgerButtonDisabled(false);
         }
     }
 
     const requestFreeCptPayAssetFeeDebt = async (values?: any) => {
         try {
             setIsLoading(true);
+            setIsLedgerButtonDisabled(true);
             const delay = (ms: number) => {
                 return new Promise(resolve => setTimeout(resolve, ms));
             }
@@ -161,6 +165,7 @@ export default function PayDebtModal({ opened, onClose, collateralPool }: IPayDe
             modals.closeAll();
         } finally {
             setIsLoading(false);
+            setIsLedgerButtonDisabled(false);
         }
     }
 
@@ -386,6 +391,7 @@ export default function PayDebtModal({ opened, onClose, collateralPool }: IPayDe
                             appName={mainToken?.network?.ledgerApp!}
                             onClick={() => confirmationStep === STEP_APPROVAL ? requestFreeCptApprove() : requestFreeCptPayAssetFeeDebt()}
                             isLoading={isLoading}
+                            isDisabled={isLedgerButtonDisabled}
                         />
                     </>
                 }

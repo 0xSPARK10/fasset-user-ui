@@ -272,10 +272,15 @@
         "title": "Additional assets needed?"
     },
     "fasset_position_card": {
+        "available_rewards_label": "Your available rewards",
+        "distribution_period_label": "Distribution period ends in",
         "fasset_position_label": "Your fasset position",
         "lots_label": "lots",
         "no_assets_label": "You hold no {{fassets}}",
+        "none_label": "None",
+        "percentage_rewards_label": "% of rewards",
         "redeem_button": "Redeem",
+        "rewards_earned_to_date_label": "Rewards earned to date",
         "view_mint_page_label": "View Mint Page"
     },
     "fasset_table": {
@@ -358,7 +363,7 @@
         "errors": {
             "bitcoin_app_not_running_error": "Error connecting to Ledger device. Make sure Bitcoin app is running on your Ledger device and device is unlocked.",
             "bitcoin_test_app_not_running_error": "Error connecting to Ledger device. Make sure Bitcoin Test app is running on your Ledger device and device is unlocked.",
-            "doge_app_not_running_error": "Error connecting to Ledger device. Make sure Bitcoin Test app is running on your Ledger device and device is unlocked.",
+            "dogecoin_app_not_running_error": "Error connecting to Ledger device. Make sure Dogecoin app is running on your Ledger device and device is unlocked.",
             "ethereum_app_not_running_error": "Error connecting to Ledger device. Make sure Ethereum app is running on your Ledger device and device is unlocked.",
             "flare_network_app_not_running_error": "Error connecting to Ledger device. Make sure Flare Network app is running on your Ledger device and device is unlocked.",
             "xrp_app_not_running_error": "Error connecting to Ledger device. Make sure XRP app is running on your Ledger device and device is unlocked."
@@ -451,6 +456,7 @@
         "available_rewards_label": "Available rewards",
         "deposit_into_pools_label": "Deposit into pools to earn rewards",
         "claim_rewards_button": "Claim Rewards",
+        "pools_rewards_earned_label": "Pool rewards earned to date",
         "rewards_earned_to_date_label": "${{amount}} rewards earned to date",
         "no_assets_label": "You have no assets deposited into pools",
         "view_all_pools_label": "View All Pools",
@@ -647,7 +653,7 @@
             "view_pools_button": "View Pools"
         },
         "minted_label": "Minted",
-        "redeem_button": "Redeem",
+        "redeem_button": "Redeem {{fAsset}}",
         "title": "Time to Redeem"
     },
     "token": {

@@ -133,7 +133,13 @@ export default function PoolsTable({ pools, className, style, type, showAll }: I
         });
     };
 
-    const renderAgentName = useCallback((pool: IPool, className: string = '', truncateCount: number = 5, largeIcons: boolean = true) => {
+    const renderAgentName = useCallback((
+        pool: IPool,
+        className: string = '',
+        truncateCount: number = 5,
+        largeIcons: boolean = true,
+        isDrawer: boolean = false
+    ) => {
         return (
             <div className="flex items-center">
                 <div className="flex items-baseline">
@@ -190,14 +196,20 @@ export default function PoolsTable({ pools, className, style, type, showAll }: I
                 <div>
                     <div className="flex items-center">
                         <Link
-                            className={`text-14 underline ${classes.agentNameTr} ${className}`}
+                            className={`text-14 underline ${classes.agentNameTr} ${className} ${[2, 3].includes(pool.health) ? 'text-[var(--flr-red)]' : 'text-[var(--flr-black)]'}`}
                             href={`/pools/${pool.vaultType}/${pool.pool}`}
                         >
                             {pool.agentName}
                         </Link>
                     </div>
                     <div className="flex items-center">
-                        <Text className="text-12" fw={400}>{truncateString(pool.vault, truncateCount, truncateCount)}</Text>
+                        <Text
+                            className="text-12"
+                            fw={400}
+                            c={!isDrawer && [2, 3].includes(pool.health) ? 'var(--flr-red)' : 'var(--flr-black)'}
+                        >
+                            {truncateString(pool.vault, truncateCount, truncateCount)}
+                        </Text>
                         <CopyIcon text={pool.vault} color="var(--mantine-color-gray-4)" />
                     </div>
                 </div>
@@ -438,7 +450,7 @@ export default function PoolsTable({ pools, className, style, type, showAll }: I
             id: 'agentName',
             label: t('agents.table.agent_label'),
             render: (pool: IPool) => {
-                return renderAgentName(pool, '!w-40 text-ellipsis overflow-hidden text-nowrap', 5)
+                return renderAgentName(pool, '!w-40 text-ellipsis overflow-hidden text-nowrap !text-[var(--flr-black)]', 5, true, true)
             }
         },
         {

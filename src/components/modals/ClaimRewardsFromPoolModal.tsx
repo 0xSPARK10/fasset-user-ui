@@ -51,6 +51,7 @@ export default function ClaimRewardsFromPoolModal({ opened, onClose, collateralP
     const [currentWalletStep, setCurrentWalletStep] = useState<number>(STEP_WALLET_CLAIM_REWARDS);
     const [errorMessage, setErrorMessage] = useState<string>();
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
     const [formValues, setFormValues] = useState<any>();
 
     const { t } = useTranslation();
@@ -77,9 +78,11 @@ export default function ClaimRewardsFromPoolModal({ opened, onClose, collateralP
         const response = await userPool.refetch();
         queryClient.setQueriesData({
             queryKey: [POOL_KEY.USER_POOLS, mainToken?.address!, COINS.filter(coin => coin.isFAssetCoin && coin.enabled).map(coin => coin.type).join()]
-        }, (updater: any) => {
-            return (updater as IPool[]).map((pool: IPool) => {
-                return pool.pool === response?.data?.pool ? { ...response.data } : pool
+        }, (updater: IPool[] | undefined) => {
+            return updater?.map(pool => {
+                return pool.pool === response?.data?.pool
+                    ? { ...response.data, userPoolFeesUSD: "0", userPoolFees: "0" }
+                    : pool
             });
         });
     }
@@ -87,10 +90,11 @@ export default function ClaimRewardsFromPoolModal({ opened, onClose, collateralP
     const requestClaimRewardsCollateralPool = async (values?: any) => {
         try {
             setIsLoading(true);
+            setIsLedgerButtonDisabled(true);
             await claimRewardsCollateralPool.mutateAsync({
                 userAddress: mainToken?.address!,
                 poolAddress: collateralPool?.pool!,
-                feeShare: parseUnits(values.amount || formValues.amount, collateralPool?.vaultType!.toLowerCase().includes('xrp') ? 6 : 8).toString(),
+                feeShare: parseUnits(values?.amount || formValues.amount, collateralPool?.vaultType!.toLowerCase().includes('xrp') ? 6 : 8).toString(),
             });
             setCurrentWalletStep(STEP_WALLET_COMPLETED);
             nativeBalances.refetch();
@@ -114,6 +118,7 @@ export default function ClaimRewardsFromPoolModal({ opened, onClose, collateralP
             modals.closeAll();
         } finally {
             setIsLoading(false);
+            setIsLedgerButtonDisabled(false);
         }
     }
 
@@ -315,6 +320,7 @@ export default function ClaimRewardsFromPoolModal({ opened, onClose, collateralP
                             appName={mainToken?.network?.ledgerApp!}
                             onClick={() => requestClaimRewardsCollateralPool()}
                             isLoading={isLoading}
+                            isDisabled={isLedgerButtonDisabled}
                         />
                     </>
                 }

@@ -3,11 +3,12 @@ import { useTranslation } from "react-i18next";
 
 interface ILedgerConfirmTransactionCard {
     isLoading: boolean;
+    isDisabled: boolean;
     appName: string;
     onClick: () => void;
 }
 
-export default function LedgerConfirmTransactionCard({ isLoading, onClick, appName } : ILedgerConfirmTransactionCard) {
+export default function LedgerConfirmTransactionCard({ isLoading, isDisabled, onClick, appName } : ILedgerConfirmTransactionCard) {
     const { t } = useTranslation();
 
     return (
@@ -36,6 +37,7 @@ export default function LedgerConfirmTransactionCard({ isLoading, onClick, appNa
                 className="hover:text-white font-normal mt-5"
                 onClick={onClick}
                 loading={isLoading}
+                disabled={isDisabled}
             >
                 {t('ledger.confirm_transaction_button')}
             </Button>
