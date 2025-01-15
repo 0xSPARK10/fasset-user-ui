@@ -33,6 +33,7 @@ export default function App({ Component, pageProps }: CustomAppProps) {
     return (
         <MantineProvider
             theme={{...defaultThemeOverride}}
+            forceColorScheme="light"
         >
             <Notifications />
             <QueryClientProvider client={queryClient}>

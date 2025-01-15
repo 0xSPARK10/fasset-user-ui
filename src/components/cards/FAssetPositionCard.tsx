@@ -173,6 +173,7 @@ export default function FAssetPositionCard({ balance, rewards, isLoading }: IFAs
                         }
                     </Grid.Col>
                 ))}
+                {/*
                 {isDistributionCountdownVisible &&
                     <Grid
                         classNames={{
@@ -346,6 +347,7 @@ export default function FAssetPositionCard({ balance, rewards, isLoading }: IFAs
                         }
                     </Grid>
                 }
+                */}
             </Grid>
             {!isLoading && hasTokensWithoutAssets &&
                 <div

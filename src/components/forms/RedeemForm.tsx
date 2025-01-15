@@ -18,7 +18,6 @@ import { useNativeBalance } from "@/api/balance";
 import { useExecutor } from "@/api/user";
 import { toNumber, fromLots, toLots, formatNumber } from "@/utils";
 import { ICoin, IFAssetCoin } from "@/types";
-import { BTC_NAMESPACE } from "@/config/networks";
 import { useWeb3 } from "@/hooks/useWeb3";
 import classes from "@/styles/components/forms/RedeemForm.module.scss";
 

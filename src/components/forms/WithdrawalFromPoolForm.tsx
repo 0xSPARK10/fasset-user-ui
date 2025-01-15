@@ -64,7 +64,12 @@ const WithdrawalFromPoolForm = forwardRef<FormRef, IWithdrawalFromPoolForm>(({ c
             amount: undefined,
             natReturn: ''
         },
-        validate: yupResolver(schema)
+        validate: yupResolver(schema),
+        onValuesChange: (values: any) => {
+            if (values?.amount?.length === 0) {
+                form.setFieldValue('amount', undefined);
+            }
+        }
     });
 
     form.watch('amount', ({ value }) => {
@@ -120,7 +125,7 @@ const WithdrawalFromPoolForm = forwardRef<FormRef, IWithdrawalFromPoolForm>(({ c
     }, [amount]);
 
     const debounceSetAmount = useDebouncedCallback(async (value) => {
-        if (value === amount) return;
+        if (value === amount || value.length === 0) return;
 
         setAmount(value);
         try {

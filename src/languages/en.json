@@ -320,8 +320,9 @@
         "cancel_button": "Cancel",
         "confirm_button": "I understand",
         "description_label": "Are you sure you want to proceed with minting?",
-        "understand_label": "I understand that total fees for this transaction are estimated to be {{fee}} {{tokenName}} and exceeds 2%.",
-        "title": "High Minting Fee"
+        "understand_label": "I understand that total fees for this transaction are estimated to be <span>{{fee}} {{tokenName}} (${{feeUsd}})</span> and <span>exceeds {{percentage}}%</span>.",
+        "title": "High Minting Fee",
+        "type_understand_label": "Type <span>I understand</span> to confirm"
     },
     "latest_transactions_card": {
         "completed_label": "Completed",

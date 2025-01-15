@@ -5,6 +5,7 @@ import {
     IAssetManagerAddress,
     IBestAgent,
     IExecutor,
+    IFassetPrice,
     IFassetState,
     ILifetimeClaimed,
     ITimeData,
@@ -18,7 +19,8 @@ export const USER_KEY = {
     USER_PROGRESS: 'user.userProgress',
     LIFETIME_CLAIMED: 'user.lifetimeClaimed',
     TIME_DATA: 'user.timeData',
-    FASSET_STATE: 'user.fassetState'
+    FASSET_STATE: 'user.fassetState',
+    FASSET_PRICE: 'user.fassetPrice'
 }
 
 export function useBestAgent() {
@@ -102,6 +104,17 @@ export function useFassetState(enabled: boolean = true) {
         queryFn: async () => {
             const response = await apiClient.get('fassetState');
             return response.data as IFassetState[];
+        },
+        enabled: enabled
+    })
+}
+
+export function useFassetPrice(fAsset: string, enabled: boolean = true) {
+    return useQuery({
+        queryKey: [fAsset, USER_KEY.FASSET_PRICE],
+        queryFn: async () => {
+            const response = await apiClient.get(`fassetPrice/${fAsset}`);
+            return response.data as IFassetPrice;
         },
         enabled: enabled
     })

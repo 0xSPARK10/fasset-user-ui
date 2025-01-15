@@ -413,3 +413,7 @@ export interface IReward {
     share: string;
     shareUsd: string;
 }
+
+export interface IFassetPrice {
+    price: number;
+}

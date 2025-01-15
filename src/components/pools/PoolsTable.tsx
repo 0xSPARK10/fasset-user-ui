@@ -403,8 +403,8 @@ export default function PoolsTable({ pools, className, style, type, showAll }: I
     }, []);
 
     const renderClaimableRewards = useCallback((pool: IPool) => {
-        const totalRewards = toNumber(pool.userPoolFees ?? '0') + toNumber(pool.lifetimeClaimedPoolFormatted ?? '0');
-        const totalRewardsUSD = toNumber(pool.userPoolFeesUSD ?? '0') + toNumber(pool.lifetimeClaimedPoolUSDFormatted ?? '0');
+        const totalRewards = Math.ceil((toNumber(pool.userPoolFees ?? '0') + toNumber(pool.lifetimeClaimedPoolFormatted ?? '0')) * 100) / 100;
+        const totalRewardsUSD = Math.ceil((toNumber(pool.userPoolFeesUSD ?? '0') + toNumber(pool.lifetimeClaimedPoolUSDFormatted ?? '0')) * 100) / 100;
 
         return (
             <div>

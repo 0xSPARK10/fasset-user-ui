@@ -274,6 +274,7 @@ export default function MintModal({ opened, onClose, fAssetCoin }: IMintModal) {
                 onClose={onCloseHighMintingFeeModal}
                 fAssetCoin={fAssetCoin}
                 mintingFee={highMintingFee ?? 0}
+                lots={lots}
             />
         </>
     );

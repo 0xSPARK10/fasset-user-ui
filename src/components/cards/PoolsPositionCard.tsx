@@ -66,7 +66,7 @@ export default function PoolsPositionCard({ className, pools }: IPoolsPositionCa
 
             return {
                 fAsset: item.fasset,
-                lifetimeEarned: toNumber(item.claimed) + total['rewards'],
+                lifetimeEarned: toNumber(item.claimed),
                 rewards: total['rewards'],
                 total: total['natBalance'],
                 icon: icon
