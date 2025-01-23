@@ -30,6 +30,13 @@ function getProvider(address: string) {
     return walletConnectConnector;
 }
 
+function handleErrors(error: any) {
+    if (error.message.includes('could not coalesce error')) {
+        throw new Error(i18next.t('errors.try_reconnecting_label'));
+    }
+
+    throw error;
+}
 
 async function getFeeData(token: ICoin) {
     const provider = new ethers.JsonRpcProvider(token.network.rpcUrl);
@@ -63,27 +70,32 @@ export function useReserveCollateral() {
             }
         ) => {
             if (!provider) return;
-            const signer = await provider?.getSigner(userAddress);
-            const contract = new ethers.Contract(assetManagerAddress ?? '', AssetManagerAbi, signer);
 
-            const tx = await contract.reserveCollateral(
-                agentVaultAddress,
-                lots,
-                maxMintingFeeBIPS,
-                executorAddress,
-                minterUnderlyingAddresses,
-                {
-                    from: userAddress,
-                    value: totalNatFee.toLocaleString('fullwide', { useGrouping: false })
+            try {
+                const signer = await provider?.getSigner(userAddress);
+                const contract = new ethers.Contract(assetManagerAddress ?? '', AssetManagerAbi, signer);
+
+                const tx = await contract.reserveCollateral(
+                    agentVaultAddress,
+                    lots,
+                    maxMintingFeeBIPS,
+                    executorAddress,
+                    minterUnderlyingAddresses,
+                    {
+                        from: userAddress,
+                        value: totalNatFee.toLocaleString('fullwide', { useGrouping: false })
+                    }
+                );
+
+                const receipt = await tx.wait();
+                if (receipt.status === 0) {
+                    throw new Error(i18next.t('errors.transaction_failed_label'));
                 }
-            );
 
-            const receipt = await tx.wait();
-            if (receipt.status === 0) {
-                throw new Error(i18next.t('errors.transaction_failed_label'));
+                return tx;
+            } catch (error: any) {
+                handleErrors(error);
             }
-
-            return tx;
         }
     });
 }
@@ -109,25 +121,31 @@ export function useRedeem() {
             executorFee: string
         }) => {
             if (!provider) return;
-            const signer = await provider.getSigner(userAddress);
-            const contract = new ethers.Contract(assetManagerAddress ?? '', AssetManagerAbi, signer);
 
-            const tx = await contract.redeem(
-                lots,
-                userUnderlyingAddress,
-                executorAddress,
-                {
-                    from: userAddress,
-                    value: executorFee
+            try {
+                const signer = await provider.getSigner(userAddress);
+                const contract = new ethers.Contract(assetManagerAddress ?? '', AssetManagerAbi, signer);
+
+                const tx = await contract.redeem(
+                    lots,
+                    userUnderlyingAddress,
+                    executorAddress,
+                    {
+                        from: userAddress,
+                        value: executorFee
+                    }
+                );
+
+                const receipt = await tx.wait();
+                if (receipt.status === 0) {
+                    throw new Error(i18next.t('errors.transaction_failed_label'));
                 }
-            );
 
-            const receipt = await tx.wait();
-            if (receipt.status === 0) {
-                throw new Error(i18next.t('errors.transaction_failed_label'));
+                return tx;
+
+            } catch (error: any) {
+                handleErrors(error);
             }
-
-            return tx;
         }
     });
 }
@@ -156,37 +174,42 @@ export function useSignTransaction(address: string) {
             }
         ) => {
             if (!provider) return;
-            const method = network.namespace === XRP_NAMESPACE
-                ? 'xrpl_signTransaction'
-                : 'sendTransfer';
 
-            const params = network.namespace === XRP_NAMESPACE
-                ? {
-                    TransactionType: 'Payment',
-                    Account: userAddress,
-                    Amount: amount,
-                    Destination: destination,
-                    Memos: [{Memo: {MemoData: paymentReference?.substring(2)}}],
+            try {
+                const method = network.namespace === XRP_NAMESPACE
+                    ? 'xrpl_signTransaction'
+                    : 'sendTransfer';
+
+                const params = network.namespace === XRP_NAMESPACE
+                    ? {
+                        TransactionType: 'Payment',
+                        Account: userAddress,
+                        Amount: amount,
+                        Destination: destination,
+                        Memos: [{Memo: {MemoData: paymentReference?.substring(2)}}],
+                    }
+                    : {
+                        account: userAddress,
+                        recipientAddress: destination,
+                        amount: amount,
+                        memo: paymentReference?.substring(2),
+                    } as { [key: string]: any };
+
+                if (utxos) {
+                    params.utxos = utxos;
                 }
-                : {
-                    account: userAddress,
-                    recipientAddress: destination,
-                    amount: amount,
-                    memo: paymentReference?.substring(2),
-                } as { [key: string]: any };
+                if (estimatedFee) {
+                    params.estimatedFee = estimatedFee;
+                }
 
-            if (utxos) {
-                params.utxos = utxos;
+                return provider.request({
+                    chainId: `${network.namespace}:${network.chainId}`,
+                    method: method,
+                    params: params
+                })
+            } catch (error: any) {
+                handleErrors(error);
             }
-            if (estimatedFee) {
-                params.estimatedFee = estimatedFee;
-            }
-
-            return provider.request({
-                chainId: `${network.namespace}:${network.chainId}`,
-                method: method,
-                params: params
-            })
         }
     })
 }
@@ -212,34 +235,39 @@ export function useEnterCollateralPool() {
             getGasFee?: boolean
         }) => {
             if (!provider) return;
-            const signer = await provider.getSigner(userAddress);
-            const contract = new ethers.Contract(poolAddress, CollateralPoolAbi, signer);
 
-            if (getGasFee) {
-                const gasPrice = (await getFeeData(mainToken!)).gasPrice;
-                const gasLimit = await contract.enter.estimateGas(fAssets, enterWithFullAssets, {
+            try {
+                const signer = await provider.getSigner(userAddress);
+                const contract = new ethers.Contract(poolAddress, CollateralPoolAbi, signer);
+
+                if (getGasFee) {
+                    const gasPrice = (await getFeeData(mainToken!)).gasPrice;
+                    const gasLimit = await contract.enter.estimateGas(fAssets, enterWithFullAssets, {
+                        from: userAddress,
+                        value: value
+                    });
+
+                    if (gasPrice) {
+                        return Number(formatUnit(gasPrice, 9)) * Number(gasLimit);
+                    }
+
+                    return undefined;
+                }
+
+                const tx = await contract.enter(fAssets, enterWithFullAssets, {
                     from: userAddress,
                     value: value
                 });
 
-                if (gasPrice) {
-                    return Number(formatUnit(gasPrice, 9)) * Number(gasLimit);
+                const receipt = await tx.wait();
+                if (receipt.status === 0) {
+                    throw new Error(i18next.t('errors.transaction_failed_label'));
                 }
 
-                return undefined;
+                return tx;
+            } catch (error: any) {
+                handleErrors(error);
             }
-
-            const tx = await contract.enter(fAssets, enterWithFullAssets, {
-                from: userAddress,
-                value: value
-            });
-
-            const receipt = await tx.wait();
-            if (receipt.status === 0) {
-                throw new Error(i18next.t('errors.transaction_failed_label'));
-            }
-
-            return tx;
         }
     });
 }
@@ -264,32 +292,37 @@ export function useExitCollateralPool() {
             getGasFee?: boolean
        }) => {
            if (!provider) return;
-           const signer = await provider.getSigner(userAddress);
-           const contract = new ethers.Contract(poolAddress, CollateralPoolAbi, signer);
 
-           if (getGasFee) {
-               const gasPrice = (await getFeeData(mainToken!)).gasPrice;
-               const gasLimit = await contract.exit.estimateGas(tokenShare, exitType, {
+           try {
+               const signer = await provider.getSigner(userAddress);
+               const contract = new ethers.Contract(poolAddress, CollateralPoolAbi, signer);
+
+               if (getGasFee) {
+                   const gasPrice = (await getFeeData(mainToken!)).gasPrice;
+                   const gasLimit = await contract.exit.estimateGas(tokenShare, exitType, {
+                       from: userAddress
+                   });
+
+                   if (gasPrice) {
+                       return Number(formatUnit(gasPrice, 9)) * Number(gasLimit);
+                   }
+
+                   return undefined;
+               }
+
+               const tx = await contract.exit(tokenShare, exitType, {
                    from: userAddress
                });
 
-               if (gasPrice) {
-                   return Number(formatUnit(gasPrice, 9)) * Number(gasLimit);
+               const receipt = await tx.wait();
+               if (receipt.status === 0) {
+                   throw new Error(i18next.t('errors.transaction_failed_label'));
                }
 
-               return undefined;
+               return tx;
+           } catch (error: any) {
+               handleErrors(error);
            }
-
-           const tx = await contract.exit(tokenShare, exitType, {
-               from: userAddress
-           });
-
-           const receipt = await tx.wait();
-           if (receipt.status === 0) {
-               throw new Error(i18next.t('errors.transaction_failed_label'));
-           }
-
-           return tx;
         },
         onSuccess: (data, variables, context) => {
            queryClient.invalidateQueries({
@@ -322,32 +355,37 @@ export function useWithdrawFeesCollateralPool() {
             getGasFee?: boolean
         }) => {
             if (!provider) return;
-            const signer = await provider.getSigner(userAddress);
-            const contract = new ethers.Contract(poolAddress, CollateralPoolAbi, signer);
 
-            if (getGasFee) {
-                const gasPrice = (await getFeeData(mainToken!)).gasPrice;
-                const gasLimit = await contract.withdrawFees.estimateGas(feeShare, {
+            try {
+                const signer = await provider.getSigner(userAddress);
+                const contract = new ethers.Contract(poolAddress, CollateralPoolAbi, signer);
+
+                if (getGasFee) {
+                    const gasPrice = (await getFeeData(mainToken!)).gasPrice;
+                    const gasLimit = await contract.withdrawFees.estimateGas(feeShare, {
+                        from: userAddress
+                    });
+
+                    if (gasPrice) {
+                        return Number(formatUnit(gasPrice, 9)) * Number(gasLimit);
+                    }
+
+                    return undefined;
+                }
+
+                const tx = await contract.withdrawFees(feeShare, {
                     from: userAddress
                 });
 
-                if (gasPrice) {
-                    return Number(formatUnit(gasPrice, 9)) * Number(gasLimit);
+                const receipt = await tx.wait();
+                if (receipt.status === 0) {
+                    throw new Error(i18next.t('errors.transaction_failed_label'));
                 }
 
-                return undefined;
+                return tx;
+            } catch (error: any) {
+                handleErrors(error);
             }
-
-            const tx = await contract.withdrawFees(feeShare, {
-                from: userAddress
-            });
-
-            const receipt = await tx.wait();
-            if (receipt.status === 0) {
-                throw new Error(i18next.t('errors.transaction_failed_label'));
-            }
-
-            return tx;
         }
     });
 }
@@ -370,28 +408,33 @@ export function useTransferCollateralPoolToken() {
             getGasFee?: boolean
         }) => {
             if (!provider) return;
-            const signer = await provider.getSigner(mainToken?.address!);
-            const contract = new ethers.Contract(poolAddress, CollateralPoolTokenAbi, signer);
 
-            if (getGasFee) {
-                const gasPrice = (await getFeeData(mainToken!)).gasPrice;
-                const gasLimit = await contract.transfer.estimateGas(userAddress, amount);
+            try {
+                const signer = await provider.getSigner(mainToken?.address!);
+                const contract = new ethers.Contract(poolAddress, CollateralPoolTokenAbi, signer);
 
-                if (gasPrice) {
-                    return Number(formatUnit(gasPrice, 9)) * Number(gasLimit);
+                if (getGasFee) {
+                    const gasPrice = (await getFeeData(mainToken!)).gasPrice;
+                    const gasLimit = await contract.transfer.estimateGas(userAddress, amount);
+
+                    if (gasPrice) {
+                        return Number(formatUnit(gasPrice, 9)) * Number(gasLimit);
+                    }
+
+                    return undefined;
                 }
 
-                return undefined;
+                const tx = await contract.transfer(userAddress, amount);
+
+                const receipt = await tx.wait();
+                if (receipt.status === 0) {
+                    throw new Error(i18next.t('errors.transaction_failed_label'));
+                }
+
+                return tx;
+            } catch (error: any) {
+                handleErrors(error);
             }
-
-            const tx = await contract.transfer(userAddress, amount);
-
-            const receipt = await tx.wait();
-            if (receipt.status === 0) {
-                throw new Error(i18next.t('errors.transaction_failed_label'));
-            }
-
-            return tx;
         }
     });
 }
@@ -420,29 +463,34 @@ export function useFreeCptApprove() {
             const token = coinName.match(/(xrp|btc|doge)/i);
 
             if (!provider || !token) return;
-            const signer = await provider.getSigner(mainToken?.address!);
 
-            const tokenKey = token[0]?.toLowerCase() as keyof typeof contractAddresses;
-            const contract = new ethers.Contract(contractAddresses[tokenKey]!, CollateralPoolTokenAbi, signer);
+            try {
+                const signer = await provider.getSigner(mainToken?.address!);
 
-            if (getGasFee) {
-                const gasPrice = (await getFeeData(mainToken!)).gasPrice;
-                const gasLimit = await contract.approve.estimateGas(spenderAddress, amount);
+                const tokenKey = token[0]?.toLowerCase() as keyof typeof contractAddresses;
+                const contract = new ethers.Contract(contractAddresses[tokenKey]!, CollateralPoolTokenAbi, signer);
 
-                if (gasPrice) {
-                    return Number(formatUnit(gasPrice, 9)) * Number(gasLimit);
+                if (getGasFee) {
+                    const gasPrice = (await getFeeData(mainToken!)).gasPrice;
+                    const gasLimit = await contract.approve.estimateGas(spenderAddress, amount);
+
+                    if (gasPrice) {
+                        return Number(formatUnit(gasPrice, 9)) * Number(gasLimit);
+                    }
+
+                    return undefined;
                 }
 
-                return undefined;
-            }
+                const tx = await contract.approve(spenderAddress, amount);
+                const receipt = await tx.wait();
+                if (receipt.status === 0) {
+                    throw new Error(i18next.t('errors.transaction_failed_label'));
+                }
 
-            const tx = await contract.approve(spenderAddress, amount);
-            const receipt = await tx.wait();
-            if (receipt.status === 0) {
-                throw new Error(i18next.t('errors.transaction_failed_label'));
+                return tx;
+            } catch (error: any) {
+                handleErrors(error);
             }
-
-            return tx;
         }
     });
 }
@@ -460,17 +508,22 @@ export function useFreeCptPayAssetFeeDebt() {
             amount: string
         }) => {
             if (!provider) return;
-            const signer = await provider.getSigner(mainToken?.address!);
-            const contract = new ethers.Contract(poolAddress, CollateralPoolAbi, signer);
 
-            const tx = await contract.payFAssetFeeDebt(amount);
+            try {
+                const signer = await provider.getSigner(mainToken?.address!);
+                const contract = new ethers.Contract(poolAddress, CollateralPoolAbi, signer);
 
-            const receipt = await tx.wait();
-            if (receipt.status === 0) {
-                throw new Error(i18next.t('errors.transaction_failed_label'));
+                const tx = await contract.payFAssetFeeDebt(amount);
+
+                const receipt = await tx.wait();
+                if (receipt.status === 0) {
+                    throw new Error(i18next.t('errors.transaction_failed_label'));
+                }
+
+                return tx;
+            } catch (error: any) {
+                handleErrors(error);
             }
-
-            return tx;
         }
     });
 }
@@ -482,17 +535,22 @@ export function useCancelCollateralReservation() {
     return useMutation({
         mutationFn: async ({ assetManagerAddress, crtId }: { assetManagerAddress: string, crtId: number }) => {
             if (!provider) return;
-            const signer = await provider.getSigner(mainToken?.address!);
-            const contract = new ethers.Contract(assetManagerAddress!, AssetManagerAbi, signer);
 
-            const tx = await contract.cancelCollateralReservation(crtId, { from: mainToken?.address! });
+            try {
+                const signer = await provider.getSigner(mainToken?.address!);
+                const contract = new ethers.Contract(assetManagerAddress!, AssetManagerAbi, signer);
 
-            const receipt = await tx.wait();
-            if (receipt.status === 0) {
-                throw new Error(i18next.t('errors.transaction_failed_label'));
+                const tx = await contract.cancelCollateralReservation(crtId, { from: mainToken?.address! });
+
+                const receipt = await tx.wait();
+                if (receipt.status === 0) {
+                    throw new Error(i18next.t('errors.transaction_failed_label'));
+                }
+
+                return tx;
+            } catch (error: any) {
+                handleErrors(error);
             }
-
-            return tx;
         }
     })
 }
@@ -515,20 +573,24 @@ export function useSignPsbt(address: string) {
             }) => {
             if (!provider) return;
 
-            return provider.request({
-                chainId: `${network.namespace}:${network.chainId}`,
-                method: 'signPsbt',
-                params: {
-                    account: userAddress,
-                    psbt: psbt,
-                    signInputs: utxos.map((utxo: any) => ({
-                        address: utxo.address,
-                        index: utxo.index,
+            try {
+                return provider.request({
+                    chainId: `${network.namespace}:${network.chainId}`,
+                    method: 'signPsbt',
+                    params: {
+                        account: userAddress,
+                        psbt: psbt,
+                        signInputs: utxos.map((utxo: any) => ({
+                            address: utxo.address,
+                            index: utxo.index,
 
-                    })),
-                    broadcast: true
-                }
-            });
+                        })),
+                        broadcast: true
+                    }
+                });
+            } catch (error: any) {
+                handleErrors(error);
+            }
         }
     })
 }

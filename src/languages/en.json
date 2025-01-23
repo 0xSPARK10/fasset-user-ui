@@ -227,7 +227,8 @@
         "usd_label": "USD"
     },
     "errors": {
-        "transaction_failed_label": "Transaction failed."
+        "transaction_failed_label": "Transaction failed.",
+        "try_reconnecting_label": "Could not coalesce error - Try reconnecting your wallet."
     },
     "dashboard": {
         "balance_title": "Balance",
@@ -278,7 +279,8 @@
         "lots_label": "lots",
         "no_assets_label": "You hold no {{fassets}}",
         "none_label": "None",
-        "percentage_rewards_label": "% of rewards",
+        "nr_lottery_tickets_description_label": "The total number of assigned lottery tickets and the percentage of the total for the current distribution period which are determined based on the number of redeemed lots and the reward multipliers.",
+        "nr_lottery_tickets_label": "No. of lottery tickets",
         "redeem_button": "Redeem",
         "rewards_earned_to_date_label": "Rewards earned to date",
         "view_mint_page_label": "View Mint Page"
@@ -311,6 +313,7 @@
         "no_assets_label": "You have no assets. Mint FAssets or deposit into pools to view your position here.",
         "number_of_agents_label": "No. agent vaults",
         "number_of_mints_label": "No. of mints",
+        "number_of_redeemed_lots_label": "No. of redeemed lots",
         "pools_position_label": "Your pools position",
         "title": "Home",
         "view_pools_button": "View Pools",
@@ -639,7 +642,8 @@
             "each_distribution_period_description_label": "Each distribution period, collateral providers will be awarded with points proportionally to their stakes, where a snapshot of stakes will be taken randomly once per hour.",
             "earn_rewards_via_pools_description_label": "20% of the total rFLR incentives will be distributed to collateral providers, who are staked to an agent maintaining a consistently healthy collateral ratio (above pool’s Safety CR).",
             "earn_rewards_via_pools_title": "Earn Rewards via Pools",
-            "earn_rewards_via_redeeming_description_label": "80% of the total rFLR incentives will be distributed to participants that will redeem FAssets when total minted lots exceeds 75% of the total lot capacity per FAsset.\n\nThe number of lots redeemed multiplied by the rewards multiplier will be assigned to the participant as points for each redemption.\n\nThe table to the right shows how the rewards multiplier increases exponentially as the mint utilization rate increases.",
+            "earn_rewards_via_redeeming_description_label": "80% of the total rFLR incentives will be distributed to participants that will redeem FAssets when total minted lots exceeds 75% of the total lot capacity per FAsset.\n\nThe way the incentives will be distributed will be using a lottery system with 50 rewards:\n\n<strong>1st Place</strong> will get $10,000 USD in rFLR\n<strong>2nd-49th</strong> places will get $400 USD in rFLR\n\nThe number of lots redeemed multiplied by the rewards multiplier will be assigned as a number of lottery tickets to the participant for each redemption.",
+            "earn_rewards_via_redeeming_table_description_label": "The table to the right shows how the rewards multiplier increases exponentially as the mint utilization rate increases. Tickets from both FAssets are added up for this lottery.\n\nExample:  If you redeem FDoge at 20x then it's 20 tickets.\n\nYou will be able to view the number of tickets you’ve accumulated at the Redemption Ticket counter in the Minting App.",
             "earn_rewards_via_redeeming_title": "Earn Rewards via Redeeming FAssets",
             "exponential_redemption_awards_label": "Exponential Redemption Rewards",
             "fassets_table": {

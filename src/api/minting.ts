@@ -11,7 +11,8 @@ import {
     IUtxoForTransaction,
     ICrStatus,
     IReturnAddress,
-    IPrepareUtxo, IUtxo
+    IPrepareUtxo,
+    IUtxo
 } from "@/types";
 import { useWeb3 } from "@/hooks/useWeb3";
 

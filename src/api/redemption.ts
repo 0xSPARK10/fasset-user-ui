@@ -4,6 +4,7 @@ import {
     IRedemptionDefault,
     IRedemptionDefaultStatus,
     IRedemptionFee,
+    IRedemptionFeeData,
     IRedemptionStatus,
     ITrailingFee
 } from "@/types";
@@ -12,7 +13,8 @@ export const REDEMPTION_KEY = {
     REDEMPTION_FEE: 'redemption.redemptionFee',
     REDEMPTION_STATUS: 'redemption.redemptionStatus',
     REQUEST_REDEMPTION_DEFAULT_STATUS: 'redemption.requestRedemptionDefaultStatus',
-    TRAILING_FEE: 'redemption.trailingFee'
+    TRAILING_FEE: 'redemption.trailingFee',
+    REDEMPTION_FEE_DATA: 'redemption.redemptionFeeData'
 }
 
 export function useRedemptionFee(fAsset: string, enabled: boolean = true) {
@@ -77,3 +79,15 @@ export function useTrailingFee(fAsset: string, enabled: boolean = true) {
         enabled: enabled
     })
 }
+
+export function useRedemptionFeeData(enabled: boolean = true) {
+    return useQuery({
+        queryKey: [REDEMPTION_KEY.REDEMPTION_FEE_DATA],
+        queryFn: async () => {
+            const response = await apiClient.get('redemptionFeeData');
+            return response.data as IRedemptionFeeData;
+        },
+        enabled: enabled
+    })
+}
+

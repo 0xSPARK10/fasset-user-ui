@@ -14,9 +14,10 @@ import {
 import Link from "next/link";
 import { useTranslation, Trans } from "react-i18next";
 import { modals } from "@mantine/modals";
+import { useRedemptionFeeData } from "@/api/redemption";
+import { toNumber } from "@/utils";
 import { IEcoSystemInfoSupplyByFasset } from "@/types";
 import { COINS } from "@/config/coin";
-import { toNumber } from "@/utils";
 import homeClasses from "@/styles/pages/Home.module.scss";
 import classes from "@/styles/components/cards/TimeToRedeemCard.module.scss";
 
@@ -109,22 +110,22 @@ export default function TimeToRedeemCard({ tokens }: ITimeToRedeemCard) {
                             {t('time_to_redeem_card.incentives_modal.redeem_button')}
                         </Button>
                     </div>
-                    <SimpleGrid
-                        cols={{base: 1, md: 2}}
-                        verticalSpacing="xl"
-                        spacing="xl"
+                    <Grid
                         className="mt-6"
                     >
-                        <div>
-                            <Text
+                        <Grid.Col span={{ base: 12, md: 6 }}>
+                            <Trans
+                                i18nKey="time_to_redeem_card.incentives_modal.earn_rewards_via_redeeming_description_label"
+                                parent={Text}
                                 className="text-16 whitespace-break-spaces"
                                 fw={400}
                                 c="var(--flr-dark-gray)"
-                            >
-                                {t('time_to_redeem_card.incentives_modal.earn_rewards_via_redeeming_description_label')}
-                            </Text>
-                        </div>
-                        <div>
+                                components={{
+                                    strong: <strong />
+                                }}
+                            />
+                        </Grid.Col>
+                        <Grid.Col span={{ base: 12, md: 6 }}>
                             <Text
                                 className="text-16"
                                 fw={500}
@@ -299,8 +300,17 @@ export default function TimeToRedeemCard({ tokens }: ITimeToRedeemCard) {
                                     </Table.Tr>
                                 </Table.Tbody>
                             </Table>
-                        </div>
-                    </SimpleGrid>
+                        </Grid.Col>
+                        <Grid.Col span={12}>
+                            <Text
+                                className="text-16 whitespace-break-spaces"
+                                fw={400}
+                                c="var(--flr-dark-gray)"
+                            >
+                                {t('time_to_redeem_card.incentives_modal.earn_rewards_via_redeeming_table_description_label')}
+                            </Text>
+                        </Grid.Col>
+                    </Grid>
                     <div className="flex items-center flex-wrap md:flex-nowrap mt-10">
                         <Title
                             className="text-24 mr-4"

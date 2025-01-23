@@ -134,7 +134,7 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
                     </div>
                 }
                 <div
-                    className={`${hasNoAssets ? 'hidden md:flex' : 'flex'} flex-col basis-full min-[430px]:basis-6/12 px-[15px] lg:px-6 py-12 grow min-[430px]:border-r border-[var(--flr-border-color)]`}
+                    className={`${hasNoAssets ? 'hidden md:flex' : 'flex'} flex-col basis-full min-[430px]:basis-6/12 px-[15px] lg:px-6 py-12 grow min-[430px]:border-r border-b border-[var(--flr-border-color)]`}
                 >
                     <Text
                         className={`text-16 uppercase`}
@@ -171,7 +171,7 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
                         </div>
                     }
                 </div>
-                <div className={`${hasNoAssets ? 'hidden md:flex' : 'flex'} flex-col basis-full min-[430px]:basis-6/12 px-[15px] lg:px-6 py-12 grow md:border-t-0 border-[var(--flr-border-color)]`}>
+                <div className={`${hasNoAssets ? 'hidden md:flex' : 'flex'} flex-col basis-full min-[430px]:basis-6/12 px-[15px] lg:px-6 py-12 grow md:border-t-0 border-b border-[var(--flr-border-color)]`}>
                     <Text
                         className={`text-16 uppercase`}
                         fw={400}
@@ -214,7 +214,6 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
                         </div>
                     }
                 </div>
-                {/*
                 <div className="flex flex-col justify-center px-[15px] lg:px-6 py-3 min-h-[71px]">
                     <Text
                         className="text-12 uppercase"
@@ -243,7 +242,6 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
                         </div>)
                     </div>
                 </div>
-                */}
             </div>
         </div>
     );

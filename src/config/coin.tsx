@@ -73,7 +73,7 @@ export const FTEST_BTC: ICoin = {
     network: NETWORK_BTC_TESTNET,
     enabled: !isMainnet && enabledUnderlyingFassets.includes(CoinEnum.FTestBTC.toLowerCase()),
     isFAssetCoin: true,
-    faucetUrl: 'https://coinfaucet.eu/en/btc-testnet',
+    faucetUrl: ['https://coinfaucet.eu/en/btc-testnet4/', 'https://faucet.testnet4.dev/'],
     supportedWallets: [WALLET.WALLET_CONNECT, WALLET.LEDGER],
     decimals: 8,
     bipPath: BIP44_PATH.TESTNET.BTC

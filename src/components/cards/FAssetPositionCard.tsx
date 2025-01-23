@@ -1,14 +1,22 @@
 import React, { useEffect, useRef, useState } from "react";
 import moment, { type Moment } from "moment";
-import { Button, Title, Text, LoadingOverlay, Grid } from "@mantine/core";
+import {
+    Button,
+    Title,
+    Text,
+    LoadingOverlay,
+    Grid,
+    Popover
+} from "@mantine/core";
 import Link from "next/link";
+import { IconTicket, IconInfoHexagon } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { useInterval, useMediaQuery } from "@mantine/hooks";
-import { formatNumberWithSuffix, toNumber } from "@/utils";
+import { formatNumber, formatNumberWithSuffix, toNumber } from "@/utils";
 import ClockIcon from "@/components/icons/ClockIcon";
+import CflrIcon from "@/components/icons/CflrIcon";
 import { INativeBalance, IReward } from "@/types";
 import { COINS } from "@/config/coin";
-import CflrIcon from "@/components/icons/CflrIcon";
 
 interface IFAssetPositionCard {
     balance: INativeBalance[] | undefined;
@@ -173,7 +181,6 @@ export default function FAssetPositionCard({ balance, rewards, isLoading }: IFAs
                         }
                     </Grid.Col>
                 ))}
-                {/*
                 {isDistributionCountdownVisible &&
                     <Grid
                         classNames={{
@@ -262,30 +269,64 @@ export default function FAssetPositionCard({ balance, rewards, isLoading }: IFAs
                                     className={`flex flex-col justify-center px-[15px] lg:px-5 py-3 ${tokens && tokens.length > 0 ? 'border-t' : ''} min-[992px]:border-r border-[var(--flr-border-color)] min-h-[71px]`}
                                 >
                                     <div>
-                                        <Text
-                                            className="text-12 uppercase"
-                                            fw={400}
-                                            c="var(--flr-gray)"
-                                        >
-                                            {t('fasset_position_card.percentage_rewards_label')}
-                                        </Text>
-                                        <Text
-                                            className="text-16 mt-1"
-                                            fw={400}
-                                            c="var(--flr-dark-gray)"
-                                        >
-                                            {toNumber(rewards?.share ?? "0") === 0
-                                                ? t('fasset_position_card.none_label')
-                                                : <>
-                                                    {formatNumberWithSuffix(rewards?.share ?? 0, 2)}
-                                                    <span
-                                                        className="ml-1 text-[var(--flr-gray)]"
+                                        <div className="flex items-center">
+                                            <Text
+                                                className="text-12 uppercase mr-1"
+                                                fw={400}
+                                                c="var(--flr-gray)"
+                                            >
+                                                {t('fasset_position_card.nr_lottery_tickets_label')}
+                                            </Text>
+                                            <Popover
+                                                withArrow
+                                                width={250}
+                                            >
+                                                <Popover.Target>
+                                                    <IconInfoHexagon
+                                                        size={15}
+                                                        color="var(--flr-gray)"
+                                                        className="cursor-pointer"
+                                                    />
+                                                </Popover.Target>
+                                                <Popover.Dropdown>
+                                                    <Text
+                                                        className="text-14"
+                                                        c="var(--flr-dark-gray)"
                                                     >
-                                                        (${formatNumberWithSuffix(rewards?.shareUsd ?? 0, 2)})
-                                                    </span>
-                                                </>
-                                            }
-                                        </Text>
+                                                        {t('fasset_position_card.nr_lottery_tickets_description_label')}
+                                                    </Text>
+                                                </Popover.Dropdown>
+                                            </Popover>
+                                        </div>
+                                        {toNumber(rewards?.share ?? "0") === 0
+                                            ? <Text
+                                                className="text-16 mt-1"
+                                                fw={400}
+                                                c="var(--flr-dark-gray)"
+                                            >
+                                                {t('fasset_position_card.none_label')}
+                                            </Text>
+                                            : <div className="flex items-center mt-1">
+                                                <IconTicket
+                                                    size={18}
+                                                    color="var(--flr-dark-gray)"
+                                                />
+                                                <Text
+                                                    c="var(--flr-dark-gray)"
+                                                    className="text-16 ml-1"
+                                                    fw={400}
+                                                >
+                                                    {rewards?.numTickets}
+                                                </Text>
+                                                <Text
+                                                    c="var(--flr-gray)"
+                                                    className="text-16 ml-5"
+                                                    fw={400}
+                                                >
+                                                    ({formatNumber(rewards?.share ?? 0, 4)} %)
+                                                </Text>
+                                            </div>
+                                        }
                                     </div>
                                 </Grid.Col>
                                 <Grid.Col
@@ -347,7 +388,6 @@ export default function FAssetPositionCard({ balance, rewards, isLoading }: IFAs
                         }
                     </Grid>
                 }
-                */}
             </Grid>
             {!isLoading && hasTokensWithoutAssets &&
                 <div

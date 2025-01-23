@@ -96,7 +96,7 @@ export default function Home() {
                         }
                     }}
                 >
-                    <Grid.Col span={{ base: 12, md: 6 }} className="flex items-center px-[10px] mb-3 md:mb-0">
+                    <Grid.Col span={{ base: 12, md: 5 }} className="flex items-center px-[10px] mb-3 md:mb-0">
                         <div className="flex w-full items-center">
                             <Title className="text-26 mr-auto md:mr-10" fw={300}>{t('home.title')}</Title>
                             <Button
@@ -127,7 +127,7 @@ export default function Home() {
                             </Button>
                         </div>
                     </Grid.Col>
-                    <Grid.Col span={{ base: 12, md: 6 }}>
+                    <Grid.Col span={{ base: 12, md: 7 }}>
                         <EcoSystemInformationCard ecoSystemInfo={ecoSystemInfo.data} />
                     </Grid.Col>
                 </Grid>
