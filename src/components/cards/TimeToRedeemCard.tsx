@@ -14,7 +14,6 @@ import {
 import Link from "next/link";
 import { useTranslation, Trans } from "react-i18next";
 import { modals } from "@mantine/modals";
-import { useRedemptionFeeData } from "@/api/redemption";
 import { toNumber } from "@/utils";
 import { IEcoSystemInfoSupplyByFasset } from "@/types";
 import { COINS } from "@/config/coin";
