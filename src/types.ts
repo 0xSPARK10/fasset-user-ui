@@ -413,6 +413,10 @@ export interface IReward {
     share: string;
     shareUsd: string;
     numTickets: number;
+    prevBiweeklyPlace: number;
+    prevBiweeklyRflr: string;
+    prevBiweeklyRflrUSD: string;
+    participated: boolean;
 }
 
 export interface IFassetPrice {

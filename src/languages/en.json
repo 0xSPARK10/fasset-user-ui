@@ -374,6 +374,25 @@
         },
         "launch_ledger_app_label": "Please launch {{appName}} in Ledger before confirming transaction."
     },
+    "lottery_modal": {
+        "claim_button": "Claim Now on Flare Portal",
+        "done_button": "Done",
+        "dont_show_again_label": "Don’t show again",
+        "next_lottery_countdown_label": "Next lottery count down",
+        "next_lottery_countdown_value_label": "$29.6k",
+        "next_lottery_prize_pool_label": "Next lottery prize pool",
+        "note_label": "*Note - FAssets rewards are only paid on the Flare Portal. Any other sources should not be trusted.",
+        "not_won_description_label": "The next lottery has started.",
+        "not_won_label": "We’re sorry you did not win a prize.",
+        "not_won_title": "You have not won the lottery",
+        "paid_in_label": "(Paid in <icon></icon>)",
+        "won_description_label": "Go to the Flare Portal and select “Songbird FAssets” to claim.",
+        "won_label_ordinal_one": "You have won {{count}}st prize",
+        "won_label_ordinal_two": "You have won {{count}}nd prize",
+        "won_label_ordinal_few": "You have won {{count}}rd prize",
+        "won_label_ordinal_other": "You have won {{count}}th prize",
+        "won_title": "You have won the lottery!"
+    },
     "mint_modal": {
         "amount_label": "Amount",
         "amount_step_title": "I want to mint",
@@ -642,7 +661,7 @@
             "each_distribution_period_description_label": "Each distribution period, collateral providers will be awarded with points proportionally to their stakes, where a snapshot of stakes will be taken randomly once per hour.",
             "earn_rewards_via_pools_description_label": "20% of the total rFLR incentives will be distributed to collateral providers, who are staked to an agent maintaining a consistently healthy collateral ratio (above pool’s Safety CR).",
             "earn_rewards_via_pools_title": "Earn Rewards via Pools",
-            "earn_rewards_via_redeeming_description_label": "80% of the total rFLR incentives will be distributed to participants that will redeem FAssets when total minted lots exceeds 75% of the total lot capacity per FAsset.\n\nThe way the incentives will be distributed will be using a lottery system with 50 rewards:\n\n<strong>1st Place</strong> will get $10,000 USD in rFLR\n<strong>2nd-49th</strong> places will get $400 USD in rFLR\n\nThe number of lots redeemed multiplied by the rewards multiplier will be assigned as a number of lottery tickets to the participant for each redemption.",
+            "earn_rewards_via_redeeming_description_label": "80% of the total rFLR incentives will be distributed to participants that will redeem FAssets when total minted lots exceeds 75% of the total lot capacity per FAsset.\n\nThe way the incentives will be distributed will be using a lottery system with 50 rewards:\n\n<strong>1st Prize</strong> will get $10,000 USD in rFLR\n<strong>2nd-50th</strong> prizes will get $400 USD in rFLR\n\nThe number of lots redeemed multiplied by the rewards multiplier will be assigned as a number of lottery tickets to the participant for each redemption.",
             "earn_rewards_via_redeeming_table_description_label": "The table to the right shows how the rewards multiplier increases exponentially as the mint utilization rate increases. Tickets from both FAssets are added up for this lottery.\n\nExample:  If you redeem FDoge at 20x then it's 20 tickets.\n\nYou will be able to view the number of tickets you’ve accumulated at the Redemption Ticket counter in the Minting App.",
             "earn_rewards_via_redeeming_title": "Earn Rewards via Redeeming FAssets",
             "exponential_redemption_awards_label": "Exponential Redemption Rewards",
@@ -660,15 +679,6 @@
         "minted_label": "Minted",
         "redeem_button": "Redeem {{fAsset}}",
         "title": "Time to Redeem"
-    },
-    "token": {
-        "cflr_label": "CFLR",
-        "cpt_label": "CPT",
-        "f_test_xrp_label": "FTestXRP",
-        "test_eth_label": "TestETH",
-        "test_usdc_label": "TestUSDC",
-        "test_usdt_label": "TestUSDT",
-        "test_xrp_label": "testXRP"
     },
     "underlying_balance_card": {
         "balance_unavailable_label": "We are not able to get a balance from {{coinName}} for your {{coinName}} address. This may result in minting and redemption not working.",

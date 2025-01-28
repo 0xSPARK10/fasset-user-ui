@@ -11,12 +11,13 @@ import {
 import Link from "next/link";
 import { IconTicket, IconInfoHexagon } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
-import { useInterval, useMediaQuery } from "@mantine/hooks";
+import { useMediaQuery } from "@mantine/hooks";
 import { formatNumber, formatNumberWithSuffix, toNumber } from "@/utils";
 import ClockIcon from "@/components/icons/ClockIcon";
 import CflrIcon from "@/components/icons/CflrIcon";
 import { INativeBalance, IReward } from "@/types";
 import { COINS } from "@/config/coin";
+import { useDistribution } from "@/hooks/useDistribution";
 
 interface IFAssetPositionCard {
     balance: INativeBalance[] | undefined;
@@ -24,14 +25,8 @@ interface IFAssetPositionCard {
     isLoading: boolean;
 }
 
-const DISTRIBUTION_START = '2024-12-16 00:00';
-const DISTRIBUTION_CYCLES_COUNT = 7;
-
 export default function FAssetPositionCard({ balance, rewards, isLoading }: IFAssetPositionCard) {
-    const [distributionCountdown, setDistributionCountdown] = useState<string>();
-    const [currentCycleCount, setCurrentCycleCount] = useState<number>(Math.ceil(moment().diff(moment.utc(DISTRIBUTION_START, 'YYYY-MM-DD HH:mm'), 'days', true) / 14));
-    const [isDistributionCountdownVisible, setIsDistributionCountdownVisible] = useState<boolean>(false);
-    const distributionTargetDate = useRef<Moment | null>(null);
+    const { distributionCountdown, isDistributionCountdownActive } = useDistribution();
     const { t } = useTranslation();
     const isMobile = useMediaQuery('(max-width: 767px)');
 
@@ -58,32 +53,6 @@ export default function FAssetPositionCard({ balance, rewards, isLoading }: IFAs
     const isRedeemButtonDisabled = fassetTokensCount === tokensWithoutAssets?.length;
     const totalRewardsEarnedUSD = toNumber(rewards?.claimedUsd ?? "0") + toNumber(rewards?.claimableUsd ?? "0");
     const totalRewardsEarned = toNumber(rewards?.claimedRflr ?? "0") + toNumber(rewards?.claimableRflr ?? "0");
-
-    const interval = useInterval(() => {
-        if (!distributionTargetDate.current) return;
-        setCurrentCycleCount(Math.ceil(moment().diff(moment.utc(DISTRIBUTION_START, 'YYYY-MM-DD HH:mm'), 'days', true) / 14))
-        const now = moment();
-        const duration = moment.duration(distributionTargetDate.current.diff(now));
-
-        if (duration.asMilliseconds() <= 0) {
-            setDistributionCountdown("0d 0h 0m 0s");
-        } else {
-            setDistributionCountdown(`${duration.days()}d ${duration.hours()}h ${duration.minutes()}m ${duration.seconds()}s`);
-        }
-    }, 1000);
-
-    useEffect(() => {
-        setIsDistributionCountdownVisible(currentCycleCount < DISTRIBUTION_CYCLES_COUNT);
-    }, []);
-
-    useEffect(() => {
-        if (!isDistributionCountdownVisible) return;
-        distributionTargetDate.current = moment.utc(DISTRIBUTION_START, 'YYYY-MM-DD HH:mm').add(currentCycleCount * 14, 'days');
-
-        interval.start();
-        return interval.stop;
-
-    }, [isDistributionCountdownVisible, currentCycleCount]);
 
     return (
         <div className="flex flex-col border-x-0 md:border-x border-y border-[var(--flr-border-color)] relative">
@@ -181,7 +150,7 @@ export default function FAssetPositionCard({ balance, rewards, isLoading }: IFAs
                         }
                     </Grid.Col>
                 ))}
-                {isDistributionCountdownVisible &&
+                {isDistributionCountdownActive &&
                     <Grid
                         classNames={{
                             root: 'w-full'

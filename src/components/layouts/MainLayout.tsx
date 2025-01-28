@@ -9,9 +9,11 @@ import {
 import { useTranslation } from "react-i18next";
 import Head from "next/head";
 import Link from "next/link";
+import { useInterval } from "@mantine/hooks";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { IconBrandX, IconBrandDiscordFilled, IconAlertTriangle } from "@tabler/icons-react";
+import { useCookies } from "react-cookie";
 import ConnectWalletButton from "@/components/elements/ConnectWalletButton";
 import LogoIcon from "@/components/icons/LogoIcon";
 import FlareLogoIcon from "@/components/icons/FlareLogoIcon";
@@ -19,7 +21,7 @@ import FlareLabsLogoIcon from "@/components/icons/FlareLabsLogoIcon";
 import TelegramIcon from "@/components/icons/TelegramIcon";
 import FlrIcon from "@/components/icons/FlrIcon";
 import SgbAltIcon from "@/components/icons/SgbAltIcon";
-import { useInterval } from "@mantine/hooks";
+import LotteryModal from "@/components/modals/LotteryModal";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useFassetState } from "@/api/user";
 import { usePools, useUserPools } from "@/api/pool";
@@ -35,6 +37,9 @@ const REDEMPTION_STATUS_FETCH_INTERVAL = 300000;
 export default function Layout({ children, ...props }: ILayout) {
     const [isMenuOpened, setIsMenuOpened] = useState<boolean>(false);
     const [redirectBackUrl, setRedirectBackUrl] = useState<string>();
+    const [isLotteryModalVisible, setIsLotteryModalVisible] = useState<boolean>(false);
+
+    const [cookies] = useCookies(['lottery']);
     const { t } = useTranslation();
     const { walletConnectConnector, isConnected, connectedCoins, mainToken } = useWeb3();
     const { isMintModalActive, isRedeemModalActive } = useModalState();
@@ -55,6 +60,12 @@ export default function Layout({ children, ...props }: ILayout) {
     const poolInterval = useInterval(() => {
         pools.refetch();
     }, REDEMPTION_STATUS_FETCH_INTERVAL);
+
+    useEffect(() => {
+        if (mainToken?.address && !(cookies as { [key: string]: any })[`lottery-${mainToken.address}`]) {
+            setIsLotteryModalVisible(true);
+        }
+    }, [cookies, mainToken]);
 
     useEffect(() => {
         const handleBackButton = async () => {
@@ -329,6 +340,10 @@ export default function Layout({ children, ...props }: ILayout) {
                         </Link>
                     </div>
                 </Drawer>
+                <LotteryModal
+                    opened={isLotteryModalVisible}
+                    onClose={() => setIsLotteryModalVisible(false)}
+                />
             </AppShell>
         </>
     );

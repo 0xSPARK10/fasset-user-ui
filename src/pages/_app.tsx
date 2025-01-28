@@ -1,21 +1,21 @@
 import { MantineProvider } from "@mantine/core";
 import { Notifications } from '@mantine/notifications';
+import { ModalsProvider } from "@mantine/modals";
+import type { AppProps } from "next/app";
+import type { NextComponentType } from "next";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { defaultThemeOverride } from "@/config/theme";
 import MainLayout from "@/components/layouts/MainLayout";
 import { Web3Provider } from "@/hooks/useWeb3";
 import { Web3ModalProvider } from "@/hooks/useWeb3Modal";
 import { ModalStateProvider } from "@/hooks/useModalState";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RouteGuard from "@/components/RouteGuard";
-import { ModalsProvider } from "@mantine/modals";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import "@/config/i18n";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "@/styles/globals.scss";
 import "@mantine/charts/styles.css";
-import type { AppProps } from "next/app";
-import type { NextComponentType } from "next";
-import ErrorBoundary from "@/components/ErrorBoundary";
 
 type CustomAppProps = AppProps & {
     Component: NextComponentType & { protected?: boolean }
