@@ -37,7 +37,8 @@ export const NETWORK_FLARE_COSTON_TESTNET: INetwork = {
     ledgerApp: LEDGER_APP.FLARE,
     icon: (props) => <CflrIcon width="32" height="32" {...props} />,
     isMandatory: true,
-    explorerUrl: 'https://coston-explorer.flare.network',
+    explorerAddressUrl: 'https://coston-explorer.flare.network/address',
+    explorerTxUrl: 'https://coston-explorer.flare.network/tx',
     mainnet: false
 }
 
@@ -49,19 +50,21 @@ export const NETWORK_XRPL_TESTNET: INetwork = {
     methods: XRP_NAMESPACE_METHODS,
     ledgerApp: LEDGER_APP.XRP,
     icon: (props) => <XrpIcon width="32" height="32" {...props} />,
-    explorerUrl: 'https://testnet.xrpl.org',
+    explorerAddressUrl: 'https://testnet.xrpl.org/accounts',
+    explorerTxUrl: 'https://testnet.xrpl.org/transactions',
     mainnet: false
 }
 
 export const NETWORK_BTC_TESTNET: INetwork = {
-    chainId: '000000000933ea01ad0ee984209779ba',
+    chainId: '00000000da84f2bafbbc53dee25a72ae',
     name: 'Bitcoin Test Network',
     rpcUrl: 'https://bitcoin-testnet.gateway.tatum.io',
     namespace: BTC_NAMESPACE,
     methods: BTC_NAMESPACE_METHODS,
     ledgerApp: LEDGER_APP.BTC_TEST,
     icon: (props) => <BtcIcon width="32" height="32" {...props} />,
-    explorerUrl: 'https://blockexplorer.one/bitcoin/testnet',
+    explorerAddressUrl: 'https://sochain.com/address/BTCTEST',
+    explorerTxUrl: 'https://sochain.com/tx/BTCTEST',
     mainnet: false
 }
 
@@ -72,7 +75,8 @@ export const NETWORK_DOGE_TESTNET: INetwork = {
     namespace: BTC_NAMESPACE,
     methods: BTC_NAMESPACE_METHODS,
     icon: (props) => <DogeIcon width="18" height="18" {...props} />,
-    explorerUrl: 'https://blockexplorer.one/dogecoin/testnet',
+    explorerAddressUrl: 'https://blockexplorer.one/dogecoin/testnet/address',
+    explorerTxUrl: 'https://blockexplorer.one/dogecoin/testnet/tx',
     mainnet: false
 }
 
@@ -86,7 +90,8 @@ export const NETWORK_SONGBIRD: INetwork = {
     ledgerApp: LEDGER_APP.FLARE,
     icon: (props) => <SgbIcon width="32" height="32" {...props} />,
     isMandatory: true,
-    explorerUrl: 'https://songbird-explorer.flare.network',
+    explorerAddressUrl: 'https://songbird-explorer.flare.network/address',
+    explorerTxUrl: 'https://songbird-explorer.flare.network/tx',
     mainnet: true
 }
 
@@ -98,7 +103,8 @@ export const NETWORK_BTC: INetwork = {
     methods: BTC_NAMESPACE_METHODS,
     ledgerApp: LEDGER_APP.BTC,
     icon: (props) => <BtcIcon width="32" height="32" {...props} />,
-    explorerUrl: 'https://blockexplorer.one/bitcoin/mainnet',
+    explorerAddressUrl: 'https://blockexplorer.one/bitcoin/mainnet/address',
+    explorerTxUrl: 'https://blockexplorer.one/bitcoin/mainnet/tx',
     mainnet: true
 }
 
@@ -110,7 +116,8 @@ export const NETWORK_DOGE: INetwork = {
     methods: BTC_NAMESPACE_METHODS,
     ledgerApp: LEDGER_APP.DOGE,
     icon: (props) => <DogeIcon width="18" height="18" {...props} />,
-    explorerUrl: 'https://blockexplorer.one/dogecoin/mainnet',
+    explorerAddressUrl: 'https://blockexplorer.one/dogecoin/mainnet/address',
+    explorerTxUrl: 'https://blockexplorer.one/dogecoin/mainnet/tx',
     mainnet: true
 }
 
@@ -122,7 +129,8 @@ export const NETWORK_XRPL: INetwork = {
     methods: XRP_NAMESPACE_METHODS,
     ledgerApp: LEDGER_APP.XRP,
     icon: (props) => <XrpIcon width="32" height="32" {...props} />,
-    explorerUrl: 'https://livenet.xrpl.org',
+    explorerAddressUrl: 'https://livenet.xrpl.org/accounts',
+    explorerTxUrl: 'https://livenet.xrpl.org/transactions',
     mainnet: true
 }
 

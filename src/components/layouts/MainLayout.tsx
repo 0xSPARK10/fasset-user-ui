@@ -13,7 +13,8 @@ import { useInterval } from "@mantine/hooks";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { IconBrandX, IconBrandDiscordFilled, IconAlertTriangle } from "@tabler/icons-react";
-import { useCookies } from "react-cookie";
+import { Cookies } from "react-cookie";
+import moment from "moment";
 import ConnectWalletButton from "@/components/elements/ConnectWalletButton";
 import LogoIcon from "@/components/icons/LogoIcon";
 import FlareLogoIcon from "@/components/icons/FlareLogoIcon";
@@ -27,6 +28,8 @@ import { useFassetState } from "@/api/user";
 import { usePools, useUserPools } from "@/api/pool";
 import { useModalState } from "@/hooks/useModalState";
 import { COINS } from "@/config/coin";
+import { useDistribution } from "@/hooks/useDistribution";
+import { useRewards } from "@/api/rewards";
 
 export interface ILayout {
     children?: React.ReactNode;
@@ -39,10 +42,12 @@ export default function Layout({ children, ...props }: ILayout) {
     const [redirectBackUrl, setRedirectBackUrl] = useState<string>();
     const [isLotteryModalVisible, setIsLotteryModalVisible] = useState<boolean>(false);
 
-    const [cookies] = useCookies(['lottery']);
+    const cookies = new Cookies();
     const { t } = useTranslation();
     const { walletConnectConnector, isConnected, connectedCoins, mainToken } = useWeb3();
     const { isMintModalActive, isRedeemModalActive } = useModalState();
+    const { distributionTargetDate } = useDistribution();
+    const rewards = useRewards(mainToken?.address ?? '', mainToken?.address !== undefined);
 
     const pools = usePools(COINS.filter(coin => coin.isFAssetCoin && coin.enabled).map(coin => coin.type), false);
     const userPools = useUserPools(
@@ -61,11 +66,14 @@ export default function Layout({ children, ...props }: ILayout) {
         pools.refetch();
     }, REDEMPTION_STATUS_FETCH_INTERVAL);
 
+
     useEffect(() => {
-        if (mainToken?.address && !(cookies as { [key: string]: any })[`lottery-${mainToken.address}`]) {
+        if (!rewards.data || !mainToken?.address) return;
+
+        if (rewards.data.rewardsDistributed && rewards.data.participated && !cookies.get(`lottery-${mainToken.address}`)/*!(cookies as { [key: string]: any })[`lottery-${mainToken.address}`]*/) {
             setIsLotteryModalVisible(true);
         }
-    }, [cookies, mainToken]);
+    }, [rewards.data]);
 
     useEffect(() => {
         const handleBackButton = async () => {
@@ -109,6 +117,18 @@ export default function Layout({ children, ...props }: ILayout) {
             fassetState.refetch();
         }
     }, [isMintModalActive, isRedeemModalActive]);
+
+    const onLotteryModalClose = async (hasCookie: boolean) => {
+        if (hasCookie && distributionTargetDate.current) {
+            const now = moment();
+            const duration = moment.duration(distributionTargetDate.current.diff(now));
+            cookies.set(`lottery-${mainToken?.address}`, true, {
+                maxAge: duration.asSeconds()
+            });
+        }
+
+        setIsLotteryModalVisible(false);
+    }
 
     return (
         <>
@@ -341,8 +361,9 @@ export default function Layout({ children, ...props }: ILayout) {
                     </div>
                 </Drawer>
                 <LotteryModal
+                    rewards={rewards.data}
                     opened={isLotteryModalVisible}
-                    onClose={() => setIsLotteryModalVisible(false)}
+                    onClose={onLotteryModalClose}
                 />
             </AppShell>
         </>

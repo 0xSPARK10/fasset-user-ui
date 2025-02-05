@@ -1,57 +1,43 @@
 import React, { useState } from "react";
 import { useTranslation, Trans } from "react-i18next";
 import { Text, Checkbox, Button } from "@mantine/core";
-import { useCookies } from "react-cookie";
 import FAssetModal from "@/components/modals/FAssetModal";
 import CflrIcon from "@/components/icons/CflrIcon";
 import ClockIcon from "@/components/icons/ClockIcon";
 import { useDistribution } from "@/hooks/useDistribution";
-import { useRewards } from "@/api/rewards";
-import { useWeb3 } from "@/hooks/useWeb3";
 import { formatNumberWithSuffix } from "@/utils";
-import moment from "moment";
+import { IReward } from "@/types";
 
 interface ILotteryModal {
     opened: boolean;
-    onClose: () => void;
+    onClose: (setCookie: boolean) => void;
+    rewards: IReward | undefined;
 }
 
-export default function LotteryModal({ opened, onClose }: ILotteryModal) {
+export default function LotteryModal({ opened, onClose, rewards }: ILotteryModal) {
     const [dontShow, setDontShow] = useState<boolean>(false);
-    const { distributionCountdown, distributionTargetDate} = useDistribution();
+    const { distributionCountdown } = useDistribution();
     const { t } = useTranslation();
-    const { mainToken } = useWeb3();
-    const rewards = useRewards(mainToken?.address ?? '', mainToken?.address !== undefined);
-    const [cookies, setCookie] = useCookies(['lottery']);
 
-    const hasWon = rewards.data
-        ? (rewards.data?.prevBiweeklyPlace <= 50 ?? false)
+    const hasWon = rewards
+        ? (rewards?.prevBiweeklyPlace <= 50 ?? false)
         : false;
 
     const closeModal = async () => {
-        if (dontShow && distributionTargetDate.current) {
-            const now = moment();
-            const duration = moment.duration(distributionTargetDate.current.diff(now));
-
-            (setCookie as (key: string, value: any, options?: { maxAge: number }) => void)(
-                `lottery-${mainToken?.address}`,
-                true,
-                { maxAge: duration.asSeconds() }
-            );
-        }
+        const setCookie = dontShow;
         setDontShow(false);
 
         if (hasWon) {
             window.location.href = 'https://portal.flare.network/';
         }
 
-        onClose();
+        onClose(setCookie);
     }
 
     return (
         <FAssetModal
-            opened={opened && !rewards.isPending && rewards.data !== undefined && rewards.data.participated}
-            onClose={onClose}
+            opened={opened}
+            onClose={() => onClose(false)}
             title={t(`lottery_modal.${hasWon ? 'won' : 'not_won'}_title`)}
             size={750}
             zIndex={9999}
@@ -62,7 +48,7 @@ export default function LotteryModal({ opened, onClose }: ILotteryModal) {
                     fw={400}
                     c="var(--flr-dark-gray)"
                 >
-                    {t(`lottery_modal.${hasWon ? 'won' : 'not_won'}_label`, { ordinal: true, count: rewards.data?.prevBiweeklyPlace })}
+                    {t(`lottery_modal.${hasWon ? 'won' : 'not_won'}_label`, { ordinal: true, count: rewards?.prevBiweeklyPlace })}
                 </Text>
                 <Text
                     className="block text-16 mb-8"
@@ -80,14 +66,14 @@ export default function LotteryModal({ opened, onClose }: ILotteryModal) {
                                 fw={300}
                                 c="var(--flr-black)"
                             >
-                                {formatNumberWithSuffix(rewards.data?.prevBiweeklyRflr ?? 0)}
+                                {formatNumberWithSuffix(rewards?.prevBiweeklyRflr ?? 0)}
                             </Text>
                             <Text
                                 className="text-16"
                                 fw={400}
                                 c="var(--flr-dark-gray)"
                             >
-                                ${formatNumberWithSuffix(rewards.data?.prevBiweeklyRflrUSD ?? 0)}
+                                ${formatNumberWithSuffix(rewards?.prevBiweeklyRflrUSD ?? 0)}
                             </Text>
                         </div>
                     </div>

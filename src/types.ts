@@ -73,7 +73,8 @@ export interface INetwork {
     ledgerApp?: string;
     icon?: (props?: IIconProps) => React.ReactNode;
     isMandatory?: boolean;
-    explorerUrl?: string;
+    explorerAddressUrl?: string;
+    explorerTxUrl?: string;
     mainnet: boolean;
 }
 
@@ -417,6 +418,7 @@ export interface IReward {
     prevBiweeklyRflr: string;
     prevBiweeklyRflrUSD: string;
     participated: boolean;
+    rewardsDistributed: boolean;
 }
 
 export interface IFassetPrice {

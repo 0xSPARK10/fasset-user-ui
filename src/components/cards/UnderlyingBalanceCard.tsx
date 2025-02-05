@@ -82,7 +82,7 @@ export default function UnderlyingBalanceCard({ className, fAssetCoin }: IUnderl
                     {fAssetCoin?.address !== undefined &&
                         <Anchor
                             underline="always"
-                            href={`${fAssetCoin.network.explorerUrl}/${fAssetCoin.network.namespace === XRP_NAMESPACE ? 'accounts/' : 'address/'}${fAssetCoin.address}`}
+                            href={`${fAssetCoin.network.explorerAddressUrl}/${fAssetCoin.address}`}
                             target="_blank"
                             className="inline-flex items-center text-12"
                             c="black"
@@ -146,7 +146,7 @@ export default function UnderlyingBalanceCard({ className, fAssetCoin }: IUnderl
                 {fAssetCoin?.address !== undefined &&
                     <Anchor
                         underline="always"
-                        href={`${fAssetCoin.network.explorerUrl}/${fAssetCoin.network.namespace === XRP_NAMESPACE ? 'accounts/' : 'address/'}${fAssetCoin.address}`}
+                        href={`${fAssetCoin.network.explorerAddressUrl}/${fAssetCoin.address}`}
                         target="_blank"
                         className="inline-flex items-center ml:0 sm:ml-auto mt-1 sm:mt-0 text-12"
                         c="var(--flr-black)"

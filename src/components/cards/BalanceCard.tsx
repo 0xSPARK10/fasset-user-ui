@@ -147,7 +147,7 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick 
                     </Title>
                     <Anchor
                         underline="always"
-                        href={`${localMainToken?.network.explorerUrl}/address/${localMainToken?.address}`}
+                        href={`${localMainToken?.network.explorerAddressUrl}/${localMainToken?.address}`}
                         target="_blank"
                         className="inline-flex items-center text-12"
                         c="black"
@@ -207,7 +207,7 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick 
                 </div>
                 <Anchor
                     underline="always"
-                    href={`${localMainToken?.network.explorerUrl}/address/${localMainToken?.address}`}
+                    href={`${localMainToken?.network.explorerAddressUrl}/${localMainToken?.address}`}
                     target="_blank"
                     className="inline-flex items-center text-12"
                     c="var(--flr-black)"

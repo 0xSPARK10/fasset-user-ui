@@ -81,13 +81,13 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
 
     const renderTransaction = (progress: ITransaction) => {
         let href = progress.action.toLowerCase() === ACTION_TYPE_REDEEM
-            ? `${mainToken?.network.explorerUrl}/tx/${progress.txhash}`
+            ? `${mainToken?.network.explorerTxUrl}/${progress.txhash}`
             : undefined;
 
         if (href === undefined) {
             const coin = COINS.find(coin => coin.type.toLowerCase() === progress.fasset.toLowerCase());
             href = coin
-                ? `${coin?.network?.explorerUrl}/${coin.nativeName?.toLowerCase() === 'xrp' ? 'transactions/' : 'tx/'}${progress.txhash}`
+                ? `${coin?.network?.explorerTxUrl}/${progress.txhash}`
                 : '#';
         }
 

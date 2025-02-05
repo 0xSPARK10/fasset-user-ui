@@ -4,6 +4,7 @@ import { ModalsProvider } from "@mantine/modals";
 import type { AppProps } from "next/app";
 import type { NextComponentType } from "next";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { CookiesProvider } from "react-cookie";
 import { defaultThemeOverride } from "@/config/theme";
 import MainLayout from "@/components/layouts/MainLayout";
 import { Web3Provider } from "@/hooks/useWeb3";
@@ -37,24 +38,26 @@ export default function App({ Component, pageProps }: CustomAppProps) {
         >
             <Notifications />
             <QueryClientProvider client={queryClient}>
-                <Web3Provider>
-                    <Web3ModalProvider>
-                        <ModalsProvider>
-                            <ModalStateProvider>
-                                <MainLayout>
-                                    <ErrorBoundary>
-                                        {Component.protected
-                                            ? <RouteGuard>
-                                                <Component {...pageProps} />
-                                            </RouteGuard>
-                                            : <Component {...pageProps} />
-                                        }
-                                    </ErrorBoundary>
-                                </MainLayout>
-                            </ModalStateProvider>
-                        </ModalsProvider>
-                    </Web3ModalProvider>
-                </Web3Provider>
+                <CookiesProvider>
+                    <Web3Provider>
+                        <Web3ModalProvider>
+                            <ModalsProvider>
+                                <ModalStateProvider>
+                                    <MainLayout>
+                                        <ErrorBoundary>
+                                            {Component.protected
+                                                ? <RouteGuard>
+                                                    <Component {...pageProps} />
+                                                </RouteGuard>
+                                                : <Component {...pageProps} />
+                                            }
+                                        </ErrorBoundary>
+                                    </MainLayout>
+                                </ModalStateProvider>
+                            </ModalsProvider>
+                        </Web3ModalProvider>
+                    </Web3Provider>
+                </CookiesProvider>
             </QueryClientProvider>
         </MantineProvider>
     );

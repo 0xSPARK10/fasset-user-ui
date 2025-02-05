@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
-import { SessionTypes } from "@walletconnect/types";
-import UniversalProvider, { ConnectParams } from "@walletconnect/universal-provider";
-import { COINS } from "@/config/coin";
-import { WalletConnectModal } from "@walletconnect/modal";
-import { INetwork } from "@/types";
-import { WALLET } from "@/constants";
-import { getAccountsFromNamespaces } from "@walletconnect/utils";
-import { useConnectedCoin } from "@/store/coin";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
+import { SessionTypes } from "@walletconnect/types";
+import { WalletConnectModal } from "@walletconnect/modal";
+import UniversalProvider, { ConnectParams } from "@walletconnect/universal-provider";
 import { ethers, JsonRpcSigner } from "ethers";
+import { getAccountsFromNamespaces } from "@walletconnect/utils";
+import { useConnectedCoin } from "@/store/coin";
 import { XRP_NAMESPACE } from "@/config/networks";
+import { COINS } from "@/config/coin";
+import { INetwork } from "@/types";
+import { WALLET } from "@/constants";
 
 export interface IWalletConnectConnector {
     connect: (networks: INetwork[]) => Promise<boolean>;
@@ -42,7 +42,7 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
     const connect = async(networks: INetwork[]) => {
         try {
             if (!universalProvider) {
-                throw new ReferenceError("WalletConnect Client is not initialized.");
+                throw new ReferenceError('WalletConnect Client is not initialized.');
             }
 
             localConnectedCoins
