@@ -10,21 +10,22 @@ import {
     Title,
     Tooltip
 } from "@mantine/core";
-import { IconArrowUpRight } from "@tabler/icons-react";
+import { IconArrowUpRight, IconExclamationCircle } from "@tabler/icons-react";
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useInterval, useMediaQuery } from "@mantine/hooks";
 import { useNativeBalance, usePoolsBalance } from "@/api/balance";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useTranslation } from "react-i18next";
-import { ICoin, IFAssetCoin } from "@/types";
 import MintModal from "@/components/modals/MintModal";
 import RedeemModal from "@/components/modals/RedeemModal";
-import { COINS } from "@/config/coin";
-import { truncateString } from "@/utils";
 import CopyIcon from "@/components/icons/CopyIcon";
 import { useUserProgress } from "@/api/user";
+import { useMintEnabled } from "@/api/minting";
 import { useModalState } from "@/hooks/useModalState";
+import { ICoin, IFAssetCoin } from "@/types";
+import { COINS } from "@/config/coin";
+import { truncateString } from "@/utils";
 
 interface IBalanceCard {
     className?: string;
@@ -43,16 +44,19 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick 
     const [localMainToken, setLocalMainToken] = useState<ICoin>();
     const [stableCoins, setStableCoins] = useState<ICoin[]>([]);
     const activeFAssetCoin = useRef<IFAssetCoin>();
-
     const { setIsMintModalActive: setContextIsMintModalActive, setIsRedeemModalActive: setContextIsRedeemModalActive } = useModalState();
     const mediaQueryMatches = useMediaQuery('(max-width: 40rem)');
+
+    const mintEnabled = useMintEnabled();
     const nativeBalance = useNativeBalance(localMainToken?.address ?? '', localMainToken !== undefined);
     const poolsBalances = usePoolsBalance(localMainToken?.address ?? '', fAssetCoins.map(c => c.type), localMainToken !== undefined && fAssetCoins.length > 0);
-
     const userProgress = useUserProgress(mainToken?.address ?? '', false);
+
     const pendingTransactions = userProgress.data
          ? userProgress.data.filter(progress => !progress.status).length
          : 0;
+
+    const disabledFassets = mintEnabled.data?.filter(item => !item.status)?.map(item => item.fasset) ?? [];
 
     const nativeBalanceFetchInterval = useInterval(() => {
         nativeBalance.refetch();
@@ -327,6 +331,29 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick 
                             </div>
                         }
                     </div>
+                    {disabledFassets.length > 0 &&
+                        <div className="flex items-center bg-[var(--flr-lightest-orange)] p-3 my-2 rounded-lg">
+                            <IconExclamationCircle
+                                size={25}
+                                color="var(--flr-orange)"
+                                className="mr-2 flex-shrink-0"
+                            />
+                            <div>
+                                <Text
+                                    className="text-14 text-[var(--flr-lighter-black)]"
+                                    fw={500}
+                                >
+                                    {t('balance_card.disabled_fassets_card.title')}
+                                </Text>
+                                <Text
+                                    className="text-14 md:text-12 text-[var(--flr-lighter-black)] mt-1"
+                                    fw={400}
+                                >
+                                    {t('balance_card.disabled_fassets_card.description_label', { fAssets: disabledFassets.join(', ') })}
+                                </Text>
+                            </div>
+                        </div>
+                    }
                     {fAssetCoins.map((fAssetCoin) => (
                         <div
                             key={fAssetCoin.type}
@@ -359,7 +386,7 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick 
                                             className="mr-3"
                                             radius="xl"
                                             fw={400}
-                                            disabled={!fAssetCoin.enabled}
+                                            disabled={!fAssetCoin.enabled || disabledFassets.includes(fAssetCoin.type)}
                                             onClick={() => {
                                                 activeFAssetCoin.current = fAssetCoin;
                                                 setIsMintModalActive(true);
@@ -374,7 +401,7 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick 
                                         className="mr-3"
                                         radius="xl"
                                         fw={400}
-                                        disabled={!fAssetCoin.enabled}
+                                        disabled={!fAssetCoin.enabled || disabledFassets.includes(fAssetCoin.type)}
                                         onClick={() => {
                                             activeFAssetCoin.current = fAssetCoin;
                                             setIsMintModalActive(true);

@@ -70,7 +70,7 @@ export default function Layout({ children, ...props }: ILayout) {
     useEffect(() => {
         if (!rewards.data || !mainToken?.address) return;
 
-        if (rewards.data.rewardsDistributed && rewards.data.participated && !cookies.get(`lottery-${mainToken.address}`)/*!(cookies as { [key: string]: any })[`lottery-${mainToken.address}`]*/) {
+        if (rewards.data.rewardsDistributed && rewards.data.participated && !cookies.get(`lottery-${mainToken.address}`)) {
             setIsLotteryModalVisible(true);
         }
     }, [rewards.data]);

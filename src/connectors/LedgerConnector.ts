@@ -52,6 +52,10 @@ export default function LedgerConnector(): ILedgerConnector {
         try {
             response = await callback(transport);
         } catch (error: any) {
+            if (error.message.includes('UNKNOWN_ERROR')) {
+                error.message = i18next.t('errors.ledger_error_label');
+            }
+
             throw error;
         } finally {
             transport?.close();

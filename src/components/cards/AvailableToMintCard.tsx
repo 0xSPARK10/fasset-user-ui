@@ -2,21 +2,24 @@ import { Text, RingProgress } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { IconArrowRight } from "@tabler/icons-react";
-import { IEcosystemInfo } from "@/types";
+import { IEcosystemInfo, IMintEnabled } from "@/types";
 import { COINS } from "@/config/coin";
 import { toNumber, formatNumber } from "@/utils";
 
 interface IAvailableToMintCard {
     ecoSystemInfo: IEcosystemInfo | undefined;
+    mintEnabled: IMintEnabled[] | undefined;
 }
 
-export default function AvailableToMintCard({ ecoSystemInfo }: IAvailableToMintCard) {
+export default function AvailableToMintCard({ ecoSystemInfo, mintEnabled }: IAvailableToMintCard) {
     const { t } = useTranslation();
 
+    const disabledFassets = mintEnabled?.filter(mintEnabled => !mintEnabled.status)?.map(mintEnabled => mintEnabled.fasset);
     const fAssetTokens = ecoSystemInfo?.supplyByFasset?.map(supply => {
         return {
             ...supply,
             token: COINS.find(coin => coin.type.toLowerCase() === supply.fasset.toLowerCase()),
+            disabled: disabledFassets?.find(fAsset => supply.fasset.toLowerCase() === fAsset.toLowerCase()) !== undefined
         };
     });
 
@@ -38,8 +41,8 @@ export default function AvailableToMintCard({ ecoSystemInfo }: IAvailableToMintC
                         <RingProgress
                             size={125}
                             thickness={13}
-                            rootColor="#E62058"
-                            label={fAsset.token?.icon({ width: "60", height: "60" })}
+                            rootColor={fAsset.disabled ? 'var(--flr-gray)' : '#E62058'}
+                            label={fAsset.token?.icon({ width: "60", height: "60", disabled: fAsset.disabled })}
                             sections={[
                                 { value: toNumber(fAsset.mintedPercentage), color: 'transparent' }
                             ]}
@@ -57,14 +60,22 @@ export default function AvailableToMintCard({ ecoSystemInfo }: IAvailableToMintC
                             <Text className="text-16" fw={400}>
                                 ${formatNumber(fAsset.availableToMintUSD)} ({fAsset.availableToMintLots} {t('available_to_mint_card.lots_label')})
                             </Text>
-                            {fAsset.availableToMintLots > 0 &&
-                                <Link
-                                    href="/mint"
-                                    className="flex items-center underline text-16 mt-1"
+                            {fAsset.disabled
+                                ? <Text
+                                    className="text-16"
+                                    fw={400}
+                                    c="var(--flr-gray)"
                                 >
-                                    <span>{t('available_to_mint_card.mint_label', { fAsset: fAsset.fasset })}</span>
-                                    <IconArrowRight size={16} className="ml-1" />
-                                </Link>
+                                    {t('available_to_mint_card.minting_paused_label')}
+                                </Text>
+                                : fAsset.availableToMintLots > 0 &&
+                                    <Link
+                                        href="/mint"
+                                        className="flex items-center underline text-16 mt-1"
+                                    >
+                                        <span>{t('available_to_mint_card.mint_label', { fAsset: fAsset.fasset })}</span>
+                                        <IconArrowRight size={16} className="ml-1" />
+                                    </Link>
                             }
                         </div>
                     </div>

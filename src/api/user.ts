@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueries } from "@tanstack/react-query";
 import apiClient from "@/api/apiClient";
 import {
     IAgent,
@@ -111,7 +111,7 @@ export function useFassetState(enabled: boolean = true) {
 
 export function useFassetPrice(fAsset: string, enabled: boolean = true) {
     return useQuery({
-        queryKey: [fAsset, USER_KEY.FASSET_PRICE],
+        queryKey: [USER_KEY.FASSET_PRICE, fAsset],
         queryFn: async () => {
             const response = await apiClient.get(`fassetPrice/${fAsset}`);
             return response.data as IFassetPrice;

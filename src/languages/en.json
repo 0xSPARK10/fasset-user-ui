@@ -126,12 +126,17 @@
     },
     "available_to_mint_card": {
         "lots_label": "lots",
+        "minting_paused_label": "Minting is paused",
         "mint_label": "Mint {{fAsset}}",
         "title": "Available to mint"
     },
     "balance_card": {
         "connect_tooltip": "To enable minting and redemption, connect to the underlying network.",
         "copied_label": "Copied",
+        "disabled_fassets_card": {
+            "description_label": "Now minting is paused but you can still redeem and withdraw collateral from {{fAssets}}.",
+            "title": "Wind down Process has started"
+        },
         "fassets_title": "FAssets",
         "flare_title": "Flare",
         "flr_address_label": "FLR Address",
@@ -227,6 +232,7 @@
         "usd_label": "USD"
     },
     "errors": {
+        "ledger_error_label": "Declined - Check ledger device for more information.",
         "transaction_failed_label": "Transaction failed.",
         "try_reconnecting_label": "Could not coalesce error - Try reconnecting your wallet."
     },
@@ -290,6 +296,15 @@
         "sort_by_asc_label": "Sort by {{label}} ascending",
         "sort_by_desc_label": "Sort by {{label}} descending"
     },
+    "fasset_wind_down_modal": {
+        "balance_label": "Balance",
+        "description_label": "We are now starting the wind-down process, which is expected to be completed by the end of March. Please ensure that you redeem all your {{fAssets}} and withdraw your collateral from {{pools}} pools before 24th March 2025.",
+        "note_label": "Note - Redemptions will not be included in the current reward program.",
+        "minting_note_label": "{{fAssets}} minting is no longer possible.",
+        "submit_button": "I understand",
+        "subtitle": "We have successfully completed the testing of {{fAssets}} on our canary network, Songbird.",
+        "title": "Important - Redeem your {{fAssets}}"
+    },
     "handshake_card": {
         "cancel_button": "Cancel",
         "confirm_cancel_label": "Please open your {{wallet}} and confirm the transaction.",
@@ -329,6 +344,7 @@
     },
     "latest_transactions_card": {
         "completed_label": "Completed",
+        "defaulted_label": "Defaulted",
         "empty_label": "No transactions available",
         "finished_label": "Finished",
         "in_progress_label": "In progress",
@@ -547,8 +563,8 @@
         "waiting_modal": {
             "action_label": "This action may take up to 1 minute.",
             "action_partial_redemption_label": "{{redeemedAmount}} {{coinName}} will be redeemed out of requested {{totalAmount}} {{coinName}}.",
-            "btc_network_action_label": "This action will take up to 1 hour.",
-            "btc_network_description_label": "If it takes longer, the agent might be unresponsive, potentially causing a delay in your redemption. In such cases, the process could take up to 3 hours. <a>Learn more<icon></icon></a>",
+            "btc_network_action_label": "This action will take up to 6 hours.",
+            "btc_network_description_label": "If it takes longer, the agent might be unresponsive, potentially causing a delay in your redemption. In such cases, the process could take up to 8 hours. <a>Learn more<icon></icon></a>",
             "description_label": "If it takes longer, the agent might be unresponsive, potentially causing a delay in your redemption. In such cases, the process could take up to 15 minutes. <a>Learn more<icon></icon></a>",
             "title": "Waiting",
             "title_partial_redemption": "Waiting (partial redemption) ..."

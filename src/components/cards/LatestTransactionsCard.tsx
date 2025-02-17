@@ -59,7 +59,7 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
 
                     return {
                         ticketId: item.ticketID!,
-                        value: 'vaultToken' in item ? item.vaultTokenValueRedeemed! : item.underlyingPaid,
+                        value: 'vaultToken' in item ? item.vaultTokenValueRedeemed! : item.underlyingPaid!,
                         type: 'vaultToken' in item ? item.vaultToken! : coin?.nativeName!,
                         status: item.status
                     }
@@ -116,7 +116,7 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
 
         const coin = COINS.find(coin => coin.type.toLowerCase() === progress.fasset.toLowerCase());
         return <div>
-            {progress.remainingLots !== null &&
+            {progress.remainingLots !== null && progress.remainingLots !== undefined &&
                 <Text className="text-14 mb-2 flex items-center" fw={400}>
                     <span className="flex-shrink-0">{t('latest_transactions_card.partial_redeem_label')}</span>
                     <Popover
@@ -238,7 +238,10 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
     const renderStatus = (progress: ITransaction) => {
         if (progress.action.toLowerCase() === ACTION_TYPE_MINT) {
             return <Badge
-                color={progress.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
+                color={progress.defaulted
+                    ? 'rgba(230, 30, 87, 0.13)'
+                    : (progress.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)')
+                }
                 variant="outline"
                 radius="xs"
                 size="md"
@@ -247,14 +250,19 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
                 <div className="flex items-center">
                     <span
                         className="status-dot mr-1 shrink-0"
-                        style={{ backgroundColor: progress.status ? 'var(--flr-green)' : 'var(--flr-warning)' }}
+                        style={{ backgroundColor: progress.defaulted
+                            ? 'var(--flr-pink)'
+                            : (progress.status ? 'var(--flr-green)' : 'var(--flr-warning)') }}
                     />
                     <Text
                         className="text-10 shrink-0"
                         fw={400}
-                        c={progress.status ? 'var(--flr-green)' : 'var(--flr-warning)'}
+                        c={progress.defaulted
+                            ? 'var(--flr-pink)'
+                            : (progress.status ? 'var(--flr-green)' : 'var(--flr-warning)')
+                        }
                     >
-                        {t(`latest_transactions_card.${progress.status ? 'finished_label' : 'in_progress_label'}`)}
+                        {t(`latest_transactions_card.${progress.defaulted ? 'defaulted_label' : (progress.status ? 'finished_label' : 'in_progress_label')}`)}
                     </Text>
                 </div>
             </Badge>

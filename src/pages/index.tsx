@@ -8,6 +8,7 @@ import {
     Grid,
     Text
 } from "@mantine/core";
+import { Cookies } from "react-cookie";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery, useMounted }  from "@mantine/hooks";
 import BlingIcon from "@/components/icons/BlingIcon";
@@ -19,7 +20,8 @@ import FAssetPositionCard from "@/components/cards/FAssetPositionCard";
 import MyPoolsPositionCard from "@/components/cards/MyPoolsPositionCard";
 import EcoSystemInformationCard from "@/components/cards/EcoSystemInformationCard";
 import TimeToRedeemCard from "@/components/cards/TimeToRedeemCard";
-import { useEcosystemInfo } from "@/api/minting";
+import FAssetWindDownModal from "@/components/modals/FAssetWindDownModal";
+import { useEcosystemInfo, useMintEnabled } from "@/api/minting";
 import { useTimeData } from "@/api/user";
 import { FILTERS } from "@/constants";
 import { useWeb3 } from "@/hooks/useWeb3";
@@ -35,6 +37,8 @@ const TIME_TO_REDEEM_CARD_LIMIT = 25;
 export default function Home() {
     const [activeFilter, setActiveFilter] = useState<string | null>(FILTERS.LAST_WEEK);
     const [fetchPools, setFetchPools] = useState<boolean>(false);
+    const [isFAssetWindDownModalActive, setIsFAssetWindDownModalActive] = useState<boolean>(false);
+    const [disabledFassets, setDisabledFAssets] = useState<string[]>([]);
 
     const { t } = useTranslation();
     const { isConnected, mainToken } = useWeb3();
@@ -44,7 +48,9 @@ export default function Home() {
     const balance = useNativeBalance(mainToken?.address!, mainToken?.address !== undefined);
     const userPools = useUserPools(mainToken?.address!, COINS.filter(coin => coin.isFAssetCoin && coin.enabled).map(coin => coin.type), fetchPools);
     const rewards = useRewards(mainToken?.address ?? '', mainToken?.address !== undefined);
+    const mintEnabled = useMintEnabled();
     const isMounted = useMounted();
+    const cookies = new Cookies();
 
     const zeroBalanceAssets = balance.data?.filter(balance => balance.balance === '0' && 'lots' in balance).length;
     const totalLotsAssets = balance.data?.filter(balance => 'lots' in balance).length;
@@ -59,9 +65,22 @@ export default function Home() {
         }
     }, [isMounted, isConnected]);
 
+    useEffect(() => {
+        if (!mintEnabled.data || cookies.get('winddown')) return;
+        const fAssets = mintEnabled.data.filter(item => !item.status).map(item => item.fasset);
+        setDisabledFAssets(fAssets);
+
+        if (fAssets.length > 0) {
+            setIsFAssetWindDownModalActive(true);
+        }
+    }, [mintEnabled.data]);
 
     const supplyTokensToRedeem = ecoSystemInfo.data?.supplyByFasset
         ?.filter(supply => toNumber(supply.mintedPercentage) <= TIME_TO_REDEEM_CARD_LIMIT);
+
+    const onFAssetWindDownModalClose = () => {
+        setIsFAssetWindDownModalActive(false);
+    }
 
     return (
         <div>
@@ -198,6 +217,7 @@ export default function Home() {
                     <Grid.Col span={{base: 12, lg: 3 }} className="mt-5 md:mt-0">
                         <AvailableToMintCard
                             ecoSystemInfo={ecoSystemInfo.data}
+                            mintEnabled={mintEnabled.data}
                         />
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, lg: 6 }} className="mt-5 md:mt-0">
@@ -215,6 +235,13 @@ export default function Home() {
                     </Grid.Col>
                 </Grid>
             </Container>
+            {disabledFassets.length > 0 &&
+                <FAssetWindDownModal
+                    opened={isFAssetWindDownModalActive}
+                    onClose={onFAssetWindDownModalClose}
+                    fAssets={disabledFassets}
+                />
+            }
         </div>
     );
 }

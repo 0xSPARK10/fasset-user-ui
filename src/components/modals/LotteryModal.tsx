@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useTranslation, Trans } from "react-i18next";
 import { Text, Checkbox, Button } from "@mantine/core";
 import FAssetModal from "@/components/modals/FAssetModal";

@@ -18,6 +18,7 @@ export interface IIconProps {
     style?: any;
     size?: number | MantineSize | (string & {}) | undefined;
     onClick?: () => void;
+    disabled?: boolean;
 }
 
 export type INamespaceMethods = string[];
@@ -259,15 +260,18 @@ export interface IUserProgress {
     amount: string;
     fasset: string;
     status: boolean;
-    txhash: string;
     defaulted: boolean;
-    ticketID: string;
-    underlyingPaid: string;
+    ticketID?: string;
     vaultToken?: string;
     vaultTokenValueRedeemed?: string;
     poolTokenValueRedeemed?: string;
-    remainingLots: string|null;
-    incomplete: boolean;
+    underlyingPaid?: string;
+    incomplete?: boolean;
+    remainingLots?: string | null;
+    rejected?: boolean;
+    takenOver?: boolean;
+    rejectionDefaulted?: boolean;
+    txhash: string;
 }
 
 export interface IEstimateFee {
@@ -429,4 +433,9 @@ export interface IRedemptionFeeData {
     fasset: string;
     feePercentage: string;
     feeUSD: string;
+}
+
+export interface IMintEnabled {
+    fasset: string;
+    status: boolean;
 }

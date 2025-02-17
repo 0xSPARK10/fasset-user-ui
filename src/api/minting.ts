@@ -12,7 +12,8 @@ import {
     ICrStatus,
     IReturnAddress,
     IPrepareUtxo,
-    IUtxo
+    IUtxo,
+    IMintEnabled
 } from "@/types";
 import { useWeb3 } from "@/hooks/useWeb3";
 
@@ -23,7 +24,8 @@ export const MINTING_KEY = {
     ESTIMATE_FEE: 'minting.estimateFee',
     ECOSYSTEM_INFO: 'minting.ecosystemInfo',
     CR_STATUS: 'minting.crStatus',
-    RETURN_ADDRESSES: 'minting.returnAddresses'
+    RETURN_ADDRESSES: 'minting.returnAddresses',
+    MINT_ENABLED: 'minting.mintEnabled'
 }
 
 export function useMaxLots(fAsset: string, enabled: boolean = true) {
@@ -148,6 +150,7 @@ export function useSubmitTx() {
         }
     });
 }
+
 export function useCrStatus(crId: string, enabled: boolean = true) {
     return useQuery({
        queryKey: [MINTING_KEY.CR_STATUS, crId],
@@ -219,9 +222,19 @@ export function usePrepareUtxos() {
                 }
             };
 
-
             const response = await apiClient.post(`prepareUtxos/${fAsset}/${amount}/${recipient}/${memo}/${fee}`, utxos, config);
             return response.data as IPrepareUtxo;
         }
     })
+}
+
+export function useMintEnabled(enabled: boolean = true) {
+    return useQuery({
+        queryKey: [MINTING_KEY.MINT_ENABLED],
+        queryFn: async () => {
+            const response = await apiClient.get('mintEnabled');
+            return response.data as IMintEnabled[];
+        },
+        enabled: enabled
+    });
 }

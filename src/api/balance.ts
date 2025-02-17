@@ -78,7 +78,10 @@ export function useUnderlyingBalances(
                 queryKey: [BALANCE_KEY.XPUB_BALANCE, asset.address, asset.fAsset],
                 queryFn: async () => {
                     const response = await apiClient.get(`${resource}/xpub/${asset.fAsset}/${asset.address}`);
-                    return response.data;
+                    return {
+                        fAsset: asset.fAsset,
+                        balance: response.data.balance
+                    }
                 },
                 enabled: enabled
             }
@@ -88,7 +91,10 @@ export function useUnderlyingBalances(
             queryKey: [BALANCE_KEY.UNDERLYING_BALANCE, asset.fAsset, asset.address, config?.params?.changeAddresses, config?.params?.receiveAddresses],
             queryFn: async () => {
                 const response = await apiClient.get(`${resource}/underlying/${asset.fAsset}/${asset.address}`, config);
-                return response.data;
+                return {
+                    fAsset: asset.fAsset,
+                    balance: response.data.balance
+                }
             },
             enabled: enabled
         }
@@ -98,7 +104,7 @@ export function useUnderlyingBalances(
         queries: queries,
         combine: (results) => {
             return {
-                data: results.map((result) => result.data),
+                data: results.filter(result => result.data).map((result) => result.data),
                 isPending: results.some((result) => result.isPending),
                 res: results
             }

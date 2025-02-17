@@ -13,6 +13,7 @@
     --flr-lightest-green: #D7F6E5;
     --flr-green: #116622;
     --flr-black: #000;
+    --flr-lighter-black: #242425;
     --flr-lightest-orange: #FCEBE2;
     --flr-orange: #CA7345;
     --flr-lightest-gray: #FBFBFB;
@@ -106,6 +107,10 @@ ol {
 
     .mantine-CloseButton-root {
         transform: scale(1.25);
+    }
+    .mantine-Modal-title {
+        font-size: 32px !important;
+        font-weight: 300;
     }
 }
 
