@@ -1,16 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { Button, Text } from "@mantine/core";
-import { useTranslation } from "react-i18next";
+import { Anchor, Button, rem, Text } from "@mantine/core";
+import { Trans, useTranslation } from "react-i18next";
 import { Cookies } from "react-cookie";
+import { IconArrowUpRight } from "@tabler/icons-react";
 import FAssetModal from "@/components/modals/FAssetModal";
+import BlazeSwapIcon from "@/components/icons/BlazeSwapIcon";
+import EnosysIcon from "@/components/icons/EnosysIcon";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useNativeBalance } from "@/api/balance";
-import { formatNumberWithSuffix } from "@/utils";
+import { formatNumberWithSuffix, toNumber } from "@/utils";
 import { COINS } from "@/config/coin";
+import { COOKIE_WINDDOWN } from "@/constants";
 
 interface IFAssetWindDownModal {
     opened: boolean;
-    onClose: () => void;
+    onClose: (redirect: boolean) => void;
     fAssets: string[];
 }
 
@@ -23,6 +27,7 @@ interface IDisabledFAsset {
 
 export default function FAssetWindDownModal({ opened, onClose, fAssets }: IFAssetWindDownModal) {
     const [disabledFassets, setDisabledFassets] = useState<IDisabledFAsset[]>([]);
+    const [cantRedeem, setCantRedeem] = useState<boolean>(false);
 
     const cookies = new Cookies();
     const { t } = useTranslation();
@@ -37,6 +42,10 @@ export default function FAssetWindDownModal({ opened, onClose, fAssets }: IFAsse
                 const coin = COINS.find(coin => coin.type.toLowerCase() === fAsset.toLowerCase());
                 const balance = nativeBalance.data.find(balance => balance.symbol === fAsset);
 
+                if (coin && balance?.balance && toNumber(balance.balance) < coin.lotSize) {
+                    setCantRedeem(true);
+                }
+
                 return {
                     fAsset: fAsset,
                     balance: balance?.balance ?? '0',
@@ -48,12 +57,25 @@ export default function FAssetWindDownModal({ opened, onClose, fAssets }: IFAsse
         );
     }, [nativeBalance.data]);
 
-    const closeModal = async () => {
-        cookies.set('winddown', true, {
+    const closeModal = async (redirect: boolean = false) => {
+        const cookieFassets = cookies.get(COOKIE_WINDDOWN);
+        let setCookies = fAssets.reduce<Record<string, boolean>>((acc, item) => {
+                acc[item] = true;
+                return acc;
+            }, {});
+
+        if (cookieFassets) {
+            setCookies = {
+                ...cookieFassets,
+                ...setCookies
+            }
+        }
+
+        cookies.set(COOKIE_WINDDOWN, setCookies, {
             maxAge: 24 * 60 * 60 * 365
         });
 
-        onClose();
+        onClose(redirect);
     }
 
     return (
@@ -70,28 +92,41 @@ export default function FAssetWindDownModal({ opened, onClose, fAssets }: IFAsse
                     fw={300}
                     c="var(--flr-dark-gray)"
                 >
-                    {t('fasset_wind_down_modal.subtitle', { fAssets: fAssets.join(', ') })}
+                    {
+                        cantRedeem
+                        ? t('fasset_wind_down_modal.subtitle_partial_lots')
+                        : t('fasset_wind_down_modal.subtitle', { fAssets: fAssets.join(', ') })
+                    }
                 </Text>
-                <Text
-                    className="text-16"
+                <Trans
+                    i18nKey={cantRedeem ? 'fasset_wind_down_modal.description_partial_lots_label' : 'fasset_wind_down_modal.description_label'}
+                    parent={Text}
+                    className="text-16 whitespace-break-spaces"
                     fw={400}
                     c="var(--flr-dark-gray)"
-                >
-                    {t('fasset_wind_down_modal.description_label', {
+                    components={{
+                        strong: <strong />,
+                        a: <Anchor
+                            underline="always"
+                            href="https://flare.network/fassets-songbird-test-milestone-advancing-towards-mainnet/"
+                            target="_blank"
+                            className="inline-flex ml-1"
+                            fw={400}
+                            c="var(--flr-dark-gray)"
+                        />,
+                        icon: <IconArrowUpRight
+                            style={{ width: rem(20), height: rem(20) }}
+                            color="var(--flr-black)"
+                        />
+                    }}
+                    values={{
                         pools: fAssets.join(', ') ,
-                        fAssets: fAssets.map(fAsset => `${fAsset}s`)
-                    })}
-                </Text>
-                <Text
-                    className="text-16 mt-2"
-                    fw={400}
-                    c="var(--flr-dark-gray)"
-                >
-                    {t('fasset_wind_down_modal.minting_note_label', { fAssets: fAssets.join(', ') })}
-                </Text>
+                        fAssets: fAssets.map(fAsset => `${fAsset}`)
+                    }}
+                />
                 {isConnected && disabledFassets.length > 0 &&
                     <div
-                        className="my-10 flex items-center flex-wrap -mx-4"
+                        className="my-8 flex items-center flex-wrap -mx-4"
                     >
                         {disabledFassets.map((fAsset, index) => (
                             <div
@@ -126,26 +161,86 @@ export default function FAssetWindDownModal({ opened, onClose, fAssets }: IFAsse
                         ))}
                     </div>
                 }
-                <Text
-                    className="text-14 mt-5"
-                    fw={400}
-                    c="var(--flr-dark-gray)"
-                >
-                    {t('fasset_wind_down_modal.note_label')}
-                </Text>
             </FAssetModal.Body>
             <FAssetModal.Footer>
-                <Button
-                    variant="filled"
-                    color="black"
-                    radius="xl"
-                    size="sm"
-                    fullWidth
-                    className="hover:text-white font-normal"
-                    onClick={closeModal}
-                >
-                    {t('fasset_wind_down_modal.submit_button')}
-                </Button>
+                {nativeBalance.data &&
+                    <div className="flex">
+                        {cantRedeem
+                            ? <div className="flex flex-col sm:flex-row w-full">
+                                <Button
+                                    variant="outline"
+                                    color="var(--flr-black)"
+                                    size="lg"
+                                    radius="xl"
+                                    fullWidth
+                                    component="a"
+                                    href="https://app.blazeswap.xyz/swap/"
+                                    target="_blank"
+                                    className="font-normal mb-3 sm:mb-0 sm:mr-3"
+                                    classNames={{
+                                        inner: 'w-full',
+                                        label: 'w-full',
+                                    }}
+                                >
+                                    <div className="flex items-center justify-between w-full">
+                                        <BlazeSwapIcon width="200"/>
+                                        <IconArrowUpRight size={26} className="ml-1"/>
+                                    </div>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    color="var(--flr-black)"
+                                    size="lg"
+                                    radius="xl"
+                                    fullWidth
+                                    component="a"
+                                    href="https://v3.dex.enosys.global/"
+                                    target="_blank"
+                                    className="font-normal mb-3"
+                                    classNames={{
+                                        inner: 'w-full',
+                                        label: 'w-full',
+                                    }}
+                                >
+                                    <div className="flex items-center justify-between w-full">
+                                        <EnosysIcon width="160" />
+                                        <IconArrowUpRight size={26} className="ml-1" />
+                                    </div>
+                                </Button>
+                            </div>
+                            : <div className="flex flex-col sm:flex-row w-full">
+                                <Button
+                                    variant="outline"
+                                    color="var(--flr-black)"
+                                    size="md"
+                                    radius="xl"
+                                    fullWidth
+                                    component="a"
+                                    href="https://flare.network/fassets-songbird-test-milestone-advancing-towards-mainnet/"
+                                    target="_blank"
+                                    className="flex items-center justify-center font-normal mb-3 sm:mb-0 sm:mr-3"
+                                >
+                                    {t('fasset_wind_down_modal.details_button')}
+                                    <IconArrowUpRight size={18} className="ml-1"/>
+                                </Button>
+                                <Button
+                                    variant="filled"
+                                    color="black"
+                                    radius="xl"
+                                    size="md"
+                                    fullWidth
+                                    className="hover:text-white font-normal"
+                                    onClick={() => closeModal(isConnected && disabledFassets.length > 0)}
+                                >
+                                    {isConnected && disabledFassets.length > 0
+                                        ? t('fasset_wind_down_modal.redeem_button', {fAssets: fAssets.join(', ')})
+                                        : t('fasset_wind_down_modal.understand_button')
+                                    }
+                                </Button>
+                            </div>
+                        }
+                    </div>
+                }
             </FAssetModal.Footer>
         </FAssetModal>
     );

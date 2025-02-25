@@ -21,7 +21,6 @@ import MintModal from "@/components/modals/MintModal";
 import RedeemModal from "@/components/modals/RedeemModal";
 import CopyIcon from "@/components/icons/CopyIcon";
 import { useUserProgress } from "@/api/user";
-import { useMintEnabled } from "@/api/minting";
 import { useModalState } from "@/hooks/useModalState";
 import { ICoin, IFAssetCoin } from "@/types";
 import { COINS } from "@/config/coin";
@@ -29,13 +28,14 @@ import { truncateString } from "@/utils";
 
 interface IBalanceCard {
     className?: string;
-    onViewPendingTransactionsClick: () => void
+    onViewPendingTransactionsClick: () => void;
+    disabledFassets: string[];
 }
 
 const BALANCE_FETCH_INTERVAL = 60000;
 const USER_PROGRESS_FETCH_INTERVAL = 60000;
 
-export default function BalanceCard({ className, onViewPendingTransactionsClick }: IBalanceCard) {
+export default function BalanceCard({ className, onViewPendingTransactionsClick, disabledFassets }: IBalanceCard) {
     const [fAssetCoins, setfAssetCoins] = useState<IFAssetCoin[]>([]);
     const [isMintModalActive, setIsMintModalActive] = useState<boolean>(false);
     const [isRedeemModalActive, setIsRedeemModalActive] = useState<boolean>(false);
@@ -47,7 +47,6 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick 
     const { setIsMintModalActive: setContextIsMintModalActive, setIsRedeemModalActive: setContextIsRedeemModalActive } = useModalState();
     const mediaQueryMatches = useMediaQuery('(max-width: 40rem)');
 
-    const mintEnabled = useMintEnabled();
     const nativeBalance = useNativeBalance(localMainToken?.address ?? '', localMainToken !== undefined);
     const poolsBalances = usePoolsBalance(localMainToken?.address ?? '', fAssetCoins.map(c => c.type), localMainToken !== undefined && fAssetCoins.length > 0);
     const userProgress = useUserProgress(mainToken?.address ?? '', false);
@@ -55,8 +54,6 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick 
     const pendingTransactions = userProgress.data
          ? userProgress.data.filter(progress => !progress.status).length
          : 0;
-
-    const disabledFassets = mintEnabled.data?.filter(item => !item.status)?.map(item => item.fasset) ?? [];
 
     const nativeBalanceFetchInterval = useInterval(() => {
         nativeBalance.refetch();

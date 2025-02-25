@@ -34,8 +34,9 @@ import { AssetManagerAbi } from "@/abi";
 import { ICoin, IFAssetCoin } from "@/types";
 import { BTC_NAMESPACE } from "@/config/networks";
 import { fromLots, toNumber, toLots } from "@/utils";
-import { WALLET } from "@/constants";
+import { COOKIE_WINDDOWN, WALLET } from "@/constants";
 import { showErrorNotification } from "@/hooks/useNotifications";
+import { Cookies } from "react-cookie";
 
 interface IRedeemModal {
     opened: boolean;
@@ -73,6 +74,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin, flareCoin }: 
     const [isNextButtonDisabled, setIsNextButtonDisabled] = useState<boolean>(false);
     const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
 
+    const cookies = new Cookies();
     const assetManagerAddress = useAssetManagerAddress(fAssetCoin.type, opened);
     const redeem = useRedeem();
     const nativeBalance = useNativeBalance(flareCoin.address!);
@@ -127,6 +129,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin, flareCoin }: 
 
     const requestRedeem = async (values?: any) => {
         try {
+
             setIsLedgerButtonDisabled(true);
             const lots = values?.lots || formValues.lots;
             setRedeemLots(lots);
@@ -154,6 +157,19 @@ export default function RedeemModal({ opened, onClose, fAssetCoin, flareCoin }: 
             setCurrentWalletStep(STEP_WALLET_COMPLETED);
             openWaitingModal(redeemedLots, lots, redeemResponse.incomplete);
             setTxHash(response.hash);
+
+            const balanceResponse = await nativeBalance.refetch();
+            const balance = balanceResponse.data?.find(balance => balance.symbol.toLowerCase() === fAssetCoin.type.toLowerCase());
+            const cookieFassets = cookies.get(COOKIE_WINDDOWN) ? Object.keys(cookies.get(COOKIE_WINDDOWN)).map(key => key) : [];
+
+            if (balance?.balance && toNumber(balance.balance) > 0 && cookieFassets.includes(fAssetCoin.type)) {
+                const setCookies = cookies.get(COOKIE_WINDDOWN);
+                delete setCookies[fAssetCoin.type];
+
+                cookies.set(COOKIE_WINDDOWN, setCookies, {
+                    maxAge: 24 * 60 * 60 * 365
+                });
+            }
         } catch (error: any) {
             if (error.cause === 'ledger') {
                 showErrorNotification(error.message);

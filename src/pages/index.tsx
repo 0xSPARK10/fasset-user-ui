@@ -23,14 +23,15 @@ import TimeToRedeemCard from "@/components/cards/TimeToRedeemCard";
 import FAssetWindDownModal from "@/components/modals/FAssetWindDownModal";
 import { useEcosystemInfo, useMintEnabled } from "@/api/minting";
 import { useTimeData } from "@/api/user";
-import { FILTERS } from "@/constants";
+import { FILTERS, COOKIE_WINDDOWN } from "@/constants";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useNativeBalance } from "@/api/balance";
 import { useUserPools } from "@/api/pool";
 import { COINS } from "@/config/coin";
 import { toNumber } from "@/utils";
-import classes from "@/styles/pages/Home.module.scss";
 import { useRewards } from "@/api/rewards";
+import { useRouter } from "next/router";
+import classes from "@/styles/pages/Home.module.scss";
 
 const TIME_TO_REDEEM_CARD_LIMIT = 25;
 
@@ -51,6 +52,7 @@ export default function Home() {
     const mintEnabled = useMintEnabled();
     const isMounted = useMounted();
     const cookies = new Cookies();
+    const router = useRouter();
 
     const zeroBalanceAssets = balance.data?.filter(balance => balance.balance === '0' && 'lots' in balance).length;
     const totalLotsAssets = balance.data?.filter(balance => 'lots' in balance).length;
@@ -66,8 +68,10 @@ export default function Home() {
     }, [isMounted, isConnected]);
 
     useEffect(() => {
-        if (!mintEnabled.data || cookies.get('winddown')) return;
-        const fAssets = mintEnabled.data.filter(item => !item.status).map(item => item.fasset);
+        if (!mintEnabled.data) return;
+
+        const cookieFassets = cookies.get(COOKIE_WINDDOWN) ? Object.keys(cookies.get(COOKIE_WINDDOWN)).map(key => key) : [];
+        const fAssets = mintEnabled.data.filter(item => !item.status && !cookieFassets.includes(item.fasset)).map(item => item.fasset);
         setDisabledFAssets(fAssets);
 
         if (fAssets.length > 0) {
@@ -75,11 +79,16 @@ export default function Home() {
         }
     }, [mintEnabled.data]);
 
+    const mintDisabledTokens = mintEnabled.data?.filter(item => !item.status)?.map(item => item.fasset) ?? [];
     const supplyTokensToRedeem = ecoSystemInfo.data?.supplyByFasset
-        ?.filter(supply => toNumber(supply.mintedPercentage) <= TIME_TO_REDEEM_CARD_LIMIT);
+        ?.filter(supply => toNumber(supply.mintedPercentage) <= TIME_TO_REDEEM_CARD_LIMIT && !mintDisabledTokens?.includes(supply.fasset)) ?? [];
 
-    const onFAssetWindDownModalClose = () => {
+    const onFAssetWindDownModalClose = async (redirect: boolean) => {
         setIsFAssetWindDownModalActive(false);
+
+        if (redirect) {
+            await router.push('/mint');
+        }
     }
 
     return (
@@ -151,9 +160,11 @@ export default function Home() {
                     </Grid.Col>
                 </Grid>
             </Container>
-            <TimeToRedeemCard
-                tokens={supplyTokensToRedeem}
-            />
+            {supplyTokensToRedeem.length > 0 &&
+                <TimeToRedeemCard
+                    tokens={supplyTokensToRedeem}
+                />
+            }
             <Container fluid className={classes.container}>
                 <Grid
                     styles={{

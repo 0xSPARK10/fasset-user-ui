@@ -12,7 +12,7 @@ import { useWeb3 } from "@/hooks/useWeb3";
 import { COINS } from "@/config/coin";
 import CopyIcon from "@/components/icons/CopyIcon";
 import { toNumber, truncateString } from "@/utils";
-import { groupBy, map } from "lodash-es";
+import { groupBy, map, orderBy } from "lodash-es";
 import classes from "@/styles/components/cards/LatestTransactionsCard.module.scss";
 
 interface ILatestTransactionsCard {
@@ -20,7 +20,7 @@ interface ILatestTransactionsCard {
 }
 
 interface ITransaction extends IUserProgress {
-    tickets: {
+    tickets?: {
         ticketId: string;
         value: string;
         type: string;
@@ -50,8 +50,10 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
             setTransactions([]);
             return;
         }
-        const grouped = groupBy(userProgress.data, 'txhash');
-        const items: ITransaction[] = map(grouped, (group, key) => {
+
+        const mintTransactions: ITransaction[] = userProgress.data.filter(transaction => transaction.action.toLowerCase() === ACTION_TYPE_MINT);
+        const grouped = groupBy(userProgress.data.filter(transaction => transaction.action.toLowerCase() === ACTION_TYPE_REDEEM), 'txhash');
+        const redeemTransactions: ITransaction[] = map(grouped, (group, key) => {
             return {
                 ...group[0],
                 tickets: group.map(item => {
@@ -67,6 +69,7 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
             }
         });
 
+        const items = orderBy([...mintTransactions, ...redeemTransactions], ['timestamp'], 'desc');
         setTransactions(items);
     }, [userProgress.data]);
 
@@ -175,7 +178,7 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
                     {t('latest_transactions_card.redeem_label')}
                 </Text>
             }
-            {progress.tickets.map((ticket, index) => (
+            {progress?.tickets?.map((ticket, index) => (
                 <div className="hidden md:flex items-baseline mb-2" key={`${ticket.ticketId}-${index}`}>
                     <Text
                         c="var(--flr-gray)"
@@ -219,7 +222,7 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
                     {progress.fasset}
                 </Text>
             </div>
-            {progress.tickets.map((ticket, index) => (
+            {progress?.tickets?.map((ticket, index) => (
                 <div className="hidden md:flex items-center md:justify-end mb-2" key={`${ticket.ticketId}-${index}`}>
                     <Text className="text-14 mr-1" fw={400}>
                         {ticket.value}
@@ -269,34 +272,36 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
         }
 
         return <div>
-            {progress.tickets.length > 0 &&
-                <div className="h-[20px]" />
-            }
-            {progress.tickets.map((ticket, index) => (
-                <Badge
-                    color={ticket.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
-                    variant="outline"
-                    radius="xs"
-                    size="md"
-                    style={{ marginBottom: index < progress.tickets.length - 1 ? '0.3rem' : '0' }}
-                    key={`${ticket.ticketId}-${index}`}
-                    className="flex"
-                >
-                    <div className="flex items-center">
-                        <span
-                            className="status-dot mr-1 srhink-0"
-                            style={{ backgroundColor: ticket.status ? 'var(--flr-green)' : 'var(--flr-warning)' }}
-                        />
-                        <Text
-                            className="text-10 shrink-0"
-                            fw={400}
-                            c={ticket.status ? 'var(--flr-green)' : 'var(--flr-warning)'}
+            {progress?.tickets?.length ? (
+                <>
+                    <div className="h-[20px]" />
+                    {progress.tickets.map((ticket, index) => (
+                        <Badge
+                            color={ticket.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
+                            variant="outline"
+                            radius="xs"
+                            size="md"
+                            style={{ marginBottom: index < (progress.tickets?.length ?? 0) - 1 ? '0.3rem' : '0' }}
+                            key={`${ticket.ticketId}-${index}`}
+                            className="flex"
                         >
-                            {t(`latest_transactions_card.${ticket.status ? 'finished_label' : 'in_progress_label'}`)}
-                        </Text>
-                    </div>
-                </Badge>
-            ))}
+                            <div className="flex items-center">
+                    <span
+                        className="status-dot mr-1 shrink-0"
+                        style={{ backgroundColor: ticket.status ? 'var(--flr-green)' : 'var(--flr-warning)' }}
+                    />
+                                <Text
+                                    className="text-10 shrink-0"
+                                    fw={400}
+                                    c={ticket.status ? 'var(--flr-green)' : 'var(--flr-warning)'}
+                                >
+                                    {t(`latest_transactions_card.${ticket.status ? 'finished_label' : 'in_progress_label'}`)}
+                                </Text>
+                            </div>
+                        </Badge>
+                    ))}
+                </>
+            ) : null}
         </div>;
     }
 
@@ -481,7 +486,7 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
                     </Table.Tr>;
                 }
 
-                return item.tickets.map((ticket, index) => (
+                return item?.tickets?.map((ticket, index) => (
                     <Table.Tr key={`${ticket.ticketId}-${index}`}>
                         <Table.Td
                             className="font-normal text-sm uppercase align-top"

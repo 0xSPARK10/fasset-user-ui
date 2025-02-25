@@ -126,9 +126,10 @@
     },
     "available_to_mint_card": {
         "lots_label": "lots",
-        "minting_paused_label": "Minting is paused",
+        "minting_paused_label": "Mint disabled",
         "mint_label": "Mint {{fAsset}}",
-        "title": "Available to mint"
+        "title": "Available to mint",
+        "why_label": "Why ?"
     },
     "balance_card": {
         "connect_tooltip": "To enable minting and redemption, connect to the underlying network.",
@@ -240,7 +241,8 @@
         "balance_title": "Balance",
         "know_more_label": "Want to know more? Please see our video for <a>detailed instructions<icon></icon></a>",
         "latest_transactions_subtitle": "Displaying all mints and redeems in last 7 days.",
-        "latest_transactions_title": "Latest transactions"
+        "latest_transactions_title": "Latest transactions",
+        "winddown_label": "We have successfully completed the testing of {{fAssets}} and are winding down. Details are in <a1>our blog post here.</a1> Have partial lots you’d like to redeem? Use our partner DEXs (<a2>Enosys</a2>, <a3>BlazeSwap</a3>)."
     },
     "deposit_to_pool_modal": {
         "confirm_step_description": "Please open your wallet app and confirm dialog to complete the process.",
@@ -298,12 +300,14 @@
     },
     "fasset_wind_down_modal": {
         "balance_label": "Balance",
-        "description_label": "We are now starting the wind-down process, which is expected to be completed by the end of March. Please ensure that you redeem all your {{fAssets}} and withdraw your collateral from {{pools}} pools before 24th March 2025.",
-        "note_label": "Note - Redemptions will not be included in the current reward program.",
-        "minting_note_label": "{{fAssets}} minting is no longer possible.",
-        "submit_button": "I understand",
-        "subtitle": "We have successfully completed the testing of {{fAssets}} on our canary network, Songbird.",
-        "title": "Important - Redeem your {{fAssets}}"
+        "details_button": "Details in blog post",
+        "description_partial_lots_label": "Redeem your FAssets for collateral tokens on our partner DEX’s listed below before March 25th to not lose token value. For more details <a>read our blog post <icon></icon></a>",
+        "description_label": "Minting of {{fAssets}} has been paused. All collateral for {{fAssets}} will be removed from the system on March 25th, which will take away the value of all {{fAssets}}. <strong>Redeem before March 25 to not lose token value.</strong>",
+        "redeem_button": "Redeem your {{fAssets}}",
+        "subtitle": "We have successfully completed the testing of {{fAssets}} and are winding down to prepare for the larger Flare launch.",
+        "subtitle_partial_lots": "The FAssets system is not able to redeem partial lots, but our partner DEXs are.",
+        "title": "Redeem your remaining {{fAssets}} by March 25",
+        "understand_button": "I understand"
     },
     "handshake_card": {
         "cancel_button": "Cancel",

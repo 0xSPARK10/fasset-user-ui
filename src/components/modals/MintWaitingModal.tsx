@@ -165,7 +165,7 @@ export default function MintWaitingModal({ opened, onClose, txHash, transferredA
                             fw={400}
                         />
                     </Paper>
-                    {fAssetCoin.type.toLowerCase().includes('btc') && fAssetCoin.network.mainnet &&
+                    {fAssetCoin.type.toLowerCase().includes('btc') && !fAssetCoin.network.mainnet &&
                         <Paper
                             radius="md"
                             className="flex items-center p-5 mt-8 my-4 bg-[var(--flr-lightest-orange)] whitespace-pre-line"

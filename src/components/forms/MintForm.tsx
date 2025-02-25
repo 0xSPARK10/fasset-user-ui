@@ -5,6 +5,7 @@ import React, {
     useImperativeHandle,
     useCallback,
     memo,
+    useRef
 } from "react";
 import {
     Anchor,
@@ -74,6 +75,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
     const [isDisabled, setIsDisabled] = useState<boolean>(true);
     const [isAgentPopoverActive, setIsAgentPopoverActive] = useState<boolean>(false);
     const [isManualSelectedAgent, setIsManualSelectedAgent] = useState<boolean>(false);
+    const hasRun = useRef(false);
 
     const { walletConnectConnector, connectedCoins, mainToken } = useWeb3();
     const popoverSize = useElementSize();
@@ -239,7 +241,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
     }, [lots]);
 
     useEffect(() => {
-        if (!underlyingBalance.data || !nativeBalances.data) return;
+        if (!underlyingBalance.data || !nativeBalances.data || hasRun.current) return;
 
         const fetch = async () => {
             try {
@@ -264,6 +266,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
                     balanceLots = 0;
                 }
 
+                hasRun.current = true;
                 // get fee for max lots to mint
                 const response = await bestAgent.mutateAsync({
                     fAsset: fAssetCoin.type,

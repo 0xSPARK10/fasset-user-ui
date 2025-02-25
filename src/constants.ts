@@ -42,3 +42,5 @@ export const FILTERS = {
 export const DISTRIBUTION_START = '2024-12-16 00:00';
 export const DISTRIBUTION_CYCLES_COUNT = 7;
 export const DISTRIBUTION_CYCLE_DAYS = 14;
+
+export const COOKIE_WINDDOWN = 'winddown';

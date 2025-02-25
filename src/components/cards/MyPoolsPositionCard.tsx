@@ -63,8 +63,11 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
             }
 
             const existingReward = accumulator['rewards'].find((reward: IReward) => reward.type === pool.vaultType) as IReward | undefined;
+
             if (existingReward) {
                 existingReward.claimable += toNumber(pool.userPoolFees!);
+                existingReward.claimed += (toNumber(pool.userPoolFees!) + toNumber(pool.lifetimeClaimedPoolFormatted!));
+                existingReward.claimedUSD += (toNumber(pool.userPoolFeesUSD!) + toNumber(pool.lifetimeClaimedPoolUSDFormatted!));
             } else {
                 accumulator['rewards'].push({
                     type: pool.vaultType,

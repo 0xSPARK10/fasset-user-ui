@@ -7,7 +7,7 @@ import {
     Anchor,
     rem
 } from "@mantine/core";
-import { IconArrowUpRight } from "@tabler/icons-react";
+import { IconArrowUpRight, IconExclamationCircle } from "@tabler/icons-react";
 import { useScrollIntoView } from "@mantine/hooks";
 import { useTranslation, Trans } from "react-i18next";
 import UnderlyingBalanceCard from "@/components/cards/UnderlyingBalanceCard";
@@ -18,6 +18,7 @@ import { IFAssetCoin } from "@/types";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { COINS } from "@/config/coin";
 import classes from "@/styles/pages/Mint.module.scss";
+import { useMintEnabled } from "@/api/minting";
 
 export default function Mint() {
     const [fAssetCoins, setFAssetCoins] = useState<IFAssetCoin[]>([]);
@@ -27,13 +28,16 @@ export default function Mint() {
         offset: 60,
     });
 
+    const mintEnabled = useMintEnabled();
+    const disabledFassets = mintEnabled.data?.filter(item => !item.status)?.map(item => item.fasset) ?? [];
+
     useEffect(() => {
         const coins: IFAssetCoin[] = [];
         COINS
             .filter(coin => coin.enabled && coin.isFAssetCoin)
             .forEach(coin => {
                 const connectedCoin = connectedCoins.find(connectedCoin => connectedCoin.type === coin.type);
-                coins.push({ ...coin, address: connectedCoin?.address } as IFAssetCoin);
+                coins.push({ ...coin, address: connectedCoin?.address, connectedWallet: connectedCoin?.connectedWallet } as IFAssetCoin);
             });
         setFAssetCoins(coins);
     }, [connectedCoins]);
@@ -53,10 +57,54 @@ export default function Mint() {
             >
                 {t('dashboard.balance_title')}
             </Title>
+            {disabledFassets.length > 0 &&
+                <div className="flex items-center border border-[var(--flr-orange)] bg-[var(--flr-lightest-orange)] rounded-sm p-2">
+                    <IconExclamationCircle
+                        size={25}
+                        color="var(--flr-orange)"
+                        className="mr-2 flex-shrink-0"
+                    />
+                    <Trans
+                        i18nKey={`dashboard.winddown_label`}
+                        values={{ fAssets: disabledFassets.join(', ') }}
+                        components={{
+                            a1: <Anchor
+                                underline="always"
+                                href="https://flare.network/fassets-songbird-test-milestone-advancing-towards-mainnet/"
+                                target="_blank"
+                                className="inline-flex"
+                                fw={400}
+                                c="var(--flr-black)"
+                            />,
+                            a2: <Anchor
+                                underline="always"
+                                href="https://v3.dex.enosys.global/"
+                                target="_blank"
+                                className="inline-flex"
+                                fw={400}
+                                c="var(--flr-black)"
+                            />,
+                            a3: <Anchor
+                                underline="always"
+                                href="https://app.blazeswap.xyz/swap/"
+                                target="_blank"
+                                className="inline-flex"
+                                fw={400}
+                                c="var(--flr-black)"
+                            />
+                        }}
+                        parent={Text}
+                        fw={400}
+                        className="text-16"
+                        c="var(--flr-black)"
+                    />
+                </div>
+            }
             <Grid gutter="md">
                 <Grid.Col span={{ base: 12, md: 6 }} className="mt-5">
                     <BalanceCard
                         onViewPendingTransactionsClick={() => scrollIntoView()}
+                        disabledFassets={disabledFassets}
                     />
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, md: 6 }} className="mt-5">
