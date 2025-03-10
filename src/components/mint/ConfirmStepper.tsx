@@ -52,11 +52,11 @@ const STEP_WALLET_DEPOSIT = 2;
 const STEP_WALLET_COMPLETED = 3;
 
 export default function ConfirmStepper({
-    fAssetCoin,
-    formValues,
-    onError,
-    onClose,
-    selectedAgent,
+   fAssetCoin,
+   formValues,
+   onError,
+   onClose,
+   selectedAgent,
 } : IConfirmStepper) {
     const [currentStep, setCurrentStep] = useState<number>(STEP_WALLET_RESERVATION);
     const [txHash, setTxHash] = useState<string>();
@@ -67,6 +67,7 @@ export default function ConfirmStepper({
     const [isHandshakeRejected, setIsHandshakeRejected] = useState<boolean>(false);
     const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
     const crStatus = useRef<ICrStatus>();
+    const isMintRequestActive = useRef<boolean>(false);
 
     const { t } = useTranslation();
     const { mainToken } = useWeb3();
@@ -98,8 +99,11 @@ export default function ConfirmStepper({
     }, [txHash]);
 
     const mintRequest = async () => {
+        if (isMintRequestActive.current) return;
+        
         try {
             const response = crStatus.current ?? (await crEvent.refetch()).data;
+            isMintRequestActive.current = true;
             setIsLoading(true);
             setIsLedgerButtonDisabled(true);
 

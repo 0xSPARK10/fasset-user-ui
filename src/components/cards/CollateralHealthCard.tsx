@@ -198,7 +198,7 @@ export default function CollateralHealthCard({ ecoSystemInfo, timeData }: IColla
                                                 className="ml-2 text-16"
                                                 fw={400}
                                             >
-                                                {formatNumberWithSuffix(token.supply)}
+                                                {formatNumberWithSuffix(token.supply, token.token?.type.toLowerCase().includes('btc') ? 6 : 2)}
                                             </Text>
                                         </div>
                                         <div className="flex items-center mt-2">

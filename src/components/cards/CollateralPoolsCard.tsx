@@ -94,7 +94,7 @@ export default function CollateralPoolsCard({ ecoSystemInfo, timeData }: ICollat
                                     fw={400}
                                     c="var(--flr-dark-gray)"
                                 >
-                                    {formatNumberWithSuffix(fAsset.rewards)}
+                                    {formatNumberWithSuffix(fAsset.rewards, fAsset.token?.type.toLowerCase().includes('btc') ? 6 : 2)}
                                 </Text>
                             </div>
                         ))}

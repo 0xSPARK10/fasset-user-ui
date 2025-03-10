@@ -24,7 +24,7 @@ export function useDistribution() {
     }, 1000);
 
     useEffect(() => {
-        setIsDistributionCountdownActive(currentCycleCount < DISTRIBUTION_CYCLES_COUNT);
+        setIsDistributionCountdownActive(currentCycleCount <= DISTRIBUTION_CYCLES_COUNT);
     }, []);
 
     useEffect(() => {
