@@ -2,7 +2,7 @@ import {
     useState,
     forwardRef,
     useImperativeHandle,
-    useEffect
+    useEffect, useRef
 } from "react";
 import {
     UseFormReturnType,
@@ -24,18 +24,22 @@ import classes from "@/styles/components/forms/RedeemForm.module.scss";
 interface IMintForm {
     fAssetCoin: IFAssetCoin;
     flareCoin: ICoin;
+    setErrorMessage: (message: string) => void;
 }
 
 export type FormRef = {
     form: () => UseFormReturnType<any>;
 }
 
-const RedeemForm = forwardRef<FormRef, IMintForm>(({ fAssetCoin, flareCoin }: IMintForm, ref) => {
+const RedeemForm = forwardRef<FormRef, IMintForm>(({ fAssetCoin, flareCoin, setErrorMessage }: IMintForm, ref) => {
     const [lots, setLots] = useState<number>();
     const [maxLots, setMaxLots] = useState<number>();
     const [redeemingFee, setRedeemingFee] = useState<number>();
     const [deposit, setDeposit] = useState<number>();
     const [inputDescription, setInputDescription] = useState<string>();
+
+    const maxRedemptionLots = useRef<number>();
+    const maxLotsOneRedemption = useRef<number>();
 
     const { mainToken } = useWeb3();
     const { t } = useTranslation();
@@ -78,11 +82,28 @@ const RedeemForm = forwardRef<FormRef, IMintForm>(({ fAssetCoin, flareCoin }: IM
         const balance = nativeBalance.data.find(balance => balance.symbol.toLowerCase() === fAssetCoin.type.toLowerCase());
         if (balance) {
             const max = toLots(toNumber(balance.balance), fAssetCoin.lotSize) as number;
-            setInputDescription(t('redeem_modal.form.lots_limit_label', { lots: max }));
+
+            if (fAssetCoin.type.toLowerCase().includes('xrp')) {
+                setInputDescription(t('redeem_modal.form.balance_label', {
+                    balance: formatNumber(balance.balance, 0),
+                    token: fAssetCoin.type,
+                    lots: max
+                }));
+            } else {
+                setInputDescription(t('redeem_modal.form.lots_limit_label', { lots: max }));
+            }
+
             setMaxLots(max);
         }
 
     }, [nativeBalance.data]);
+
+    useEffect(() => {
+        if (!fAssetCoin.type.toLowerCase().includes('xrp') || !redemptionFee.data) return;
+
+        maxLotsOneRedemption.current = redemptionFee.data.maxLotsOneRedemption;
+        maxRedemptionLots.current = redemptionFee.data.maxRedemptionLots;
+    }, [redemptionFee]);
 
     useEffect(() => {
         if (!executor.data) return;
@@ -96,9 +117,22 @@ const RedeemForm = forwardRef<FormRef, IMintForm>(({ fAssetCoin, flareCoin }: IM
 
     const debounceSetLots = useDebouncedCallback(async (value) => {
         setLots(value);
-        const redeemingFee = fromLots(value, fAssetCoin.lotSize) as number * ((redemptionFee?.data?.redemptionFee ?? 0) / 10000);
+        const redeemingFee = (fromLots(value, fAssetCoin.lotSize) as number) * (toNumber(redemptionFee?.data?.redemptionFee ?? '0') / 10000);
         setRedeemingFee(redeemingFee);
-        setDeposit(fromLots(value, fAssetCoin.lotSize) as number - redeemingFee);
+        setDeposit((fromLots(value, fAssetCoin.lotSize) as number) - redeemingFee);
+
+        if (maxLotsOneRedemption?.current && maxRedemptionLots?.current && value > maxLotsOneRedemption.current && value < maxRedemptionLots.current) {
+            setErrorMessage(t('redeem_modal.form.single_redemption_limit_error', { lots: maxLotsOneRedemption.current }));
+            form.setFieldError('lots', t('redeem_modal.form.adjust_amount_label'));
+        } else if (maxRedemptionLots?.current && (value > maxRedemptionLots.current) || maxRedemptionLots.current === 0) {
+            setErrorMessage(t('redeem_modal.form.above_max_amount_core_vault_error', {
+                lots: maxRedemptionLots.current,
+                fAsset: fAssetCoin.type
+            }))
+            form.setFieldError('lots', t('redeem_modal.form.adjust_amount_label'));
+        } else {
+            setErrorMessage('');
+        }
     }, 500);
 
     return (
@@ -115,7 +149,7 @@ const RedeemForm = forwardRef<FormRef, IMintForm>(({ fAssetCoin, flareCoin }: IM
                         {t('redeem_modal.form.lots_label')}
                     </Text>
                 }
-                description={inputDescription}
+                description={Object.keys(form.errors).length > 0 ? '' : inputDescription}
                 inputWrapperOrder={['label', 'input', 'error', 'description']}
                 size="sm"
                 inputMode="numeric"

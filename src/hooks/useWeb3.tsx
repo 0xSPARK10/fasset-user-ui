@@ -41,7 +41,7 @@ export function Web3Provider({ children }: { children: ReactNode | ReactNode[] }
     // Computed values
     const connectedCoins: ICoin[] = localConnectedCoins
         .map(connectedCoin => {
-            const coin = COINS.find(coin => coin.type === connectedCoin.type);
+            const coin = COINS.find(coin => coin.enabled && coin.type === connectedCoin.type);
             return coin !== undefined
                 ? {
                     ...coin,

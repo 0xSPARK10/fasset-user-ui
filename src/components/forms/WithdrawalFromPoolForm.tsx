@@ -132,7 +132,7 @@ const WithdrawalFromPoolForm = forwardRef<FormRef, IWithdrawalFromPoolForm>(({ c
             const estimatedGas = await exitCollateralPool.mutateAsync({
                 userAddress: mainToken?.address!,
                 poolAddress: collateralPool?.pool!,
-                tokenShare: parseUnits(value, 18).toString(),
+                tokenShare: value === maxWithdrawal ? collateralPool.userPoolTokensFull! : parseUnits(value, 18).toString(),
                 exitType: 0,
                 getGasFee: true
             });

@@ -1,76 +1,4 @@
 {
-    "agents": {
-        "active_pools_title": "Your Pools",
-        "back_button": "Back to Home",
-        "collateral_addresses_label": "Collateral addresses",
-        "filter_label": "Filters",
-        "load_all_button": "Load all",
-        "loading_label": "Fetching pools from blockchain.",
-        "pool_label": "Pool",
-        "pool_tokens_label": "Pool Tokens",
-        "remaining_pools_title": "Other Pools",
-        "table": {
-            "agent_name_label": "Agent name",
-            "agent_label": "Agent & Vault",
-            "claim_button": "Claim",
-            "claimable_reward_label": "Your claimable & total rewards",
-            "claimable_rewards_label": "Claimable rewards",
-            "cpt_label": "CPT",
-            "cr_label": "Collateral & Collateral ratio",
-            "empty_label": "Deposit into pools to view your position here.",
-            "deposit_button": "Deposit",
-            "fee_share_label": "Pool Fee",
-            "free_lots_label": "Free lots",
-            "free_lots_pool_fee_label": "Free lots & Pool fee",
-            "health_label": "Health",
-            "health_status_label": "Health & Status",
-            "health_status_ccb_label": "CCB",
-            "health_status_closing_label": "Closing",
-            "health_status_healthy_label": "Healthy",
-            "health_status_in_full_liquidation_label": "In full liquidation",
-            "health_status_in_liquidation_label": "In Liquidation",
-            "liquidations_label": "Liquidations",
-            "mint_count_label": "Mint count",
-            "mint_fee_label": "Mint Fee",
-            "mint_label": "Mint",
-            "my_position_label": "Your position & share",
-            "my_share_label": "My share",
-            "other_empty_label": "No collateral pools available.",
-            "past_liq_label": "Past Liquidations",
-            "pay_debt_button": "Pay debt",
-            "pool_cr_label": "Pool CR",
-            "pool_collateral_label": "Pool collateral",
-            "pool_exit_cr_label": "Pool exit CR",
-            "pool_exit_label": "Pool exit",
-            "pool_fee_label": "Fee",
-            "pool_label": "Pool",
-            "pool_topup_cr_label": "Pool Topup CR",
-            "position_label": "Position",
-            "position_rewards_label": "Your position & rewards",
-            "redeem_rate_label": "Redeem rate",
-            "rewards_label": "Rewards",
-            "send_collateral_button": "Send CPTs",
-            "share_label": "Share",
-            "show_only_healthy_pools_label": "Show only healthy pools",
-            "show_only_live_pools_label": "Show only online pools",
-            "status_label": "Status",
-            "total_rewards_label": "Total rewards",
-            "total_value_locked_label": "Total Value Locked",
-            "tvl_mint_label": "TVL & Mint Count",
-            "undefined_agent_name_label": "Not defined",
-            "vault_address_label": "Vault address",
-            "vault_cr_label": "Vault CR",
-            "vault_collateral_label": "Vault collateral",
-            "vault_label": "Vault",
-            "vault_type_label": "Vault type",
-            "status_live_label": "Online",
-            "status_offline_label": "Offline",
-            "withdraw_button": "Withdraw"
-        },
-        "title": "Pools",
-        "vault_details_label": "Vault details",
-        "vault_label": "Vault"
-    },
     "agent_details": {
         "about_label": "About",
         "agent_fee_description_label": "The portion of the minting fee that the agent shares.",
@@ -90,9 +18,9 @@
         "loading_label": "Fetching pool",
         "lots_label": "lots",
         "minimum_cr_label": "Minimum CR - {{amount}}",
-        "minted_label": "Minted",
         "mint_count_description_label": "The number of mints the agent has done.",
         "mint_count_label": "Mints completed",
+        "minted_label": "Minted",
         "minting_cr_label": "Minting CR - {{amount}}",
         "minting_fee_description_label": "The fee that agents takes for minting.",
         "minting_fee_label": "Minting fee",
@@ -104,19 +32,91 @@
         "pool_collateral_label": "Pool Collateral",
         "remaining_label": "Remaining",
         "safety_cr_label": "Safety CR - {{amount}}",
-        "value_label": "Value",
-        "vault_address_label": "Vault address",
-        "vault_capacity_description_label": "The relationship between the amount of the FAsset that is already minted and the amount of FAssets that can still be minted.",
-        "vault_capacity_label": "Vault Capacity",
-        "vault_collateral_description_label": "The tokens in the agent’s vault collateral that can be used as collateral.",
-        "vault_collateral_label": "Vault Collateral",
         "terms_of_use_label": "Terms of use",
         "title": "Vault details",
         "token_label": "Token",
         "topup_cr_label": "Top-up CR - {{amount}}",
         "total_collateral_description_label": "The total amount of collateral contained in the agent’s vault and collateral pool.",
         "total_collateral_label": "Total collateral",
-        "total_portfolio_value_label": "Total portfolio value"
+        "total_portfolio_value_label": "Total portfolio value",
+        "value_label": "Value",
+        "vault_address_label": "Vault address",
+        "vault_capacity_description_label": "The relationship between the amount of the FAsset that is already minted and the amount of FAssets that can still be minted.",
+        "vault_capacity_label": "Vault Capacity",
+        "vault_collateral_description_label": "The tokens in the agent’s vault collateral that can be used as collateral.",
+        "vault_collateral_label": "Vault Collateral"
+    },
+    "agents": {
+        "active_pools_title": "Your Pools",
+        "back_button": "Back to Home",
+        "collateral_addresses_label": "Collateral addresses",
+        "filter_label": "Filters",
+        "load_all_button": "Load all",
+        "loading_label": "Fetching pools from blockchain.",
+        "pool_label": "Pool",
+        "pool_tokens_label": "Pool Tokens",
+        "remaining_pools_title": "Other Pools",
+        "table": {
+            "agent_label": "Agent & Vault",
+            "agent_name_label": "Agent name",
+            "claim_button": "Claim",
+            "claimable_reward_label": "Your claimable & total rewards",
+            "claimable_rewards_label": "Claimable rewards",
+            "cpt_label": "CPT",
+            "cr_label": "Collateral & Collateral ratio",
+            "deposit_button": "Deposit",
+            "empty_label": "Deposit into pools to view your position here.",
+            "fee_share_label": "Pool Fee",
+            "free_lots_label": "Free lots",
+            "free_lots_pool_fee_label": "Free lots & Pool fee",
+            "health_label": "Health",
+            "health_status_ccb_label": "CCB",
+            "health_status_closing_label": "Closing",
+            "health_status_healthy_label": "Healthy",
+            "health_status_in_full_liquidation_label": "In full liquidation",
+            "health_status_in_liquidation_label": "In Liquidation",
+            "health_status_label": "Health & Status",
+            "liquidations_label": "Liquidations",
+            "mint_count_label": "Mint count",
+            "mint_fee_label": "Mint Fee",
+            "mint_label": "Mint",
+            "my_position_label": "Your position & share",
+            "my_share_label": "My share",
+            "other_empty_label": "No collateral pools available.",
+            "past_liq_label": "Past Liquidations",
+            "pay_debt_button": "Pay debt",
+            "pool_collateral_label": "Pool collateral",
+            "pool_cr_label": "Pool CR",
+            "pool_exit_cr_label": "Pool exit CR",
+            "pool_exit_label": "Pool exit",
+            "pool_fee_label": "Fee",
+            "pool_label": "Pool",
+            "pool_topup_cr_label": "Pool Topup CR",
+            "position_label": "Position",
+            "position_rewards_label": "Your position & rewards",
+            "redeem_rate_label": "Redeem rate",
+            "rewards_label": "Rewards",
+            "send_collateral_button": "Send CPTs",
+            "share_label": "Share",
+            "show_only_healthy_pools_label": "Show only healthy pools",
+            "show_only_live_pools_label": "Show only online pools",
+            "status_label": "Status",
+            "status_live_label": "Online",
+            "status_offline_label": "Offline",
+            "total_rewards_label": "Total rewards",
+            "total_value_locked_label": "Total Value Locked",
+            "tvl_mint_label": "TVL & Mint Count",
+            "undefined_agent_name_label": "Not defined",
+            "vault_address_label": "Vault address",
+            "vault_collateral_label": "Vault collateral",
+            "vault_cr_label": "Vault CR",
+            "vault_label": "Vault",
+            "vault_type_label": "Vault type",
+            "withdraw_button": "Withdraw"
+        },
+        "title": "Pools",
+        "vault_details_label": "Vault details",
+        "vault_label": "Vault"
     },
     "already_connected_modal": {
         "confirm_button": "OK",
@@ -126,8 +126,8 @@
     },
     "available_to_mint_card": {
         "lots_label": "lots",
-        "minting_paused_label": "Mint disabled",
         "mint_label": "Mint {{fAsset}}",
+        "minting_paused_label": "Mint disabled",
         "title": "Available to mint",
         "why_label": "Why ?"
     },
@@ -141,10 +141,10 @@
         "fassets_title": "FAssets",
         "flare_title": "Flare",
         "flr_address_label": "FLR Address",
-        "other_title": "Other",
         "mint_button": "Mint",
         "my_position_label": "My position",
         "not_connected_label": "Not connected",
+        "other_title": "Other",
         "pending_transactions_label_one": "{{count}} pending transaction",
         "pending_transactions_label_other": "{{count}} pending transactions",
         "providing_collateral_button": "Providing collateral",
@@ -160,6 +160,11 @@
         "confirm_step_description": "Please open your wallet app and confirm the dialogue to complete the process.",
         "confirm_step_title": "Confirm in wallet app",
         "error_not_enough_balance": "Insufficient {{tokenName}} balance",
+        "finished_modal": {
+            "confirm_button": "OK",
+            "description_label": "You can now access FAssets in your wallet.",
+            "title": "Finished"
+        },
         "form": {
             "agent_label": "from <bold>{{agent}}</bold>",
             "amount_label": "Amount",
@@ -171,16 +176,15 @@
             "withdraw_label": "Withdraw",
             "you_will_claim_label": "You will claim"
         },
-        "finished_modal": {
-            "confirm_button": "OK",
-            "description_label": "You can now access FAssets in your wallet.",
-            "title": "Finished"
-        },
         "next_button": "Next",
         "title": "Claim rewards from Pool",
         "want_to_claim_rewards_title": "I want to claim rewards",
         "withdraw_fees_step_description": "Confirm transaction to start process of withdrawing fees from collateral.",
         "withdraw_fees_step_label": "Withdraw Fees"
+    },
+    "collateral_card": {
+        "title": "Collateral",
+        "total_label": "Total"
     },
     "collateral_health_card": {
         "circulating_supply_label": "Circulating supply",
@@ -198,18 +202,15 @@
         "tvl_label": "TVL",
         "view_pools_button": "View Pools"
     },
-    "copy_icon": {
-        "copied_label": "Copied"
-    },
     "connect": {
         "before_you_start_card": {
             "enable_developer_mode_label": "Enable Developer mode",
             "get_test_coin_label": "Get your {{network}} {{coinName}}",
             "here_label": "Here",
-            "interact_fasset_sytem_label": "To interact with FAsset system you need enough test network funds which you can get:",
             "install_bifrost_wallet_label": "Install or get the latest version of Bifrost Wallet",
-            "set_up_bifrost_wallet_label": "To set up Bifrost Wallet you need to follow two simple steps:",
+            "interact_fasset_sytem_label": "To interact with FAsset system you need enough test network funds which you can get:",
             "know_more_label": "Want to know more? Please see our video for <a>detailed instructions<icon></icon></a>",
+            "set_up_bifrost_wallet_label": "To set up Bifrost Wallet you need to follow two simple steps:",
             "support_networks_label": "We support several type of connections. For the best user experience we recommend using \nBifrost Wallet which besides Flare also supports all the underlying chains in the FAsset ecosystem (BTC, XRP and DOGE).",
             "testnet_label": "Testnet",
             "title": "Before you start"
@@ -229,13 +230,25 @@
         "wallet_description_label": "These three services will allow you to connect to networks. \u2028Note: If you connect to additional networks using the same service, you must disconnect before connecting to multiple networks.",
         "wallet_title": "Which wallet should I use?"
     },
+    "copy_icon": {
+        "copied_label": "Copied"
+    },
+    "core_vault_card": {
+        "inflow_label": "Inflow",
+        "modal": {
+            "confirm_button": "Got it",
+            "title": "Core Vault: New Functionality Addition",
+            "what_is_core_vault_description_label": "The Core Vault operates as the system's vault on the underlying network, where the agents can transfer the underlying assets and keep them safe. Agents will have collateral available to back mints/redemptions for the assets immediately up to some daily amount.",
+            "what_is_core_vault_title": "What is a core vault? ",
+            "why_core_vault_description_label": "The demand for FAssets V1 has been incredible but has also highlighted a crucial limiting factor: minting capacity.\n\nTo solve this, our team has come up with a new design that gets closer to unlimited minting by adding a new feature: The Core Vault.",
+            "why_core_vault_title": "Why core vault?"
+        },
+        "outflow_label": "Outflow",
+        "title": "Core Vault",
+        "total_label": "Total"
+    },
     "currency": {
         "usd_label": "USD"
-    },
-    "errors": {
-        "ledger_error_label": "Declined - Check ledger device for more information.",
-        "transaction_failed_label": "Transaction failed.",
-        "try_reconnecting_label": "Could not coalesce error - Try reconnecting your wallet."
     },
     "dashboard": {
         "balance_title": "Balance",
@@ -247,9 +260,9 @@
     "deposit_to_pool_modal": {
         "confirm_step_description": "Please open your wallet app and confirm dialog to complete the process.",
         "confirm_step_title": "Confirm in wallet app",
-        "error_not_enough_balance": "Insufficient {{tokenName}} balance",
         "enter_collateral_pool_step_description": "Confirm transaction to start process of entering collateral pool.",
         "enter_collateral_pool_step_label": "Enter collateral pool",
+        "error_not_enough_balance": "Insufficient {{tokenName}} balance",
         "finished_modal": {
             "confirm_button": "OK",
             "description_label": "Assets added to collateral pool.",
@@ -270,15 +283,13 @@
     },
     "error": {
         "error_message": "Error: {{message}}",
-        "try_again_label": "Please try again in few minutes",
-        "title": "Something went wrong"
+        "title": "Something went wrong",
+        "try_again_label": "Please try again in few minutes"
     },
-    "faucet_card": {
-        "get_test_coin_label": "Get your {{network}} {{coinName}}",
-        "here_label": "Here",
-        "or_label": "or",
-        "testnet_label": "Testnet",
-        "title": "Additional assets needed?"
+    "errors": {
+        "ledger_error_label": "Declined - Check ledger device for more information.",
+        "transaction_failed_label": "Transaction failed.",
+        "try_reconnecting_label": "Could not coalesce error - Try reconnecting your wallet."
     },
     "fasset_position_card": {
         "available_rewards_label": "Your available rewards",
@@ -300,14 +311,29 @@
     },
     "fasset_wind_down_modal": {
         "balance_label": "Balance",
+        "description_label": "What it means for FDoge: <br>• Minting is paused <br>• You should remove collateral from the pools <br>• Redeem before {{date}}",
+        "description_partial_lots_label": "Redeem your FAssets for collateral tokens on our partner DEX’s listed below before {{date}} to not lose token value. For more details <a>read our blog post <icon></icon></a>",
         "details_button": "Details in blog post",
-        "description_partial_lots_label": "Redeem your FAssets for collateral tokens on our partner DEX’s listed below before March 25th to not lose token value. For more details <a>read our blog post <icon></icon></a>",
-        "description_label": "Minting of {{fAssets}} has been paused. All collateral for {{fAssets}} will be removed from the system on March 25th, which will take away the value of all {{fAssets}}. <strong>Redeem before March 25 to not lose token value.</strong>",
         "redeem_button": "Redeem your {{fAssets}}",
-        "subtitle": "We have successfully completed the testing of {{fAssets}} and are winding down to prepare for the larger Flare launch.",
+        "subtitle": "As we are launching v1.1 on Flare we won’t be supporting {{fAssets}} until v2 is launched.",
         "subtitle_partial_lots": "The FAssets system is not able to redeem partial lots, but our partner DEXs are.",
-        "title": "Redeem your remaining {{fAssets}} by March 25",
+        "title": "Redeem your remaining {{fAssets}} by {{date}}",
+        "title_partial": "Exchange your remaining {{fAssets}} by {{date}}",
         "understand_button": "I understand"
+    },
+    "fassets_overview_card": {
+        "available_to_mint_label": "Available to mint",
+        "circulating_supply_label": "Circulating supply",
+        "lots_label": "{{lots}} lots",
+        "mint_button": "Mint {{fAsset}}",
+        "title": "FAssets overview"
+    },
+    "faucet_card": {
+        "get_test_coin_label": "Get your {{network}} {{coinName}}",
+        "here_label": "Here",
+        "or_label": "or",
+        "testnet_label": "Testnet",
+        "title": "Additional assets needed?"
     },
     "handshake_card": {
         "cancel_button": "Cancel",
@@ -315,17 +341,25 @@
         "launch_ledger_app_label": "If you want to cancel the transaction please open {{appName}} in Ledger and click Cancel.",
         "ledger_confirm_transaction_label": "Please confirm the transaction in {{appName}} Ledger app.",
         "ok_button": "Ok",
-        "request_no_response_label": "Your request is under review. There was no response within 1 minute, so you can cancel and get a full refund of the reservation fee or wait for confirmation.",
         "request_agent_rejected_transaction_label": "The agent has completed the identity verification process and rejected the transaction. The funds used for the reservation will be returned to you.",
+        "request_no_response_label": "Your request is under review. There was no response within 1 minute, so you can cancel and get a full refund of the reservation fee or wait for confirmation.",
         "request_under_review_label": "Your request is under review. If there’s no response within 1 minute, you will be able to cancel and get a full refund of the reservation fee."
+    },
+    "high_minting_fee_modal": {
+        "cancel_button": "Cancel",
+        "confirm_button": "I understand",
+        "description_label": "Are you sure you want to proceed with minting?",
+        "title": "High Minting Fee",
+        "type_understand_label": "Type <span>I understand</span> to confirm",
+        "understand_label": "I understand that total fees for this transaction are estimated to be <span>{{fee}} {{tokenName}} (${{feeUsd}})</span> and <span>exceeds {{percentage}}%</span>."
     },
     "home": {
         "filters": {
             "all_time_label": "All Time",
             "last_24_hours_label": "Last 24 hours",
             "last_month_label": "Last Month",
-            "last_year_label": "Last Year",
             "last_week_label": "Last Week",
+            "last_year_label": "Last Year",
             "year_to_date_label": "Year to Date"
         },
         "mint_fassets_button": "Mint FAssets",
@@ -337,14 +371,6 @@
         "title": "Home",
         "view_pools_button": "View Pools",
         "wallets_holding_fassets_label": "Wallets holding FAssets"
-    },
-    "high_minting_fee_modal": {
-        "cancel_button": "Cancel",
-        "confirm_button": "I understand",
-        "description_label": "Are you sure you want to proceed with minting?",
-        "understand_label": "I understand that total fees for this transaction are estimated to be <span>{{fee}} {{tokenName}} (${{feeUsd}})</span> and <span>exceeds {{percentage}}%</span>.",
-        "title": "High Minting Fee",
-        "type_understand_label": "Type <span>I understand</span> to confirm"
     },
     "latest_transactions_card": {
         "completed_label": "Completed",
@@ -377,9 +403,9 @@
             "beta_label": "beta",
             "home_label": "Home",
             "mint_label": "Mint",
+            "quest_label": "Quest",
             "songbird_label": "Songbird",
-            "title": "FAsset",
-            "quest_label": "Quest"
+            "title": "FAsset"
         }
     },
     "ledger": {
@@ -401,16 +427,16 @@
         "next_lottery_countdown_label": "Next lottery count down",
         "next_lottery_countdown_value_label": "$29.6k",
         "next_lottery_prize_pool_label": "Next lottery prize pool",
-        "note_label": "*Note - FAssets rewards are only paid on the Flare Portal. Any other sources should not be trusted.",
         "not_won_description_label": "The next lottery has started.",
         "not_won_label": "We’re sorry you did not win a prize.",
         "not_won_title": "You have not won the lottery",
+        "note_label": "*Note - FAssets rewards are only paid on the Flare Portal. Any other sources should not be trusted.",
         "paid_in_label": "(Paid in <icon></icon>)",
         "won_description_label": "Go to the Flare Portal and select “Songbird FAssets” to claim.",
-        "won_label_ordinal_one": "You have won {{count}}st prize",
-        "won_label_ordinal_two": "You have won {{count}}nd prize",
         "won_label_ordinal_few": "You have won {{count}}rd prize",
+        "won_label_ordinal_one": "You have won {{count}}st prize",
         "won_label_ordinal_other": "You have won {{count}}th prize",
+        "won_label_ordinal_two": "You have won {{count}}nd prize",
         "won_title": "You have won the lottery!"
     },
     "mint_modal": {
@@ -463,60 +489,103 @@
         "minting_fee_high_warning_label": "Please note! Minting fee is high.",
         "next_button": "Next",
         "ok_button": "Ok",
-        "return_to_home_button": "OK",
         "reservation_step_btc_fee_label": "Please be sure to set the fee high enough for the bitcoin deposit transaction to be confirmed in 2 hours. We suggest at least {{amount}} satoshis/byte. To see how it works follow this<a>here<icon></icon></a>",
         "reservation_step_description": "Confirm a collateral reservation transaction that defines amount to mint and associated fees.",
         "reservation_step_label": "{{stepIndex}}. Reservation",
+        "return_to_home_button": "OK",
         "title": "Mint {{coinName}}",
         "xrpl_network_label": "XRPL network"
     },
     "mint_redeem_chart_card": {
         "agent_collateral_label": "Agent collateral",
+        "balance_label": "Balance",
         "become_an_agent_label": "Become an Agent",
-        "mints_and_redeems_label": "Mints and Redeems Over Time",
+        "core_vault_label": "Core Vault",
+        "core_vault_tvl_label": "Core Vault TVL",
+        "inflow_label": "Inflow",
+        "mints_and_redeems_label": "Mints and Redeems",
         "mints_label": "Mints",
         "number_of_liquidations_label": "No. liquidations",
+        "outflow_label": "Outflow",
         "redeems_label": "Redeems",
-        "title": "For agents and liquidators"
+        "title": "Activity over time"
     },
     "mint_waiting_modal": {
         "additional_info": "Minting {{mintAmount}} {{coinName}} on agent {{agent}}.",
         "bifrost_note_label": "Note: Bifrost Wallet allows to speed up the transaction confirmation within the first hour after your minting request by setting a new higher network fee. To see how it works follow this<a>here<icon></icon></a>",
         "btc_confirmation_label": "Please periodically check your wallet to see if your BTC deposit transaction is in the confirmation process. In order to successfully initiate FTestBTC minting on the FAsset system side, the transaction must receive 6 confirmations within 2 hours.",
-        "step_1_description_label": "In <bold>Step 1</bold>, the system requests the proof of payment of {{value}} {{coinName}} from the Flare Data Connector. More about <a>the Data Connector<icon></icon></a>",
-        "step_2_description_label": "In <bold>Step 2</bold>, the Flare Data Connector completes the proof of payment of {{value}} {{coinName}}. More about <a>the Data Connector<icon></icon></a>",
-        "step_3_description_label": "In <bold>Step 3</bold> your {{coinName}}s are minted. While you wait, learn <a>how the FAssets work<icon></icon></a>",
-        "step_4_description_label": "In the <bold>Final Step</bold>, the minting process is completed and the tokens are transferred to your account. While you wait, learn more about the <a>possibilities of FAssets<icon></icon></a>",
-        "step_title": "Step {{currentStep}} of 2",
         "step_1_btc_title": "Minting takes 2 steps and approximate 1 hour and 30 minutes to complete.",
+        "step_1_description_label": "In <bold>Step 1</bold>, the system requests the proof of payment of {{value}} {{coinName}} from the Flare Data Connector. More about <a>the Data Connector<icon></icon></a>",
         "step_1_title": "Minting takes 2 steps and 5 minutes to complete.",
+        "step_2_description_label": "In <bold>Step 2</bold>, the Flare Data Connector completes the proof of payment of {{value}} {{coinName}}. More about <a>the Data Connector<icon></icon></a>",
         "step_2_title": "Proof of payment request was successful!",
+        "step_3_description_label": "In <bold>Step 3</bold> your {{coinName}}s are minted. While you wait, learn <a>how the FAssets work<icon></icon></a>",
         "step_3_title": "Your payment has been confirmed. Almost done!",
+        "step_4_description_label": "In the <bold>Final Step</bold>, the minting process is completed and the tokens are transferred to your account. While you wait, learn more about the <a>possibilities of FAssets<icon></icon></a>",
         "step_4_title": "{{coinName}}s are now on their way to you!",
+        "step_title": "Step {{currentStep}} of 2",
         "title": "Mint {{coinName}}"
     },
     "my_pools_position_card": {
-        "available_rewards_label": "Available rewards",
-        "deposit_into_pools_label": "Deposit into pools to earn rewards",
+        "available_rewards_label": "Available pool rewards",
         "claim_rewards_button": "Claim Rewards",
-        "pools_rewards_earned_label": "Pool rewards earned to date",
-        "rewards_earned_to_date_label": "${{amount}} rewards earned to date",
+        "deposit_into_pools_label": "Deposit into pools to earn rewards",
         "no_assets_label": "You have no assets deposited into pools",
+        "pools_rewards_earned_label": "Rewards earned to date",
+        "rewards_earned_to_date_label": "${{amount}} rewards earned to date",
         "view_all_pools_label": "View All Pools",
-        "your_position_label": "Your position",
-        "your_pools_position_label": "Your pools position"
+        "your_pools_position_label": "Your pools",
+        "your_position_label": "Your position"
     },
     "notifications": {
         "action_rejected_title": "Declined",
         "error_title": "Error",
         "request_rejected_by_user_label": "The request was rejected by the user."
     },
+    "pay_debt_modal": {
+        "approval_description_label": "Approve FAsset spending for the collateral pool to which you are paying your fee debt.",
+        "approval_label": "Approval",
+        "confirm_step_description": "Please open your wallet app and confirm both dialogues to complete the process.",
+        "confirm_step_title": "Confirm in wallet app",
+        "error_not_enough_cflr": "Insufficient CFLR balance",
+        "finished_modal": {
+            "confirm_button": "OK",
+            "description_label": "You have successfully paid your FAsset fee debt.",
+            "title": "Finished"
+        },
+        "form": {
+            "address_label": "Address",
+            "agent_label": "to <bold>{{agent}}</bold>",
+            "amount_label": "Amount",
+            "fee_label": "Gas fee (estimated)",
+            "fees_label": "Fees",
+            "max_button": "Max",
+            "min_balance_label": "You have {{amount}} {{coinName}} fee debt. By paying fee debt, your collateral pool tokens will get unlocked and transferable. Your FAsset balance is {{fassetBalance}}.\nA balance of at least 2 {{mainTokenName}} is required for the transaction.",
+            "transfer_label": "Transfer",
+            "you_will_send_label": "You will send"
+        },
+        "next_button": "Next",
+        "pay_debt_label": "I want to pay fee debt",
+        "title": "Pay FAsset fee debt",
+        "transfer_description_label": "Transfer approved FAssets to the collateral pool, which will pay your fee debt and unlock collateral pool tokens.",
+        "transfer_label": "Transfer FAssets"
+    },
+    "pools_position_card": {
+        "ecosystem_activity_label": "Ecosystem Pools Activity",
+        "lifetime_earned_label": "Lifetime Earned ${{amount}}",
+        "transactions_description_label": "Number of deposits, withdrawals and claims",
+        "transactions_label": "TRANSACTIONS",
+        "tvl_description_label": "Total value locked in pools (USD)",
+        "tvl_label": "TVL",
+        "what_are_collateral_pools_label": "What are collateral pools?",
+        "your_position_label": "Your position"
+    },
     "redeem_finished_modal": {
         "amount_label": "Amount",
-        "deposit_label": "Deposit",
         "deposit_from_pool_collateral_label": "From Pool Collateral",
         "deposit_from_underlying_chain_label": "From Underlying Chain",
         "deposit_from_vault_collateral_label": "From Vault Collateral",
+        "deposit_label": "Deposit",
         "description_label": "The redemption process is completed successfully.",
         "partial_redemption_label": "{{redeemedAmount}} {{coinName}} was redeemed out of {{totalAmount}} {{coinName}}.",
         "redemption_label": "Redemption",
@@ -531,33 +600,37 @@
         "confirm_step_description": "Open your wallet app and confirm the dialog to complete the process.",
         "confirm_step_title": "Please confirm in the wallet app.",
         "discard_button": "Discard",
-        "form": {
-            "deposit_label": "Deposit",
-            "executor_fee_label": "Executor fee",
-            "fees_label": "Fees",
-            "lots_label": "Lot(s)",
-            "lots_placeholder": "Input number",
-            "lots_allowed_limit_label": "The FAsset system allows you to redeem a maximum of {{lots}} lots at a time.",
-            "lots_limit_label": "Max {{lots}} to redeem.",
-            "redeeming_fee_label": "Redemptions fee",
-            "you_will_receive_label": "You will receive"
-        },
         "finished_modal": {
             "amount_label": "Amount",
-            "deposit_label": "Deposit",
             "deposit_from_pool_collateral_label": "From Pool Collateral",
             "deposit_from_underlying_chain_label": "From Underlying Chain",
             "deposit_from_vault_collateral_label": "From Vault Collateral",
+            "deposit_label": "Deposit",
             "description_label": "The redemption process is completed successfully.",
             "partial_redemption_label": "{{redeemedLots}} {{coinName}} was redeemed out of {{totalLots}} {{coinName}}.",
             "redemption_label": "Redemption",
             "title": "Finished",
             "title_partial_redemption": "Finished (partial redemption)"
         },
+        "form": {
+            "above_max_amount_core_vault_error": "You are above the max amount of {{lots}} lots for today. The Agent will need to requests funds through the Core Vault which may take up to a day before you will be able to redeem more {{fAsset}}.",
+            "adjust_amount_label": "Adjust amount of lots.",
+            "balance_label": "Your balance is {{balance}} {{token}} ({{lots}} lots).",
+            "deposit_label": "Deposit",
+            "executor_fee_label": "Executor fee",
+            "fees_label": "Fees",
+            "lots_allowed_limit_label": "The FAsset system allows you to redeem a maximum of {{lots}} lots at a time.",
+            "lots_label": "Lot(s)",
+            "lots_limit_label": "Max {{lots}} to redeem.",
+            "lots_placeholder": "Input number",
+            "redeeming_fee_label": "Redemptions fee",
+            "single_redemption_limit_error": "Current limitation for single redemption request is {{lots}} lots.",
+            "you_will_receive_label": "You will receive"
+        },
+        "next_button": "Next",
         "payment_redemption_step_description": "Confirm the redemption transaction to initiate the redemption process.",
         "payment_redemption_step_label": "Payment Redemption",
         "return_to_home_button": "OK",
-        "next_button": "Next",
         "title": "Redeem {{coinName}}",
         "unresponsive_agent_modal": {
             "btc_network_description_label": "You will be paid from collateral in stable coins and {{tokenName}}. \n This action will take up to 3 hours.",
@@ -586,75 +659,9 @@
         },
         "mandatory_label": "Mandatory",
         "next_button": "Next",
-        "unselect_networks_label": "You can unselect some of the networks.",
         "select_networks_title": "Select networks",
-        "title": "Connect Wallet"
-    },
-    "send_cpt_modal": {
-        "confirm_step_description": "Please open your wallet app and confirm dialogue to complete the process.",
-        "confirm_step_title": "Confirm in wallet app",
-        "error_not_enough_cflr": "Insufficient CFLR balance",
-        "transfer_collateral_pool_step_description": "Confirm transaction to start process.",
-        "transfer_collateral_pool_step_label": "Transfer collateral pool tokens",
-        "pay_debt_description_label": "Tokens that are not transferable are either timelocked or debt-locked. You can use Pay Debt functionality and add FAsset to the pool to make more collateral pool tokens transferable.",
-        "pay_debt_learn_more": "To learn more about Fee Debt please visit official docs. <a>Here<icon></icon></a>",
-        "finished_modal": {
-            "confirm_button": "OK",
-            "description_label": "{{amount}} collateral pool tokens were sent to address {{address}}.",
-            "title": "Finished"
-        },
-        "form": {
-            "agent_label": "from <bold>{{agent}}</bold>",
-            "address_label": "Address",
-            "amount_label": "Amount (CPT)",
-            "fee_label": "Gas fee (estimated)",
-            "fees_label": "Fees",
-            "min_balance_label": "You can transfer <bold>{{amount}}</bold> out of <bold>{{outOfAmount}}</bold> collateral pool tokens.\nA balance of at least <bold>2 {{tokenName}}</bold> is required for the transaction.",
-            "transfer_label": "Transfer"
-        },
-        "next_button": "Next",
-        "title": "Transfer collateral pool tokens",
-        "pay_debt_title": "FAsset Fee Debt",
-
-        "want_to_transfer": "I want to transfer"
-    },
-    "pay_debt_modal": {
-        "approval_label": "Approval",
-        "approval_description_label": "Approve FAsset spending for the collateral pool to which you are paying your fee debt.",
-        "confirm_step_description": "Please open your wallet app and confirm both dialogues to complete the process.",
-        "confirm_step_title": "Confirm in wallet app",
-        "error_not_enough_cflr": "Insufficient CFLR balance",
-        "finished_modal": {
-            "confirm_button": "OK",
-            "description_label": "You have successfully paid your FAsset fee debt.",
-            "title": "Finished"
-        },
-        "form": {
-            "address_label": "Address",
-            "agent_label": "to <bold>{{agent}}</bold>",
-            "amount_label": "Amount",
-            "fee_label": "Gas fee (estimated)",
-            "fees_label": "Fees",
-            "max_button": "Max",
-            "min_balance_label": "You have {{amount}} {{coinName}} fee debt. By paying fee debt, your collateral pool tokens will get unlocked and transferable. Your FAsset balance is {{fassetBalance}}.\nA balance of at least 2 {{mainTokenName}} is required for the transaction.",
-            "you_will_send_label": "You will send",
-            "transfer_label": "Transfer"
-        },
-        "next_button": "Next",
-        "pay_debt_label": "I want to pay fee debt",
-        "title": "Pay FAsset fee debt",
-        "transfer_label": "Transfer FAssets",
-        "transfer_description_label": "Transfer approved FAssets to the collateral pool, which will pay your fee debt and unlock collateral pool tokens."
-    },
-    "pools_position_card": {
-        "ecosystem_activity_label": "Ecosystem Pools Activity",
-        "lifetime_earned_label": "Lifetime Earned ${{amount}}",
-        "transactions_description_label": "Number of deposits, withdrawals and claims",
-        "transactions_label": "TRANSACTIONS",
-        "tvl_description_label": "Total value locked in pools (USD)",
-        "tvl_label": "TVL",
-        "what_are_collateral_pools_label": "What are collateral pools?",
-        "your_position_label": "Your position"
+        "title": "Connect Wallet",
+        "unselect_networks_label": "You can unselect some of the networks."
     },
     "select_wallet_button": {
         "available_options_label": "Available options",
@@ -665,8 +672,35 @@
         "install_label": "Install",
         "open_app_label": "Open app",
         "other_options_label": "Other options",
-        "user_rejected_request_label": "The request was rejected by the user",
-        "try_again_label": "Try again?"
+        "try_again_label": "Try again?",
+        "user_rejected_request_label": "The request was rejected by the user"
+    },
+    "send_cpt_modal": {
+        "confirm_step_description": "Please open your wallet app and confirm dialogue to complete the process.",
+        "confirm_step_title": "Confirm in wallet app",
+        "error_not_enough_cflr": "Insufficient CFLR balance",
+        "finished_modal": {
+            "confirm_button": "OK",
+            "description_label": "{{amount}} collateral pool tokens were sent to address {{address}}.",
+            "title": "Finished"
+        },
+        "form": {
+            "address_label": "Address",
+            "agent_label": "from <bold>{{agent}}</bold>",
+            "amount_label": "Amount (CPT)",
+            "fee_label": "Gas fee (estimated)",
+            "fees_label": "Fees",
+            "min_balance_label": "You can transfer <bold>{{amount}}</bold> out of <bold>{{outOfAmount}}</bold> collateral pool tokens.\nA balance of at least <bold>2 {{tokenName}}</bold> is required for the transaction.",
+            "transfer_label": "Transfer"
+        },
+        "next_button": "Next",
+        "pay_debt_description_label": "Tokens that are not transferable are either timelocked or debt-locked. You can use Pay Debt functionality and add FAsset to the pool to make more collateral pool tokens transferable.",
+        "pay_debt_learn_more": "To learn more about Fee Debt please visit official docs. <a>Here<icon></icon></a>",
+        "pay_debt_title": "FAsset Fee Debt",
+        "title": "Transfer collateral pool tokens",
+        "transfer_collateral_pool_step_description": "Confirm transaction to start process.",
+        "transfer_collateral_pool_step_label": "Transfer collateral pool tokens",
+        "want_to_transfer": "I want to transfer"
     },
     "session_expired_modal": {
         "confirm_button": "OK",
@@ -703,22 +737,23 @@
     "underlying_balance_card": {
         "balance_unavailable_label": "We are not able to get a balance from {{coinName}} for your {{coinName}} address. This may result in minting and redemption not working.",
         "copied_label": "Copied",
-        "refresh_button": "Refresh",
         "manage_connection_button": "Manage connection",
         "not_connected_label": "Not connected",
-        "update_balance_label": "Your balance needs to be updated. Use the refresh button and confirm it within wallet.",
+        "refresh_button": "Refresh",
         "testnet_balance_unavailable_label": "We are not able to get a balance from {{coinName}} Testnet for your {{coinName}} address. This may result in minting and redemption not working.",
         "testnet_title": "Testnet {{coinName}} Address",
         "title": "{{coinName}} Address",
+        "update_balance_label": "Your balance needs to be updated. Use the refresh button and confirm it within wallet.",
         "view_on_explorer_button": "View on Explorer"
     },
     "validation": {
         "messages": {
             "alpha": "The {{field}} field may only contain alphabetic characters",
-            "alpha_num": "The {{field}} field may only contain alpha-numeric characters",
             "alpha_dash": "The {{field}} field may contain alpha-numeric characters as well as dashes and underscores",
+            "alpha_num": "The {{field}} field may only contain alpha-numeric characters",
             "alpha_spaces": "The {{field}} field may only contain alphabetic characters as well as spaces",
             "between": "The {{field}} field must be between 0:{{min}} and 1:{{max}}",
+            "birth_day": "The {{field}} field must be a valid date",
             "confirmed": "The {{field}} field confirmation does not match",
             "digits": "The {{field}} field must be numeric and exactly contain 0:{{length}} digits",
             "dimensions": "The {{field}} field must be 0:{width} pixels by 1:{{height}} pixels",
@@ -727,24 +762,23 @@
             "ext": "The {{field}} field is not a valid file",
             "image": "The {{field}} field must be an image",
             "integer": "The {{field}} field must be an integer",
-            "length": "The {{field}} field must be 0:{{length}} long",
-            "max_value": "The {{field}} field must be 0:{{max}} or less",
-            "max": "The {{field}} field may not be greater than 0:{{length}} characters",
-            "mimes": "The {{field}} field must have a valid file type",
-            "min_value": "The {{field}} field must be 0:{{min}} or more",
-            "min": "The {{field}} field must be at least 0:{{length}} characters",
-            "numeric": "The {{field}} field may only contain numeric characters",
-            "number": "The {{field}} field may only contain numeric characters",
-            "one_of": "The {{field}} field is not a valid value",
-            "regex": "The {{field}} field format is invalid",
-            "required_if": "The {{field}} field is required",
-            "required": "The {{field}} field is required",
-            "size": "The {{field}} field size must be less than 0:{{size}}KB",
+            "invalid_address": "Address is not valid",
             "is_equal": "The {{field1}} field must match {{field2}}",
+            "length": "The {{field}} field must be 0:{{length}} long",
+            "max": "The {{field}} field may not be greater than 0:{{length}} characters",
+            "max_value": "The {{field}} field must be 0:{{max}} or less",
+            "mimes": "The {{field}} field must have a valid file type",
+            "min": "The {{field}} field must be at least 0:{{length}} characters",
+            "min_value": "The {{field}} field must be 0:{{min}} or more",
             "not_equal": "The {{field1}} field can not be the same as {field2}}",
+            "number": "The {{field}} field may only contain numeric characters",
+            "numeric": "The {{field}} field may only contain numeric characters",
+            "one_of": "The {{field}} field is not a valid value",
             "password_no_match": "Password does not match",
-            "birth_day": "The {{field}} field must be a valid date",
-            "invalid_address": "Address is not valid"
+            "regex": "The {{field}} field format is invalid",
+            "required": "The {{field}} field is required",
+            "required_if": "The {{field}} field is required",
+            "size": "The {{field}} field size must be less than 0:{{size}}KB"
         }
     },
     "wallet_connect_open_wallet_card": {
@@ -753,10 +787,15 @@
     "withdrawal_from_pool_modal": {
         "confirm_step_description": "Please open your wallet app and confirm dialog to complete the process.",
         "confirm_step_title": "Confirm in wallet app",
-        "error_pool_collateral_ratio": "Pool collateral ratio is lower than pool exit collateral ratio, so withdrawing from this pool is not possible at the moment.",
         "error_not_enough_balance": "Insufficient {{tokenName}} balance",
+        "error_pool_collateral_ratio": "Pool collateral ratio is lower than pool exit collateral ratio, so withdrawing from this pool is not possible at the moment.",
         "exit_collateral_step_description": "Confirm a transaction to start process exiting collateral pool.",
         "exit_collateral_step_label": "Exit collateral pool",
+        "finished_modal": {
+            "confirm_button": "OK",
+            "description_label": "You can now access {{tokenName}} in your wallet.",
+            "title": "Finished"
+        },
         "form": {
             "agent_label": "from <bold>{{agent}}</bold>",
             "amount_label": "Amount (CPT)",
@@ -768,11 +807,6 @@
             "withdraw_label": "Withdraw",
             "you_will_receive_label": "You will receive",
             "you_will_withdraw_label": "You will withdraw"
-        },
-        "finished_modal": {
-            "confirm_button": "OK",
-            "description_label": "You can now access {{tokenName}} in your wallet.",
-            "title": "Finished"
         },
         "next_button": "Next",
         "title": "Withdrawal from Pool",

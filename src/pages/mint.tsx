@@ -58,10 +58,10 @@ export default function Mint() {
                 {t('dashboard.balance_title')}
             </Title>
             {disabledFassets.length > 0 &&
-                <div className="flex items-center border border-[var(--flr-orange)] bg-[var(--flr-lightest-orange)] rounded-sm p-2">
+                <div className="flex items-center border border-[var(--flr-green)] bg-[var(--flr-lightest-green)] rounded-sm p-2">
                     <IconExclamationCircle
                         size={25}
-                        color="var(--flr-orange)"
+                        color="var(--flr-green)"
                         className="mr-2 flex-shrink-0"
                     />
                     <Trans
@@ -70,7 +70,7 @@ export default function Mint() {
                         components={{
                             a1: <Anchor
                                 underline="always"
-                                href="https://flare.network/fassets-songbird-test-milestone-advancing-towards-mainnet/"
+                                href={process.env.WIND_DOWN_BLOG_URL}
                                 target="_blank"
                                 className="inline-flex"
                                 fw={400}

@@ -268,7 +268,9 @@ export default function PoolsPositionCard({ className, pools }: IPoolsPositionCa
                                             c="var(--flr-gray)"
                                             className="text-14"
                                         >
-                                            {t('pools_position_card.lifetime_earned_label', { amount: formatNumberWithSuffix(position.lifetimeEarned) })}
+                                            {t('pools_position_card.lifetime_earned_label', {
+                                                amount: formatNumberWithSuffix(position.lifetimeEarned)
+                                            })}
                                         </Text>
                                     </div>
                                 </div>

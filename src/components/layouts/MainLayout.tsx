@@ -29,7 +29,6 @@ import { usePools, useUserPools } from "@/api/pool";
 import { useModalState } from "@/hooks/useModalState";
 import { COINS } from "@/config/coin";
 import { useDistribution } from "@/hooks/useDistribution";
-import { useRewards } from "@/api/rewards";
 
 export interface ILayout {
     children?: React.ReactNode;
@@ -40,14 +39,12 @@ const REDEMPTION_STATUS_FETCH_INTERVAL = 300000;
 export default function Layout({ children, ...props }: ILayout) {
     const [isMenuOpened, setIsMenuOpened] = useState<boolean>(false);
     const [redirectBackUrl, setRedirectBackUrl] = useState<string>();
-    const [isLotteryModalVisible, setIsLotteryModalVisible] = useState<boolean>(false);
 
     const cookies = new Cookies();
     const { t } = useTranslation();
     const { walletConnectConnector, isConnected, connectedCoins, mainToken } = useWeb3();
     const { isMintModalActive, isRedeemModalActive } = useModalState();
     const { distributionTargetDate } = useDistribution();
-    const rewards = useRewards(mainToken?.address ?? '', mainToken?.address !== undefined);
 
     const pools = usePools(COINS.filter(coin => coin.isFAssetCoin && coin.enabled).map(coin => coin.type), false);
     const userPools = useUserPools(
@@ -66,14 +63,6 @@ export default function Layout({ children, ...props }: ILayout) {
         pools.refetch();
     }, REDEMPTION_STATUS_FETCH_INTERVAL);
 
-
-    useEffect(() => {
-        if (!rewards.data || !mainToken?.address) return;
-
-        if (rewards.data.rewardsDistributed && rewards.data.participated && !cookies.get(`lottery-${mainToken.address}`)) {
-            setIsLotteryModalVisible(true);
-        }
-    }, [rewards.data]);
 
     useEffect(() => {
         const handleBackButton = async () => {
@@ -117,18 +106,6 @@ export default function Layout({ children, ...props }: ILayout) {
             fassetState.refetch();
         }
     }, [isMintModalActive, isRedeemModalActive]);
-
-    const onLotteryModalClose = async (hasCookie: boolean) => {
-        if (hasCookie && distributionTargetDate.current) {
-            const now = moment();
-            const duration = moment.duration(distributionTargetDate.current.diff(now));
-            cookies.set(`lottery-${mainToken?.address}`, true, {
-                maxAge: duration.asSeconds()
-            });
-        }
-
-        setIsLotteryModalVisible(false);
-    }
 
     return (
         <>
@@ -360,11 +337,6 @@ export default function Layout({ children, ...props }: ILayout) {
                         </Link>
                     </div>
                 </Drawer>
-                <LotteryModal
-                    rewards={rewards.data}
-                    opened={isLotteryModalVisible}
-                    onClose={onLotteryModalClose}
-                />
             </AppShell>
         </>
     );

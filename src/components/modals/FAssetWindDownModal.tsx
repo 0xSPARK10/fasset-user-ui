@@ -34,6 +34,14 @@ export default function FAssetWindDownModal({ opened, onClose, fAssets }: IFAsse
     const { isConnected, mainToken } = useWeb3();
     const nativeBalance = useNativeBalance(mainToken?.address ?? '', mainToken !== undefined && opened);
 
+    let windDownDate = '';
+    if (process.env.WIND_DOWN_DATE) {
+        windDownDate = new Date(process.env.WIND_DOWN_DATE).toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric'
+        });
+    }
+
     useEffect(() => {
         if (!nativeBalance.data) return;
 
@@ -43,7 +51,7 @@ export default function FAssetWindDownModal({ opened, onClose, fAssets }: IFAsse
                 const balance = nativeBalance.data.find(balance => balance.symbol === fAsset);
 
                 if (coin && balance?.balance && toNumber(balance.balance) < coin.lotSize) {
-                    setCantRedeem(true);
+                     setCantRedeem(true);
                 }
 
                 return {
@@ -82,7 +90,10 @@ export default function FAssetWindDownModal({ opened, onClose, fAssets }: IFAsse
         <FAssetModal
             opened={opened}
             onClose={closeModal}
-            title={t('fasset_wind_down_modal.title', { fAssets: fAssets.join(', ') })}
+            title={t(`fasset_wind_down_modal.${cantRedeem ? 'title_partial' : 'title'}`, {
+                fAssets: fAssets.join(', '),
+                date: windDownDate
+            })}
             size={750}
             zIndex={9999}
         >
@@ -108,7 +119,7 @@ export default function FAssetWindDownModal({ opened, onClose, fAssets }: IFAsse
                         strong: <strong />,
                         a: <Anchor
                             underline="always"
-                            href="https://flare.network/fassets-songbird-test-milestone-advancing-towards-mainnet/"
+                            href={process.env.WIND_DOWN_BLOG_URL}
                             target="_blank"
                             className="inline-flex ml-1"
                             fw={400}
@@ -121,7 +132,8 @@ export default function FAssetWindDownModal({ opened, onClose, fAssets }: IFAsse
                     }}
                     values={{
                         pools: fAssets.join(', ') ,
-                        fAssets: fAssets.map(fAsset => `${fAsset}`)
+                        fAssets: fAssets.map(fAsset => `${fAsset}`),
+                        date: windDownDate
                     }}
                 />
                 {isConnected && disabledFassets.length > 0 &&
@@ -216,7 +228,7 @@ export default function FAssetWindDownModal({ opened, onClose, fAssets }: IFAsse
                                     radius="xl"
                                     fullWidth
                                     component="a"
-                                    href="https://flare.network/fassets-songbird-test-milestone-advancing-towards-mainnet/"
+                                    href={process.env.WIND_DOWN_BLOG_URL}
                                     target="_blank"
                                     className="flex items-center justify-center font-normal mb-3 sm:mb-0 sm:mr-3"
                                 >

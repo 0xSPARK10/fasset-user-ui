@@ -126,7 +126,7 @@ export default function CollateralPoolsCard({ ecoSystemInfo, timeData }: ICollat
                     </div>
                 </div>
                 <div
-                    className="flex items-center justify-between pb-1 basis-full"
+                    className="flex items-center justify-between pb-1 basis-full mt-[0.75rem]"
                 >
                     <Text
                         className="text-16 pl-[15px] lg:pl-6"

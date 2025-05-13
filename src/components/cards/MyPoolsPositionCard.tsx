@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Title, Text, LoadingOverlay } from "@mantine/core";
+import { Button, Title, Text, LoadingOverlay, SimpleGrid } from "@mantine/core";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import FXrpIcon from "@/components/icons/FXrpIcon";
@@ -9,6 +9,7 @@ import { useMediaQuery } from "@mantine/hooks";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { formatNumberWithSuffix, toNumber } from "@/utils";
 import { IPool } from "@/types";
+import { COINS } from "@/config/coin";
 
 interface IMyPoolsPositionCard {
     pools: IPool[] | undefined;
@@ -34,6 +35,7 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
     const { t } = useTranslation();
     const { mainToken } = useWeb3();
     const isMobile = useMediaQuery('(max-width: 767px)');
+    const isSingleFassetEnabled = COINS.filter(coin => coin.isFAssetCoin && coin.enabled).length === 1;
 
     const position: IPosition | undefined = pools
         ?.reduce((accumulator, pool) => {
@@ -87,6 +89,120 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
     const hasNoAssets = position?.totalFassets === 0;
     const isClaimRewardsButtonDisabled = position?.totalRewardsUSD.toFixed(2) === "0.00";
 
+    const myPositionBlock = <div>
+        <Text
+            className="text-12 uppercase"
+            fw={400}
+            c="var(--flr-dark-gray)"
+        >
+            {t('my_pools_position_card.your_position_label')}
+        </Text>
+        <div className="flex items-center">
+            <Text
+                className="text-28"
+                fw={300}
+            >
+                ${formatNumberWithSuffix(position?.totalFassetsUSD ?? 0)}
+            </Text>
+            {!hasNoAssets &&
+                <div className="ml-2 flex items-center">
+                    {mainToken?.icon({width: "20", height: "20"})}
+                    <Text
+                        className="ml-2 text-16"
+                        fw={400}
+                        c="var(--flr-dark-gray)"
+                    >
+                        {formatNumberWithSuffix(position?.totalFassets ?? 0)}
+                    </Text>
+                </div>
+            }
+        </div>
+        {hasNoAssets &&
+            <Text
+                className="text-16"
+                fw={400}
+                c="var(--flr-gray)"
+            >
+                {t('my_pools_position_card.no_assets_label')}
+            </Text>
+        }
+    </div>;
+
+    const availablePoolRewardsBlock = <>
+        <Text
+            className={`text-12 uppercase`}
+            fw={400}
+            c="var(--flr-dark-gray)"
+        >
+            {t('my_pools_position_card.available_rewards_label')}
+        </Text>
+        <div className="flex items-center flex-wrap">
+            <Text
+                className="text-28"
+                fw={300}
+            >
+                ${formatNumberWithSuffix(position?.totalRewardsUSD ?? 0)}
+            </Text>
+            {!hasNoAssets &&
+                <div className="ml-2 flex items-center">
+                    {position?.rewards?.map((reward, index) => (
+                        <div
+                            className={`flex items-center ${index < position.rewards.length - 1 ? 'mr-8' : ''}`}
+                            key={index}
+                        >
+                            {reward.icon !== undefined && reward.icon}
+                            <Text
+                                className="text-16 ml-2"
+                                fw={400}
+                                c="var(--flr-dark-gray)"
+                            >
+                                {formatNumberWithSuffix(reward.claimable, reward.type.toLowerCase().includes('btc') ? 5 : 2)}
+                            </Text>
+                        </div>
+                    ))}
+                </div>
+            }
+        </div>
+        {hasNoAssets &&
+            <Text
+                className="text-16"
+                fw={400}
+                c="var(--flr-gray)"
+            >
+                {t('my_pools_position_card.deposit_into_pools_label')}
+            </Text>
+        }
+    </>;
+
+    const earnedRewardsBlock = <>
+        <Text
+            className="text-12 uppercase"
+            c="var(--flr-dark-gray)"
+            fw={400}
+        >
+            {t('my_pools_position_card.pools_rewards_earned_label')}
+        </Text>
+        <div className="flex items-center">
+            <Text
+                className="text-28 mr-2"
+                fw={300}
+            >
+                ${formatNumberWithSuffix(totalClaimed ?? 0)}
+            </Text>
+            <div className="flex items-center">
+                {position?.rewards?.map((reward, index) => (
+                    <div
+                        className={`flex items-center ${index < position.rewards.length - 1 ? 'mr-5' : ''}`}
+                        key={index}
+                    >
+                        {reward.icon !== undefined && reward.icon}
+                        <span className="ml-1 text-16 text-[var(--flr-dark-gray)]">{formatNumberWithSuffix(reward.claimed)}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    </>;
+
     return (
         <div className="flex flex-col border-x-0 md:border-x md:border-y border-[var(--flr-border-color)] relative h-full">
             <LoadingOverlay visible={isLoading} />
@@ -122,130 +238,47 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
                     </Button>
                 </div>
             </div>
-            <div
-                className="flex flex-wrap bg-[var(--flr-lightest-gray)] border-t border-b md:border-b-0 border-[var(--flr-border-color)] h-full"
-            >
-                {!isLoading && hasNoAssets &&
-                    <div className="px-[15px] lg:px-5 py-5 md:hidden">
-                        <Text
-                            className="text-16"
-                            fw={400}
-                            c="var(--flr-gray)"
-                        >
-                            {t('my_pools_position_card.no_assets_label')}
-                        </Text>
-                    </div>
-                }
-                <div
-                    className={`${hasNoAssets ? 'hidden md:flex' : 'flex'} flex-col basis-full min-[430px]:basis-6/12 px-[15px] lg:px-6 py-12 grow min-[430px]:border-r border-b border-[var(--flr-border-color)]`}
+            {isSingleFassetEnabled
+                ? <SimpleGrid
+                    cols={{ base: 1, sm: 3 }}
+                    styles={{
+                        root: {
+                            '--sg-spacing-y': 0
+                        }
+                    }}
+                    className="bg-[var(--flr-lightest-gray)] border-t border-b md:border-b-0 border-[var(--flr-border-color)] h-full"
                 >
-                    <Text
-                        className={`text-16 uppercase`}
-                        fw={400}
-                        c="var(--flr-dark-gray)"
-                    >
-                        {t('my_pools_position_card.your_position_label')}
-                    </Text>
-                    <Text
-                        className="text-32"
-                        fw={300}
-                    >
-                        ${formatNumberWithSuffix(position?.totalFassetsUSD ?? 0)}
-                    </Text>
-                    {hasNoAssets &&
-                        <Text
-                            className="text-16"
-                            fw={400}
-                            c="var(--flr-gray)"
-                        >
-                            {t('my_pools_position_card.no_assets_label')}
-                        </Text>
-                    }
-                    {!hasNoAssets &&
-                        <div className="flex items-center">
-                            {mainToken?.icon({width: "20", height: "20"})}
+                    <div className="px-5 border-b md:border-b-0 md:border-r border-[var(--flr-border-color)] py-3 md:py-7">{myPositionBlock}</div>
+                    <div className="px-5 border-b md:border-b-0  md:border-r border-[var(--flr-border-color)] py-3 md:py-7">{availablePoolRewardsBlock}</div>
+                    <div className="px-5 py-3 md:py-7">{earnedRewardsBlock}</div>
+                </SimpleGrid>
+                : <div
+                    className="flex flex-wrap bg-[var(--flr-lightest-gray)] border-t border-b md:border-b-0 border-[var(--flr-border-color)] h-full"
+                >
+                    {!isLoading && hasNoAssets &&
+                        <div className="px-[15px] lg:px-5 py-5 md:hidden">
                             <Text
-                                className="ml-2 text-16"
+                                className="text-16"
                                 fw={400}
-                                c="var(--flr-dark-gray)"
+                                c="var(--flr-gray)"
                             >
-                                {formatNumberWithSuffix(position?.totalFassets ?? 0)}
+                                {t('my_pools_position_card.no_assets_label')}
                             </Text>
                         </div>
                     }
-                </div>
-                <div className={`${hasNoAssets ? 'hidden md:flex' : 'flex'} flex-col basis-full min-[430px]:basis-6/12 px-[15px] lg:px-6 py-12 grow md:border-t-0 border-b border-[var(--flr-border-color)]`}>
-                    <Text
-                        className={`text-16 uppercase`}
-                        fw={400}
-                        c="var(--flr-dark-gray)"
+                    <div
+                        className={`${hasNoAssets ? 'hidden md:flex' : 'flex'} flex-col justify-center basis-full min-[430px]:basis-6/12 px-[15px] lg:px-6 py-4 grow min-[430px]:border-r border-b border-[var(--flr-border-color)]`}
                     >
-                        {t('my_pools_position_card.available_rewards_label')}
-                    </Text>
-                    <Text
-                        className="text-32"
-                        fw={300}
-                    >
-                        ${formatNumberWithSuffix(position?.totalRewardsUSD ?? 0)}
-                    </Text>
-                    {hasNoAssets &&
-                        <Text
-                            className="text-16"
-                            fw={400}
-                            c="var(--flr-gray)"
-                        >
-                            {t('my_pools_position_card.deposit_into_pools_label')}
-                        </Text>
-                    }
-                    {!hasNoAssets &&
-                        <div className="flex items-center">
-                            {position?.rewards?.map((reward, index) => (
-                                <div
-                                    className={`flex items-center ${index < position.rewards.length - 1 ? 'mr-10' : ''}`}
-                                    key={index}
-                                >
-                                    {reward.icon !== undefined && reward.icon}
-                                    <Text
-                                        className="text-16 ml-2"
-                                        fw={400}
-                                        c="var(--flr-dark-gray)"
-                                    >
-                                        {formatNumberWithSuffix(reward.claimable, reward.type.toLowerCase().includes('btc') ? 5 : 2)}
-                                    </Text>
-                                </div>
-                            ))}
-                        </div>
-                    }
-                </div>
-                <div className="flex flex-col justify-center px-[15px] lg:px-6 py-3 min-h-[71px]">
-                    <Text
-                        className="text-12 uppercase"
-                        c="var(--flr-gray)"
-                        fw={400}
-                    >
-                        {t('my_pools_position_card.pools_rewards_earned_label')}
-                    </Text>
-                    <div className="flex items-center mt-1">
-                        <Text
-                            className="text-16 mr-3"
-                            c="var(--flr-dark-gray)"
-                        >
-                            ${formatNumberWithSuffix(totalClaimed ?? 0)}
-                        </Text>
-                        (<div className="mx-2 flex items-center">
-                            {position?.rewards?.map((reward, index) => (
-                                <div
-                                    className={`flex items-center ${index < position.rewards.length - 1 ? 'mr-5' : ''}`}
-                                    key={index}
-                                >
-                                    {reward.icon !== undefined && reward.icon}
-                                    <span className="ml-1">{formatNumberWithSuffix(reward.claimed)}</span>
-                                </div>
-                            ))}
-                        </div>)
+                        {myPositionBlock}
+                    </div>
+                    <div className={`${hasNoAssets ? 'hidden md:flex' : 'flex'} flex-col justify-center basis-full min-[430px]:basis-6/12 px-[15px] lg:px-6 py-4 grow md:border-t-0 border-b border-[var(--flr-border-color)]`}>
+                        {availablePoolRewardsBlock}
+                    </div>
+                    <div className="flex flex-col justify-center px-[15px] lg:px-6 py-3 min-h-[71px]">
+                        {earnedRewardsBlock}
                     </div>
                 </div>
-            </div>
+            }
         </div>
     );
 }

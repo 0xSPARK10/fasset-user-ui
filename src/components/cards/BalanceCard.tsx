@@ -76,21 +76,23 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
         const stableCoins: ICoin[] = [];
         nativeBalance?.data?.forEach(balance => {
             const connectedCoin = connectedCoins.find(connectedCoin => connectedCoin.type === balance.symbol);
-           if ('lots' in balance) {
+            const coin = COINS.find(coin => coin.enabled && coin.type === balance.symbol);
+            if (!coin) return;
+
+            if ('lots' in balance) {
                let fAssetCoin;
 
                if (connectedCoin) {
                    fAssetCoin = { ...connectedCoin } as IFAssetCoin;
                    fAssetCoin.balance = balance?.balance || "0";
                } else {
-                   const coin = COINS.find(coin => coin.type === balance.symbol);
                    fAssetCoin = { ...coin } as IFAssetCoin;
                    fAssetCoin.balance = balance?.balance || "0";
                    fAssetCoin.enabled = false;
                }
 
                fAssetCoins.push(fAssetCoin);
-           } else if (!('lots' in balance) && !('valueUSD' in balance)) {
+            } else if (!('lots' in balance) && !('valueUSD' in balance)) {
                let stableCoin;
 
                if (connectedCoin) {
@@ -328,29 +330,6 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                             </div>
                         }
                     </div>
-                    {disabledFassets.length > 0 &&
-                        <div className="flex items-center bg-[var(--flr-lightest-orange)] p-3 my-2 rounded-lg">
-                            <IconExclamationCircle
-                                size={25}
-                                color="var(--flr-orange)"
-                                className="mr-2 flex-shrink-0"
-                            />
-                            <div>
-                                <Text
-                                    className="text-14 text-[var(--flr-lighter-black)]"
-                                    fw={500}
-                                >
-                                    {t('balance_card.disabled_fassets_card.title')}
-                                </Text>
-                                <Text
-                                    className="text-14 md:text-12 text-[var(--flr-lighter-black)] mt-1"
-                                    fw={400}
-                                >
-                                    {t('balance_card.disabled_fassets_card.description_label', { fAssets: disabledFassets.join(', ') })}
-                                </Text>
-                            </div>
-                        </div>
-                    }
                     {fAssetCoins.map((fAssetCoin) => (
                         <div
                             key={fAssetCoin.type}

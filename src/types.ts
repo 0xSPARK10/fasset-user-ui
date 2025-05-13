@@ -142,11 +142,13 @@ export interface IAssetManagerAddress {
 }
 
 export interface IUnderylingBalance {
-    balance: string|null;
+    balance: string | null;
 }
 
 export interface IRedemptionFee {
-    redemptionFee: number;
+    redemptionFee: string;
+    maxLotsOneRedemption: number;
+    maxRedemptionLots: number;
 }
 
 export interface IMaxLots {
@@ -174,6 +176,7 @@ export interface IPool {
     userPoolNatBalance?: string;
     userPoolNatBalanceInUSD?: string;
     userPoolShare?: string;
+    userPoolTokensFull?: string;
     health: number;
     mintCount: number;
     numLiquidations: number;
@@ -307,23 +310,37 @@ export interface ILifetimeClaimed {
 
 export interface IEcoSystemInfoSupplyByFasset {
     allLots: number;
+    availableToMintAsset: string;
     availableToMintLots: number;
     availableToMintUSD: string;
     fasset: string;
     minted: string;
+    mintedLots: number;
     mintedPercentage: string;
     supply: string;
 }
 
 export interface IEcosystemInfo {
     agentCollateral: string;
-    tvl: string;
-    tvlPoolsNat: string;
-    numTransactions: string;
     agentsInLiquidation: number;
+    coreVaultInflows: string;
+    coreVaultInflowsUSD: string;
+    coreVaultOutflows: string;
+    coreVaultOutflowsUSD: string;
+    coreVaultSupply: string;
+    coreVaultSupplyUSD: string;
     numAgents: number;
+    numHolders: string;
     numLiquidations: number;
+    numMints: number;
+    numRedeems: number;
+    numTransactions: string;
     overCollaterazied: string;
+    poolRewards: {
+        fasset: string;
+        rewards: string;
+        rewardsUSD: string;
+    }[];
     rewardsAvailableUSD: string;
     supplyByCollateral: {
         symbol: string;
@@ -333,15 +350,9 @@ export interface IEcosystemInfo {
     supplyByFasset: IEcoSystemInfoSupplyByFasset[];
     totalCollateral: string;
     totalMinted: string;
-    numMints: number;
     totalPoolRewardsPaidUSD: string;
-    poolRewards: {
-        fasset: string;
-        rewards: string;
-        rewardsUSD: string;
-    }[];
-    numHolders: string;
-    numRedeems: number;
+    tvl: string;
+    tvlPoolsNat: string;
 }
 
 export interface ISubmitTx {
@@ -378,6 +389,26 @@ export interface ITimeData {
     }[];
     totalCollateralDiff: string;
     isPositiveCollateralDiff: boolean;
+    coreVaultData: {
+        inflowDiff: string;
+        inflowGraph: {
+            timestamp: number;
+            value: string;
+        }[];
+        isPositiveInflowDiff: boolean;
+        isPositiveOutflowDiff: boolean;
+        isPositiveSupplyDiff: boolean;
+        outflowDiff: string;
+        outflowGraph: {
+            timestamp: number;
+            value: string;
+        }[];
+        supplyDiff: string;
+        tvlGraph: {
+            timestamp: number;
+            value: string;
+        }[];
+    }
 }
 
 export interface ICrStatus {

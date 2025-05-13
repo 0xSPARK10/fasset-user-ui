@@ -29,6 +29,7 @@ import { WALLET } from "@/constants";
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { POOL_KEY, useUserPool } from "@/api/pool";
 import { COINS } from "@/config/coin";
+import { USER_KEY } from "@/api/user";
 
 interface IClaimRewardsFromPoolModal {
     opened: boolean;
@@ -76,12 +77,14 @@ export default function ClaimRewardsFromPoolModal({ opened, onClose, collateralP
 
         await delay(3000);
         const response = await userPool.refetch();
+        await queryClient.invalidateQueries({ queryKey: [USER_KEY.LIFETIME_CLAIMED, mainToken?.address] });
+
         queryClient.setQueriesData({
             queryKey: [POOL_KEY.USER_POOLS, mainToken?.address!, COINS.filter(coin => coin.isFAssetCoin && coin.enabled).map(coin => coin.type).join()]
         }, (updater: IPool[] | undefined) => {
             return updater?.map(pool => {
                 return pool.pool === response?.data?.pool
-                    ? { ...response.data, userPoolFeesUSD: "0", userPoolFees: "0" }
+                    ? response.data
                     : pool
             });
         });

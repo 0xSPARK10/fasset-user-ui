@@ -69,6 +69,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin, flareCoin }: 
     const closeModal = useRef<boolean>(true);
     const { t } = useTranslation();
     const [errorMessage, setErrorMessage] = useState<string>();
+    const [coreVaultErrorMessage, setCoreVaultErrorMessage] = useState<string>('');
     const [formValues, setFormValues] = useState<any>();
     const [redeemedLots, setRedeemedLots] = useState<number>();
     const [isNextButtonDisabled, setIsNextButtonDisabled] = useState<boolean>(false);
@@ -370,6 +371,22 @@ export default function RedeemModal({ opened, onClose, fAssetCoin, flareCoin }: 
                             withIcon={false}
                         >
                             <div>
+                                {coreVaultErrorMessage &&
+                                    <div className="flex items-center mb-5 border border-[var(--flr-orange)] p-3 bg-[var(--flr-lightest-orange)]">
+                                        <IconExclamationCircle
+                                            style={{ width: rem(25), height: rem(25) }}
+                                            color="var(--flr-orange)"
+                                            className="mr-3 flex-shrink-0"
+                                        />
+                                        <Text
+                                            className="text-16"
+                                            fw={400}
+                                            c="var(--flr-black)"
+                                        >
+                                            {coreVaultErrorMessage}
+                                        </Text>
+                                    </div>
+                                }
                                 {errorMessage &&
                                     <div className="flex items-center mb-5 border border-red-700 p-3 bg-red-100">
                                         <IconExclamationCircle
@@ -398,6 +415,9 @@ export default function RedeemModal({ opened, onClose, fAssetCoin, flareCoin }: 
                                         ref={formRef}
                                         flareCoin={flareCoin}
                                         fAssetCoin={fAssetCoin}
+                                        setErrorMessage={(message: string) => {
+                                            setCoreVaultErrorMessage(message);
+                                        }}
                                     />
                                 }
                             </div>
@@ -502,7 +522,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin, flareCoin }: 
                             radius="xl"
                             size="sm"
                             fullWidth
-                        disabled={isNextButtonDisabled}
+                            disabled={coreVaultErrorMessage.length > 0 || isNextButtonDisabled}
                             className="hover:text-white"
                         >
                             {t('redeem_modal.next_button')}

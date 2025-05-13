@@ -12,15 +12,15 @@ import { Cookies } from "react-cookie";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery, useMounted }  from "@mantine/hooks";
 import BlingIcon from "@/components/icons/BlingIcon";
-import CollateralHealthCard from "@/components/cards/CollateralHealthCard";
-import AvailableToMintCard from "@/components/cards/AvailableToMintCard";
 import CollateralPoolsCard from "@/components/cards/CollateralPoolsCard";
 import MintRedeemChartCard from "@/components/cards/MintRedeemChartCard";
 import FAssetPositionCard from "@/components/cards/FAssetPositionCard";
 import MyPoolsPositionCard from "@/components/cards/MyPoolsPositionCard";
 import EcoSystemInformationCard from "@/components/cards/EcoSystemInformationCard";
-import TimeToRedeemCard from "@/components/cards/TimeToRedeemCard";
 import FAssetWindDownModal from "@/components/modals/FAssetWindDownModal";
+import FassetsOverviewCard from "@/components/cards/FassetsOverviewCard";
+import CollateralCard from "@/components/cards/CollateralCard";
+import CoreVaultCard from "@/components/cards/CoreVaultCard";
 import { useEcosystemInfo, useMintEnabled } from "@/api/minting";
 import { useTimeData } from "@/api/user";
 import { FILTERS, COOKIE_WINDDOWN } from "@/constants";
@@ -29,11 +29,8 @@ import { useNativeBalance } from "@/api/balance";
 import { useUserPools } from "@/api/pool";
 import { COINS } from "@/config/coin";
 import { toNumber } from "@/utils";
-import { useRewards } from "@/api/rewards";
 import { useRouter } from "next/router";
 import classes from "@/styles/pages/Home.module.scss";
-
-const TIME_TO_REDEEM_CARD_LIMIT = 25;
 
 export default function Home() {
     const [activeFilter, setActiveFilter] = useState<string | null>(FILTERS.LAST_WEEK);
@@ -48,7 +45,6 @@ export default function Home() {
     const timeData = useTimeData(activeFilter as string);
     const balance = useNativeBalance(mainToken?.address!, mainToken?.address !== undefined);
     const userPools = useUserPools(mainToken?.address!, COINS.filter(coin => coin.isFAssetCoin && coin.enabled).map(coin => coin.type), fetchPools);
-    const rewards = useRewards(mainToken?.address ?? '', mainToken?.address !== undefined);
     const mintEnabled = useMintEnabled();
     const isMounted = useMounted();
     const cookies = new Cookies();
@@ -58,6 +54,7 @@ export default function Home() {
     const totalLotsAssets = balance.data?.filter(balance => 'lots' in balance).length;
     const hasNoAssets = zeroBalanceAssets === totalLotsAssets
         && userPools?.data !== undefined && userPools.data?.filter(pool => toNumber(pool.userPoolNatBalance!) > 0).length === 0;
+    const isSingleFassetEnabled = COINS.filter(coin => coin.isFAssetCoin && coin.enabled).length === 1;
 
     useEffect(() => {
         if (!isMounted || !isConnected) return;
@@ -78,10 +75,6 @@ export default function Home() {
             setIsFAssetWindDownModalActive(true);
         }
     }, [mintEnabled.data]);
-
-    const mintDisabledTokens = mintEnabled.data?.filter(item => !item.status)?.map(item => item.fasset) ?? [];
-    const supplyTokensToRedeem = ecoSystemInfo.data?.supplyByFasset
-        ?.filter(supply => toNumber(supply.mintedPercentage) <= TIME_TO_REDEEM_CARD_LIMIT && !mintDisabledTokens?.includes(supply.fasset)) ?? [];
 
     const onFAssetWindDownModalClose = async (redirect: boolean) => {
         setIsFAssetWindDownModalActive(false);
@@ -160,11 +153,6 @@ export default function Home() {
                     </Grid.Col>
                 </Grid>
             </Container>
-            {supplyTokensToRedeem.length > 0 &&
-                <TimeToRedeemCard
-                    tokens={supplyTokensToRedeem}
-                />
-            }
             <Container fluid className={classes.container}>
                 <Grid
                     styles={{
@@ -175,7 +163,7 @@ export default function Home() {
                     }}
                 >
                     {isConnected &&
-                        <Grid.Col span={12}>
+                        <Grid.Col span={12} className="pb-0">
                             <Grid
                                 styles={{
                                     root: {
@@ -183,24 +171,16 @@ export default function Home() {
                                         '--grid-gutter': 0
                                     }
                                 }}
-                                breakpoints={{
-                                    xs: '576px',
-                                    sm: '768px',
-                                    md: '992px',
-                                    lg: '1200px',
-                                    xl: '1482px'
-                                }}
                             >
                                 {(!hasNoAssets || isMobile) &&
                                     <>
-                                        <Grid.Col span={{ base: 12, xl: 6 }} className="mt-5 md:mt-0 pl-0 max-[1482px]:pr-0">
+                                        <Grid.Col span={{ base: 12, lg: isSingleFassetEnabled ? 4 : 6 }} className="px-0 min-[1200px]:pr-[10px] mt-5 md:mt-0 pl-0">
                                             <FAssetPositionCard
                                                 balance={balance.data}
-                                                rewards={rewards.data}
                                                 isLoading={balance.isPending}
                                             />
                                         </Grid.Col>
-                                        <Grid.Col span={{ base: 12, xl: 6 }} className="mt-5 md:mt-0 max-[1482px]:pl-0 pr-0">
+                                        <Grid.Col span={{ base: 12, lg: isSingleFassetEnabled ? 8 : 6 }} className="px-0 min-[1200px]:pl-[10px] mt-5 md:mt-0">
                                             <MyPoolsPositionCard
                                                 pools={userPools.data}
                                                 isLoading={userPools.isPending}
@@ -219,16 +199,23 @@ export default function Home() {
                             </Grid>
                         </Grid.Col>
                     }
-                    <Grid.Col span={{ base: 12, lg: 9 }} className="mt-5 md:mt-0">
-                        <CollateralHealthCard
+                    <Grid.Col span={{ base: 12, lg: 6 }} className="mt-5 md:mt-0">
+                        <FassetsOverviewCard
+                            ecoSystemInfo={ecoSystemInfo.data}
+                            timeData={timeData.data}
+                            mintEnabled={mintEnabled.data}
+                        />
+                    </Grid.Col>
+                    <Grid.Col span={{ base: 12, sm: 6, lg: 3 }} className="mt-5 md:mt-0">
+                        <CollateralCard
                             ecoSystemInfo={ecoSystemInfo.data}
                             timeData={timeData.data}
                         />
                     </Grid.Col>
-                    <Grid.Col span={{base: 12, lg: 3 }} className="mt-5 md:mt-0">
-                        <AvailableToMintCard
+                    <Grid.Col span={{ base: 12, sm: 6, lg: 3 }} className="mt-5 md:mt-0">
+                        <CoreVaultCard
                             ecoSystemInfo={ecoSystemInfo.data}
-                            mintEnabled={mintEnabled.data}
+                            timeData={timeData.data}
                         />
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, lg: 6 }} className="mt-5 md:mt-0">

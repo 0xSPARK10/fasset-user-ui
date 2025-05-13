@@ -1,4 +1,4 @@
-import {Title, Text, Grid, Divider} from "@mantine/core";
+import { Title, Text, Grid, Divider, Tabs } from "@mantine/core";
 import { LineChart } from "@mantine/charts";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
@@ -6,6 +6,8 @@ import moment from "moment";
 import { IEcosystemInfo, ITimeData } from "@/types";
 import { formatNumberWithSuffix, toNumber } from "@/utils";
 import { FILTERS } from "@/constants";
+import { useState } from "react";
+import classes from "@/styles/pages/Home.module.scss";
 
 interface IMintRedeemChartCard {
     timeData: ITimeData | undefined;
@@ -13,16 +15,36 @@ interface IMintRedeemChartCard {
     filter: string | null;
 }
 
-interface IChartData {
+interface IMintRedeemChartData {
     date: string;
     xLabel: string;
     mint: number;
     redeem: number;
 }
 
+interface ICoreVaultChartData {
+    date: string;
+    xLabel: string;
+    inflow: number;
+    outflow: number;
+}
+
+interface ITvlGraph {
+    date: string;
+    xLabel: string;
+    value: number;
+}
+
+const TAB_MINTS_REDEEMS = 'mints_redeems';
+const TAB_CORE_VAULT = 'core_vault';
+const TAB_CORE_VAULT_TVL = 'core_vault_tvl';
+
 export default function MintRedeemChartCard({ timeData, filter, ecoSystemInfo }: IMintRedeemChartCard) {
+    const [activeTab, setActiveTab] = useState<string | null>(TAB_MINTS_REDEEMS);
     const { t } = useTranslation();
-    const chartData: IChartData[] = [];
+    const mintRedeemChartData: IMintRedeemChartData[] = [];
+    const coreVaultChartData: ICoreVaultChartData[] = [];
+    const coreVaultTvlChartData: ITvlGraph[] = [];
 
     const formatLabel = () => {
         if (!filter) return '';
@@ -44,11 +66,28 @@ export default function MintRedeemChartCard({ timeData, filter, ecoSystemInfo }:
     timeData?.mintGraph.forEach(mint => {
         const redeem = timeData?.redeemGraph.find(redeem => redeem.timestamp === mint.timestamp);
 
-        chartData.push({
+        mintRedeemChartData.push({
             date: moment.unix(mint.timestamp).format(),
             xLabel: moment.unix(mint.timestamp).format(formatLabel()),
             mint: toNumber(mint.value),
             redeem: toNumber(redeem?.value ?? '0')
+        });
+    });
+    timeData?.coreVaultData?.inflowGraph.forEach(inflow => {
+        const outflow = timeData?.coreVaultData?.outflowGraph.find(outflow => outflow.timestamp === inflow.timestamp);
+
+        coreVaultChartData.push({
+            date: moment.unix(inflow.timestamp).format(),
+            xLabel: moment.unix(inflow.timestamp).format(formatLabel()),
+            inflow: toNumber(inflow.value),
+            outflow: toNumber(outflow?.value ?? '0')
+        });
+    });
+    timeData?.coreVaultData?.tvlGraph.forEach(tvl => {
+        coreVaultTvlChartData.push({
+            date: moment.unix(tvl.timestamp).format(),
+            xLabel: moment.unix(tvl.timestamp).format(formatLabel()),
+            value: toNumber(tvl.value)
         });
     });
 
@@ -72,62 +111,145 @@ export default function MintRedeemChartCard({ timeData, filter, ecoSystemInfo }:
             </div>
             <div className="bg-[var(--flr-lightest-gray)] border-t border-[var(--flr-border-color)] p-[15px] lg:p-6 pb-8 grow">
                 <div className="flex flex-wrap justify-between items-center mb-8">
-                    <Text
-                        className="text-18 mb-2 min-[489px]:mb-0 mr-2"
-                        fw={300}
-                        c="var(--flr-dark-gray)"
+                    <Tabs
+                        value={activeTab}
+                        onChange={setActiveTab}
+                        classNames={{
+                            root: 'flex',
+                            list: 'ml-auto flex-nowrap',
+                            tab: `text-[--flr-gray] ${classes.tab}`
+                        }}
                     >
-                        {t('mint_redeem_chart_card.mints_and_redeems_label')}
-                    </Text>
+                        <Tabs.List>
+                            <Tabs.Tab
+                                value={TAB_MINTS_REDEEMS}
+                            >
+                                {t('mint_redeem_chart_card.mints_and_redeems_label')}
+                            </Tabs.Tab>
+                            <Tabs.Tab
+                                value={TAB_CORE_VAULT_TVL}
+                            >
+                                {t('mint_redeem_chart_card.core_vault_tvl_label')}
+                            </Tabs.Tab>
+                            <Tabs.Tab
+                                value={TAB_CORE_VAULT}
+                            >
+                                {t('mint_redeem_chart_card.core_vault_label')}
+                            </Tabs.Tab>
+                        </Tabs.List>
+                    </Tabs>
                     <div className="flex items-center">
                         <div className="flex items-center mr-10">
                             <div className="w-5 h-5 rounded-md bg-[var(--flr-pink)] mr-2" />
-                            <Text
-                                className="text-16 uppercase"
-                                fw={400}
-                                c="var(--flr-dark-gray)"
-                            >
-                                {t('mint_redeem_chart_card.mints_label')}
-                            </Text>
+                            {activeTab === TAB_CORE_VAULT_TVL
+                                ? <Text
+                                    className="text-16 uppercase"
+                                    fw={400}
+                                    c="var(--flr-dark-gray)"
+                                >
+                                    {t('mint_redeem_chart_card.balance_label')}
+                                </Text>
+                                : <Text
+                                    className="text-16 uppercase"
+                                    fw={400}
+                                    c="var(--flr-dark-gray)"
+                                >
+                                    {t(activeTab === TAB_MINTS_REDEEMS ? 'mint_redeem_chart_card.mints_label' : 'mint_redeem_chart_card.inflow_label')}
+                                </Text>
+                            }
                         </div>
-                        <div className="flex items-center">
-                            <div className="w-5 h-5 rounded-md bg-[var(--flr-black)] mr-2" />
-                            <Text
-                                className="text-16 uppercase"
-                                fw={400}
-                                c="var(--flr-dark-gray)"
-                            >
-                                {t('mint_redeem_chart_card.redeems_label')}
-                            </Text>
-                        </div>
+                        {activeTab !== TAB_CORE_VAULT_TVL &&
+                            <div className="flex items-center">
+                                <div className="w-5 h-5 rounded-md bg-[var(--flr-black)] mr-2" />
+                                <Text
+                                    className="text-16 uppercase"
+                                    fw={400}
+                                    c="var(--flr-dark-gray)"
+                                >
+                                    {t(activeTab === TAB_MINTS_REDEEMS ? 'mint_redeem_chart_card.redeems_label' : 'mint_redeem_chart_card.outflow_label')}
+                                </Text>
+                            </div>
+                        }
                     </div>
                 </div>
-                <LineChart
-                    h={300}
-                    data={chartData}
-                    dataKey="xLabel"
-                    series={[
-                        {
-                            name: 'mint',
-                            label: t('mint_redeem_chart_card.mints_label'),
-                            color: 'var(--flr-pink)',
-                        },
-                        {
-                            name: 'redeem',
-                            label: t('mint_redeem_chart_card.redeems_label'),
-                            color: 'var(--flr-black)',
-                            strokeDasharray: '10 10'
-                        },
-                    ]}
-                    curveType="bump"
-                    tickLine="none"
-                    gridAxis="none"
-                    valueFormatter={(value) => `$${formatNumberWithSuffix(value, 0)}`}
-                    withDots={false}
-                    classNames={{
-                        root: 'pl-[2px]'
-                    }}
-                />
+                {activeTab === TAB_MINTS_REDEEMS &&
+                    <LineChart
+                        h={300}
+                        data={mintRedeemChartData}
+                        dataKey="xLabel"
+                        series={[
+                            {
+                                name: 'mint',
+                                label: t('mint_redeem_chart_card.mints_label'),
+                                color: 'var(--flr-pink)',
+                            },
+                            {
+                                name: 'redeem',
+                                label: t('mint_redeem_chart_card.redeems_label'),
+                                color: 'var(--flr-black)',
+                                strokeDasharray: '10 10'
+                            },
+                        ]}
+                        curveType="bump"
+                        tickLine="none"
+                        gridAxis="none"
+                        valueFormatter={(value) => `$${formatNumberWithSuffix(value, 0)}`}
+                        withDots={false}
+                        classNames={{
+                            root: 'pl-[2px]'
+                        }}
+                    />
+                }
+                {activeTab === TAB_CORE_VAULT &&
+                    <LineChart
+                        h={300}
+                        data={coreVaultChartData}
+                        dataKey="xLabel"
+                        series={[
+                            {
+                                name: 'inflow',
+                                label: t('mint_redeem_chart_card.inflow_label'),
+                                color: 'var(--flr-pink)',
+                            },
+                            {
+                                name: 'outflow',
+                                label: t('mint_redeem_chart_card.outflow_label'),
+                                color: 'var(--flr-black)',
+                                strokeDasharray: '10 10'
+                            },
+                        ]}
+                        curveType="bump"
+                        tickLine="none"
+                        gridAxis="none"
+                        valueFormatter={(value) => `$${formatNumberWithSuffix(value, 0)}`}
+                        withDots={false}
+                        classNames={{
+                            root: 'pl-[2px]'
+                        }}
+                    />
+                }
+                {activeTab === TAB_CORE_VAULT_TVL &&
+                    <LineChart
+                        h={300}
+                        data={coreVaultTvlChartData}
+                        dataKey="xLabel"
+                        series={[
+                            {
+                                name: 'value',
+                                label: t('mint_redeem_chart_card.balance_label'),
+                                color: 'var(--flr-pink)',
+                            },
+                        ]}
+                        curveType="bump"
+                        tickLine="none"
+                        gridAxis="none"
+                        valueFormatter={(value) => `$${formatNumberWithSuffix(value, 0)}`}
+                        withDots={false}
+                        classNames={{
+                            root: 'pl-[2px]'
+                        }}
+                    />
+                }
             </div>
             <Grid
                 styles={{
