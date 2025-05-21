@@ -151,7 +151,7 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
                         {t('core_vault_card.inflow_label')}
                     </Text>
                     <div className="flex items-center">
-                        <XrpIcon width="22" height="22" />
+                        <XrpIcon width="22" height="22" className="shrink-0" />
                         <Text
                             className="ml-2 text-24"
                             fw={300}
@@ -160,7 +160,7 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
                             {formatNumberWithSuffix(ecoSystemInfo?.coreVaultInflows ?? 0)}
                         </Text>
                     </div>
-                    <div className="flex items-center mt-1">
+                    <div className="flex items-center mt-1 flex-wrap">
                         <Text
                             className="mr-2 text-16"
                             fw={400}
@@ -176,7 +176,7 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
                                 ? <IconCaretUpFilled size={15} color="var(--flr-green)" />
                                 : <IconCaretDownFilled size={15} color="var(--flr-red)" />
                             }
-                            className="px-1"
+                            className="px-1 shrink-0"
                         >
                             <Text
                                 className="text-14"
@@ -197,7 +197,7 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
                         {t('core_vault_card.outflow_label')}
                     </Text>
                     <div className="flex items-center">
-                        <XrpIcon width="22" height="22" />
+                        <XrpIcon width="22" height="22" className="shrink-0" />
                         <Text
                             className="ml-2 text-24"
                             fw={300}
@@ -206,7 +206,7 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
                             {formatNumberWithSuffix(ecoSystemInfo?.coreVaultOutflows ?? 0)}
                         </Text>
                     </div>
-                    <div className="flex items-center mt-1">
+                    <div className="flex items-center mt-1 flex-wrap">
                         <Text
                             className="mr-2 text-16"
                             fw={400}
@@ -222,7 +222,7 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
                                 ? <IconCaretUpFilled size={15} color="var(--flr-green)" />
                                 : <IconCaretDownFilled size={15} color="var(--flr-red)" />
                             }
-                            className="px-1"
+                            className="px-1 shrink-0"
                         >
                             <Text
                                 className="text-14"

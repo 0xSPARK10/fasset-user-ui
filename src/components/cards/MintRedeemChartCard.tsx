@@ -110,7 +110,7 @@ export default function MintRedeemChartCard({ timeData, filter, ecoSystemInfo }:
                 </Link>
             </div>
             <div className="bg-[var(--flr-lightest-gray)] border-t border-[var(--flr-border-color)] p-[15px] lg:p-6 pb-8 grow">
-                <div className="flex flex-wrap justify-between items-center mb-8">
+                <div className="flex flex-wrap justify-between items-center mb-6">
                     <Tabs
                         value={activeTab}
                         onChange={setActiveTab}
@@ -120,7 +120,7 @@ export default function MintRedeemChartCard({ timeData, filter, ecoSystemInfo }:
                             tab: `text-[--flr-gray] ${classes.tab}`
                         }}
                     >
-                        <Tabs.List>
+                        <Tabs.List className="mb-2">
                             <Tabs.Tab
                                 value={TAB_MINTS_REDEEMS}
                             >

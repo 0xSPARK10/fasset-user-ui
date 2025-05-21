@@ -226,73 +226,7 @@ export default function Layout({ children, ...props }: ILayout) {
                             >
                                 {t('layout.footer.become_an_fasset_agent_label')}
                             </Link>
-                            {!mainToken?.network.mainnet &&
-                                <Text
-                                    className="hidden md:inline-block text-12 font-normal"
-                                    c="var(--mantine-color-gray-6)"
-                                >
-                                    {t('layout.footer.copyright_label', { year: (new Date()).getFullYear() })}
-                                </Text>
-                            }
                         </div>
-                        {!mainToken?.network.mainnet &&
-                            <div className="flex justify-between w-full md:w-auto items-center mt-2">
-                                <div className="flex items-center">
-                                    <Link
-                                        href="https://flare.network/"
-                                        target="_blank"
-                                        className="mr-3"
-                                    >
-                                        <FlareLogoIcon width="60" height="20"/>
-                                    </Link>
-                                    <Link
-                                        href="https://x.com/FlareNetworks"
-                                        target="_blank"
-                                        className="mr-3"
-                                    >
-                                        <IconBrandX
-                                            size={16}
-                                            color="var(--flr-gray)"
-                                        />
-                                    </Link>
-                                    <Link
-                                        href="https://discord.com/invite/flarenetwork"
-                                        target="_blank"
-                                        className="mr-3"
-                                    >
-                                        <IconBrandDiscordFilled
-                                            size={16}
-                                            color="var(--flr-gray)"
-                                        />
-                                    </Link>
-                                    <Link
-                                        href="https://t.me/FlareNetwork"
-                                        target="_blank"
-                                        className="mr-1 md:mr-10"
-                                    >
-                                        <TelegramIcon width="16" height="16"/>
-                                    </Link>
-                                </div>
-                                <div className="flex items-center">
-                                    <Link
-                                        href="https://flarelabs.org/"
-                                        target="_blank"
-                                        className="mr-3"
-                                    >
-                                        <FlareLabsLogoIcon width="100" height="25"/>
-                                    </Link>
-                                    <Link
-                                        href="https://twitter.com/Flare_Labs"
-                                        target="_blank"
-                                    >
-                                        <IconBrandX
-                                            size={16}
-                                            color="var(--flr-gray)"
-                                        />
-                                    </Link>
-                                </div>
-                            </div>
-                        }
                     </Container>
                 </AppShell.Main>
                 <Drawer
