@@ -96,7 +96,9 @@ export default function FaucetCard({ className }: IFaucetCard) {
                                         <List.Item className="mt-1" key={coin.type + '_additional_asset'}>
                                             <Text fw={400} className="inline text-14">
                                                 {t('faucet_card.get_test_coin_label', {
-                                                    network: coin.type === CoinEnum.CFLR ? '' : t('faucet_card.testnet_label'),
+                                                    network: [CoinEnum.CFLR, CoinEnum.C2FLR].includes(coin.type)
+                                                        ? ''
+                                                        : t('faucet_card.testnet_label'),
                                                     coinName: coin.nativeName
                                                 })}
                                                 {Array.isArray(coin.faucetUrl)

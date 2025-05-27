@@ -36,7 +36,7 @@ export default function FAssetPositionCard({ balance, isLoading }: IFAssetPositi
         });
 
     const tokensWithoutAssets = balance
-        ?.filter(balance => 'lots' in balance && balance.balance === '0')
+        ?.filter(balance => 'lots' in balance && balance.lots === '0')
         ?.map(balance => {
             return {
                 ...balance,
@@ -62,14 +62,12 @@ export default function FAssetPositionCard({ balance, isLoading }: IFAssetPositi
                     {t('fasset_position_card.fasset_position_label')}
                 </Title>
                 <div className="flex items-center shrink-0">
-                    {!hasSingleToken &&
-                        <Link
-                            href="/mint"
-                            className="hidden md:block underline text-16 font-normal mr-4"
-                        >
-                            {t('fasset_position_card.view_mint_page_label')}
-                        </Link>
-                    }
+                    <Link
+                        href="/mint"
+                        className="hidden md:block underline text-16 font-normal mr-4"
+                    >
+                        {t('fasset_position_card.view_mint_page_label')}
+                    </Link>
                     <Button
                         variant="gradient"
                         component={Link}

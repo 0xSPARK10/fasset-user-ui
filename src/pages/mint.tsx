@@ -19,6 +19,7 @@ import { useWeb3 } from "@/hooks/useWeb3";
 import { COINS } from "@/config/coin";
 import classes from "@/styles/pages/Mint.module.scss";
 import { useMintEnabled } from "@/api/minting";
+import { NETWORK_FLARE, NETWORK_FLARE_COSTON2_TESTNET } from "@/config/networks";
 
 export default function Mint() {
     const [fAssetCoins, setFAssetCoins] = useState<IFAssetCoin[]>([]);
@@ -115,7 +116,7 @@ export default function Mint() {
                             className="mb-2"
                         />
                     )}
-                    {!mainToken?.network.mainnet &&
+                    {!mainToken?.network.mainnet || ![NETWORK_FLARE_COSTON2_TESTNET.chainId, NETWORK_FLARE.chainId].includes(mainToken.network.chainId) &&
                         <Trans
                             i18nKey={'dashboard.know_more_label'}
                             components={{

@@ -102,25 +102,23 @@ export default function CollateralCard({ ecoSystemInfo, timeData }: ICollateralC
                         </Tooltip>
                     ))}
                 </Progress.Root>
-                <SimpleGrid
-                    cols={2}
-                    className="mt-4"
-                >
+
+                <div className="flex flex-wrap mt-4 -mx-4">
                     {collateralTokens?.map((token, index) => (
                         <div key={index}>
-                            <div className="flex items-center">
+                            <div className="px-4 py-2 flex items-center">
                                 {token?.token?.icon({ width: "20", height: "20" })}
                                 <Text
-                                    className="ml-2 text-16"
+                                    className="flex items-center flex-wrap ml-2 text-16"
                                     fw={400}
                                 >
-                                    {formatNumberWithSuffix(token.supply)}
-                                    <span className="ml-1 text-14 text-[var(--flr-dark-gray)]">(${formatNumberWithSuffix(token.supplyUSD)})</span>
+                                    <span className="mr-1">{formatNumberWithSuffix(token.supply)}</span>
+                                    <span className="text-14 text-[var(--flr-dark-gray)]">(${formatNumberWithSuffix(token.supplyUSD)})</span>
                                 </Text>
                             </div>
                         </div>
                     ))}
-                </SimpleGrid>
+                </div>
             </div>
         </div>
     );

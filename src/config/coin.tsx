@@ -12,11 +12,14 @@ import EthIcon from "@/components/icons/EthIcon";
 import UsdcIcon from "@/components/icons/UsdcIcon";
 import UsdtIcon from "@/components/icons/UsdtIcon";
 import UsdxIcon from "@/components/icons/UsdxIcon";
+import C2FlrIcon from "@/components/icons/C2FlrIcon";
+import Usdt0Icon from "@/components/icons/Usdt0Icon";
 import {
     NETWORK_BTC,
     NETWORK_BTC_TESTNET,
     NETWORK_DOGE,
-    NETWORK_DOGE_TESTNET,
+    NETWORK_DOGE_TESTNET, NETWORK_FLARE,
+    NETWORK_FLARE_COSTON2_TESTNET,
     NETWORK_FLARE_COSTON_TESTNET,
     NETWORK_SONGBIRD,
     NETWORK_XRPL,
@@ -29,6 +32,9 @@ const enabledUnderlyingFassets = process.env.ENABLED_UNDERLYING_FASSETS && proce
     : [];
 
 const isMainnet = process.env.NETWORK === 'mainnet';
+const testnetChain = !isMainnet
+    ? process.env.TESTNET_CHAIN
+    : undefined;
 
 export const CFLR_COIN: ICoin = {
     type: CoinEnum.CFLR,
@@ -38,9 +44,26 @@ export const CFLR_COIN: ICoin = {
     lotSize: 1,
     minWalletBalance: 2,
     network: NETWORK_FLARE_COSTON_TESTNET,
-    enabled: !isMainnet,
+    enabled: !isMainnet && testnetChain === 'CFLR',
     isFAssetCoin: false,
     faucetUrl: 'https://faucet.flare.network/coston',
+    supportedWallets: [WALLET.WALLET_CONNECT, WALLET.META_MASK, WALLET.LEDGER],
+    decimals: 2,
+    isMainToken: true,
+    bipPath: BIP44_PATH.TESTNET.ETH
+}
+
+export const C2FLR_COIN: ICoin = {
+    type: CoinEnum.C2FLR,
+    icon: (props) => <C2FlrIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    nativeName: 'C2FLR',
+    nativeIcon: (props) => <C2FlrIcon width="18" height="18" {...props} />,
+    lotSize: 1,
+    minWalletBalance: 2,
+    network: NETWORK_FLARE_COSTON2_TESTNET,
+    enabled: !isMainnet && testnetChain === 'C2FLR',
+    isFAssetCoin: false,
+    faucetUrl: 'https://faucet.flare.network/coston2',
     supportedWallets: [WALLET.WALLET_CONNECT, WALLET.META_MASK, WALLET.LEDGER],
     decimals: 2,
     isMainToken: true,
@@ -52,7 +75,7 @@ export const FTEST_XRP: ICoin = {
     icon: (props) => <FXrpIcon width="32" height="32" className="flex-shrink-0" {...props} />,
     nativeName: 'XRP',
     nativeIcon: (props) => <XrpIcon width="18" height="18" className="flex-shrink-0" {...props} />,
-    lotSize: 20,
+    lotSize: testnetChain === 'C2FLR' ? 10 : 20,
     minWalletBalance: 3,
     network: NETWORK_XRPL_TESTNET,
     enabled: !isMainnet && enabledUnderlyingFassets.includes(CoinEnum.FTestXRP.toLowerCase()),
@@ -97,11 +120,25 @@ export const FTEST_DOGE: ICoin = {
 
 export const TEST_USDT: ICoin = {
     type: CoinEnum.TestUSDT,
-    icon: (props) => <UsdtIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    icon: (props) => testnetChain === 'C2FLR'
+        ? <Usdt0Icon width="32" height="32" className="flex-shrink-0" {...props} />
+        : <UsdtIcon width="32" height="32" className="flex-shrink-0" {...props} />,
     lotSize: 0,
     minWalletBalance: 0,
-    network: NETWORK_FLARE_COSTON_TESTNET,
+    network: testnetChain === 'CFLR' ? NETWORK_FLARE_COSTON2_TESTNET : NETWORK_FLARE_COSTON_TESTNET,
     enabled: !isMainnet,
+    isFAssetCoin: false,
+    isStableCoin: true,
+    decimals: 2
+}
+
+export const USDT0: ICoin = {
+    type: CoinEnum.USDT0,
+    icon: (props) => <Usdt0Icon width="32" height="32" className="flex-shrink-0" {...props} />,
+    lotSize: 0,
+    minWalletBalance: 0,
+    network: NETWORK_FLARE,
+    enabled: isMainnet,
     isFAssetCoin: false,
     isStableCoin: true,
     decimals: 2
@@ -205,6 +242,7 @@ export const USDX: ICoin = {
 
 export const COINS = [
     CFLR_COIN,
+    C2FLR_COIN,
     FTEST_XRP,
     FTEST_BTC,
     FTEST_DOGE,
@@ -215,7 +253,8 @@ export const COINS = [
     FXRP,
     FBTC,
     FDOGE,
-    USDX
+    USDX,
+    USDT0
 ]
 
 

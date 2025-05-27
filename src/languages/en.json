@@ -623,7 +623,7 @@
             "lots_label": "Lot(s)",
             "lots_limit_label": "Max {{lots}} to redeem.",
             "lots_placeholder": "Input number",
-            "redeeming_fee_label": "Redemptions fee",
+            "redeeming_fee_label": "Redemption fee",
             "single_redemption_limit_error": "Current limitation for single redemption request is {{lots}} lots.",
             "you_will_receive_label": "You will receive"
         },

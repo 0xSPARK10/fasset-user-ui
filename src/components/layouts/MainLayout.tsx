@@ -12,23 +12,16 @@ import Link from "next/link";
 import { useInterval } from "@mantine/hooks";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { IconBrandX, IconBrandDiscordFilled, IconAlertTriangle } from "@tabler/icons-react";
-import { Cookies } from "react-cookie";
-import moment from "moment";
+import { IconAlertTriangle } from "@tabler/icons-react";
 import ConnectWalletButton from "@/components/elements/ConnectWalletButton";
 import LogoIcon from "@/components/icons/LogoIcon";
-import FlareLogoIcon from "@/components/icons/FlareLogoIcon";
-import FlareLabsLogoIcon from "@/components/icons/FlareLabsLogoIcon";
-import TelegramIcon from "@/components/icons/TelegramIcon";
 import FlrIcon from "@/components/icons/FlrIcon";
 import SgbAltIcon from "@/components/icons/SgbAltIcon";
-import LotteryModal from "@/components/modals/LotteryModal";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useFassetState } from "@/api/user";
 import { usePools, useUserPools } from "@/api/pool";
 import { useModalState } from "@/hooks/useModalState";
 import { COINS } from "@/config/coin";
-import { useDistribution } from "@/hooks/useDistribution";
 
 export interface ILayout {
     children?: React.ReactNode;
@@ -40,11 +33,9 @@ export default function Layout({ children, ...props }: ILayout) {
     const [isMenuOpened, setIsMenuOpened] = useState<boolean>(false);
     const [redirectBackUrl, setRedirectBackUrl] = useState<string>();
 
-    const cookies = new Cookies();
     const { t } = useTranslation();
     const { walletConnectConnector, isConnected, connectedCoins, mainToken } = useWeb3();
     const { isMintModalActive, isRedeemModalActive } = useModalState();
-    const { distributionTargetDate } = useDistribution();
 
     const pools = usePools(COINS.filter(coin => coin.isFAssetCoin && coin.enabled).map(coin => coin.type), false);
     const userPools = useUserPools(

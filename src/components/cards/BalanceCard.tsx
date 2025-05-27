@@ -25,6 +25,7 @@ import { useModalState } from "@/hooks/useModalState";
 import { ICoin, IFAssetCoin } from "@/types";
 import { COINS } from "@/config/coin";
 import { truncateString } from "@/utils";
+import { NETWORK_FLARE, NETWORK_FLARE_COSTON2_TESTNET } from "@/config/networks";
 
 interface IBalanceCard {
     className?: string;
@@ -432,7 +433,7 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                         className="text-24"
                         fw={300}
                     >
-                        {mainToken?.network.mainnet
+                        {mainToken && (mainToken.network.mainnet || [NETWORK_FLARE_COSTON2_TESTNET.chainId, NETWORK_FLARE.chainId].includes(mainToken.network.chainId))
                             ? t('balance_card.stablecoins_title')
                             : t('balance_card.stablecoins_eth_title')
                         }

@@ -174,13 +174,13 @@ export default function Home() {
                             >
                                 {(!hasNoAssets || isMobile) &&
                                     <>
-                                        <Grid.Col span={{ base: 12, lg: isSingleFassetEnabled ? 4 : 6 }} className="px-0 min-[1200px]:pr-[10px] mt-5 md:mt-0 pl-0">
+                                        <Grid.Col span={{ base: 12, lg: isSingleFassetEnabled ? 5 : 6 }} className="px-0 min-[1200px]:pr-[10px] mt-5 md:mt-0 pl-0">
                                             <FAssetPositionCard
                                                 balance={balance.data}
                                                 isLoading={balance.isPending}
                                             />
                                         </Grid.Col>
-                                        <Grid.Col span={{ base: 12, lg: isSingleFassetEnabled ? 8 : 6 }} className="px-0 min-[1200px]:pl-[10px] mt-5 md:mt-0">
+                                        <Grid.Col span={{ base: 12, lg: isSingleFassetEnabled ? 7 : 6 }} className="px-0 min-[1200px]:pl-[10px] mt-5 md:mt-0">
                                             <MyPoolsPositionCard
                                                 pools={userPools.data}
                                                 isLoading={userPools.isPending}

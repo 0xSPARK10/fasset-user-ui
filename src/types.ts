@@ -32,9 +32,11 @@ export const enum CoinEnum {
     FDoge = 'FDOGE',
     TestUSDC = 'testUSDC',
     TestUSDT = 'testUSDT',
+    USDT0 = 'USDT0',
     TestETH = 'testETH',
     USDX = 'USDX',
     CFLR = 'CFLR',
+    C2FLR = 'C2FLR',
     SGB = 'SGB'
 }
 

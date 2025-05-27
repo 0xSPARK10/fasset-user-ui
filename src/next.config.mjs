@@ -52,6 +52,7 @@ const nextConfig = {
         ENABLED_WALLETS: process.env.ENABLED_WALLETS,
         XPUB_SECRET: process.env.XPUB_SECRET,
         NETWORK: process.env.NETWORK,
+        TESTNET_CHAIN: process.env.TESTNET_CHAIN,
         TERM_OF_SERVICE_URL: process.env.TERMS_OF_SERVICE_URL,
         WIND_DOWN_DATE: process.env.WIND_DOWN_DATE,
         WIND_DOWN_BLOG_URL: process.env.WIND_DOWN_BLOG_URL

@@ -166,7 +166,7 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
                             fw={400}
                             c="var(--flr-dark-gray)"
                         >
-                            {formatNumberWithSuffix(ecoSystemInfo?.coreVaultInflowsUSD ?? 0)}
+                            ${formatNumberWithSuffix(ecoSystemInfo?.coreVaultInflowsUSD ?? 0)}
                         </Text>
                         <Badge
                             variant="outline"
@@ -183,7 +183,7 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
                                 fw={400}
                                 c={timeData?.coreVaultData?.isPositiveInflowDiff ? 'var(--flr-green)' : 'var(--flr-red)'}
                             >
-                                ${timeData?.coreVaultData?.inflowDiff}%
+                                {timeData?.coreVaultData?.inflowDiff}%
                             </Text>
                         </Badge>
                     </div>
@@ -212,7 +212,7 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
                             fw={400}
                             c="var(--flr-dark-gray)"
                         >
-                            {formatNumberWithSuffix(ecoSystemInfo?.coreVaultOutflowsUSD ?? 0)}
+                            ${formatNumberWithSuffix(ecoSystemInfo?.coreVaultOutflowsUSD ?? 0)}
                         </Text>
                         <Badge
                             variant="outline"
@@ -229,7 +229,7 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
                                 fw={400}
                                 c={timeData?.coreVaultData?.isPositiveOutflowDiff ? 'var(--flr-green)' : 'var(--flr-red)'}
                             >
-                                ${timeData?.coreVaultData?.outflowDiff}%
+                                {timeData?.coreVaultData?.outflowDiff}%
                             </Text>
                         </Badge>
                     </div>

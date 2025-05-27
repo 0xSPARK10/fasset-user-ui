@@ -4,6 +4,7 @@ import XrpIcon from "@/components/icons/XrpIcon";
 import BtcIcon from "@/components/icons/BtcIcon";
 import DogeIcon from "@/components/icons/DogeIcon";
 import SgbIcon from "@/components/icons/SgbIcon";
+import C2FlrIcon from "@/components/icons/C2FlrIcon";
 import { INamespaceMethods, INetwork } from "@/types";
 import { LEDGER_APP } from "@/constants";
 
@@ -39,6 +40,21 @@ export const NETWORK_FLARE_COSTON_TESTNET: INetwork = {
     isMandatory: true,
     explorerAddressUrl: 'https://coston-explorer.flare.network/address',
     explorerTxUrl: 'https://coston-explorer.flare.network/tx',
+    mainnet: false
+}
+
+export const NETWORK_FLARE_COSTON2_TESTNET: INetwork = {
+    chainId: '114',
+    name: 'Flare Testnet Coston2',
+    rpcUrl: 'https://coston2-api.flare.network/ext/C/rpc',
+    namespace: ETH_NAMESPACE,
+    methods: ETH_NAMESPACE_METODS,
+    addRpcMap: true,
+    ledgerApp: LEDGER_APP.FLARE,
+    icon: (props) => <C2FlrIcon width="32" height="32" {...props} />,
+    isMandatory: true,
+    explorerAddressUrl: 'https://coston2-explorer.flare.network/address',
+    explorerTxUrl: 'https://coston2-explorer.flare.network/tx',
     mainnet: false
 }
 
@@ -131,6 +147,21 @@ export const NETWORK_XRPL: INetwork = {
     icon: (props) => <XrpIcon width="32" height="32" {...props} />,
     explorerAddressUrl: 'https://livenet.xrpl.org/accounts',
     explorerTxUrl: 'https://livenet.xrpl.org/transactions',
+    mainnet: true
+}
+
+export const NETWORK_FLARE: INetwork = {
+    chainId: '14',
+    name: 'Flare Mainnet',
+    rpcUrl: 'https://flare-api.flare.network/ext/C/rpc"',
+    namespace: ETH_NAMESPACE,
+    methods: ETH_NAMESPACE_METODS,
+    addRpcMap: true,
+    ledgerApp: LEDGER_APP.FLARE,
+    icon: (props) => <CflrIcon width="32" height="32" {...props} />,
+    isMandatory: true,
+    explorerAddressUrl: 'https://flare-explorer.flare.network/address',
+    explorerTxUrl: 'https://flare-explorer.flare.network/tx',
     mainnet: true
 }
 
