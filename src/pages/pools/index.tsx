@@ -90,7 +90,7 @@ export default function Agents() {
             if (
                 (pool.userPoolBalance && Number(pool.userPoolBalance) !== 0) ||
                 (pool.userPoolNatBalance && Number(pool.userPoolNatBalance) !== 0) ||
-                (pool.userPoolFees && Number(pool.userPoolFees) !== 0)) {
+                (pool.userPoolFees && Number(pool.userPoolFees) >= 0.01)) {
                 activePools.push(pool);
             } else {
                 otherPools.push(pool);

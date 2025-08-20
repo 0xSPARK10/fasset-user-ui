@@ -36,8 +36,9 @@ export const enum CoinEnum {
     TestETH = 'testETH',
     USDX = 'USDX',
     CFLR = 'CFLR',
+    SGB = 'SGB',
     C2FLR = 'C2FLR',
-    SGB = 'SGB'
+    FLR = 'FLR'
 }
 
 export interface ICoin {
@@ -250,7 +251,6 @@ export interface ISelectedAgent {
     name: string;
     address: string;
     feeBIPS: string;
-    handshakeType: number;
     underlyingAddress: string;
     infoUrl: string;
 }
@@ -355,6 +355,13 @@ export interface IEcosystemInfo {
     totalPoolRewardsPaidUSD: string;
     tvl: string;
     tvlPoolsNat: string;
+    proofOfReserve: {
+        ratio: string;
+        reserve: string;
+        reserveUSD: string;
+        total: string;
+        totalUSD: string;
+    }
 }
 
 export interface ISubmitTx {
@@ -411,6 +418,10 @@ export interface ITimeData {
             value: string;
         }[];
     }
+    proofOfReserve: {
+        timestamp: number;
+        value: string;
+    }[];
 }
 
 export interface ICrStatus {
@@ -471,4 +482,13 @@ export interface IRedemptionFeeData {
 export interface IMintEnabled {
     fasset: string;
     status: boolean;
+}
+
+export interface IEarn {
+    [key: string]: {
+        type: string;
+        pairs: string[];
+        coin_type: string;
+        url: string;
+    }
 }

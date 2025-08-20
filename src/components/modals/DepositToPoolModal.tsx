@@ -82,8 +82,6 @@ export default function DepositToPoolModal({ opened, onClose, collateralPool }: 
             await enterCollateralPool.mutateAsync({
                 userAddress: mainToken?.address!,
                 poolAddress: collateralPool?.pool!,
-                fAssets: 0,
-                enterWithFullAssets: false,
                 value: parseUnits(values?.amount || formValues.amount, 18).toString()
             });
             setCurrentWalletStep(STEP_WALLET_COMPLETED);

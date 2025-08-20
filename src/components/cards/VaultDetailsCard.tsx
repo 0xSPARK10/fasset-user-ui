@@ -114,35 +114,6 @@ export default function VaultDetailsCard({ pool }: IVaultDetailsCard) {
                         >
                             {pool?.description}
                         </Text>
-                        <Text
-                            className="text-16 uppercase mt-4 mb-1"
-                            fw={400}
-                            c="var(--flr-gray)"
-                        >
-                            {t('agent_details.terms_of_use_label')}
-                        </Text>
-                        {pool && pool?.infoUrl?.replace(/\s/g, '')?.length > 0
-                            ? <Anchor
-                                underline="always"
-                                href={poolUrl}
-                                target="_blank"
-                                className="inline-flex items-centertext-16"
-                                c="var(--flr-black)"
-                                fw={500}
-                            >
-                                {t('agent_details.learn_more_label')}
-                                <IconArrowUpRight
-                                    size={20}
-                                    className="ml-1 flex-shrink-0"
-                                />
-                            </Anchor>
-                            : <Text
-                                className="text-16"
-                                fw={400}
-                            >
-                                {t('agent_details.not_available_label')}
-                            </Text>
-                        }
                     </div>
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, lg: 8, xl: 6 }}>
@@ -220,7 +191,10 @@ export default function VaultDetailsCard({ pool }: IVaultDetailsCard) {
                                     >
                                         {t('agent_details.agent_fee_label')}
                                     </Text>
-                                    <Popover withArrow>
+                                    <Popover
+                                        withArrow
+                                        width="auto"
+                                    >
                                         <Popover.Target>
                                             <IconInfoHexagon
                                                 style={{width: rem(16), height: rem(16)}}
@@ -253,7 +227,10 @@ export default function VaultDetailsCard({ pool }: IVaultDetailsCard) {
                                     >
                                         {t('agent_details.minting_fee_label')}
                                     </Text>
-                                    <Popover withArrow>
+                                    <Popover
+                                        withArrow
+                                        width="auto"
+                                    >
                                         <Popover.Target>
                                             <IconInfoHexagon
                                                 style={{width: rem(16), height: rem(16)}}
@@ -287,7 +264,10 @@ export default function VaultDetailsCard({ pool }: IVaultDetailsCard) {
                                     >
                                         {t('agent_details.available_mint_label')}
                                     </Text>
-                                    <Popover withArrow>
+                                    <Popover
+                                        withArrow
+                                        width="auto"
+                                    >
                                         <Popover.Target>
                                             <IconInfoHexagon
                                                 style={{ width: rem(16), height: rem(16) }}
@@ -337,7 +317,10 @@ export default function VaultDetailsCard({ pool }: IVaultDetailsCard) {
                                     >
                                         {t('agent_details.mint_count_label')}
                                     </Text>
-                                    <Popover withArrow>
+                                    <Popover
+                                        withArrow
+                                        width="auto"
+                                    >
                                         <Popover.Target>
                                             <IconInfoHexagon
                                                 style={{ width: rem(16), height: rem(16) }}
@@ -371,7 +354,10 @@ export default function VaultDetailsCard({ pool }: IVaultDetailsCard) {
                                     >
                                         {t('agent_details.total_collateral_label')}
                                     </Text>
-                                    <Popover withArrow>
+                                    <Popover
+                                        withArrow
+                                        width="auto"
+                                    >
                                         <Popover.Target>
                                             <IconInfoHexagon
                                                 style={{width: rem(16), height: rem(16)}}
@@ -404,7 +390,10 @@ export default function VaultDetailsCard({ pool }: IVaultDetailsCard) {
                                     >
                                         {t('agent_details.past_liquidations_label')}
                                     </Text>
-                                    <Popover withArrow>
+                                    <Popover
+                                        withArrow
+                                        width="auto"
+                                    >
                                         <Popover.Target>
                                             <IconInfoHexagon
                                                 style={{width: rem(16), height: rem(16)}}

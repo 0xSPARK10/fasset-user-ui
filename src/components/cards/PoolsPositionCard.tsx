@@ -136,6 +136,7 @@ export default function PoolsPositionCard({ className, pools }: IPoolsPositionCa
                         </Text>
                         <Popover
                             withArrow
+                            width="auto"
                         >
                             <Popover.Target>
                                 <IconInfoHexagon
@@ -161,6 +162,7 @@ export default function PoolsPositionCard({ className, pools }: IPoolsPositionCa
                         </Text>
                         <Popover
                             withArrow
+                            width="auto"
                         >
                             <Popover.Target>
                                 <IconInfoHexagon

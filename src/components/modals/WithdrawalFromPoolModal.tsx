@@ -95,7 +95,6 @@ export default function WithdrawalFromPoolModal({ opened, onClose, collateralPoo
                 userAddress: mainToken?.address!,
                 poolAddress: collateralPool?.pool!,
                 tokenShare: parseUnits(values?.amount || formValues.amount, 18).toString(),
-                exitType: 0,
             });
             setCurrentWalletStep(STEP_WALLET_COMPLETED);
             nativeBalances.refetch();

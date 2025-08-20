@@ -21,12 +21,15 @@ import FAssetWindDownModal from "@/components/modals/FAssetWindDownModal";
 import FassetsOverviewCard from "@/components/cards/FassetsOverviewCard";
 import CollateralCard from "@/components/cards/CollateralCard";
 import CoreVaultCard from "@/components/cards/CoreVaultCard";
+import EarnCard from "@/components/cards/EarnCard";
+import ProofOfReservesCard from "@/components/cards/ProofOfReservesCard";
 import { useEcosystemInfo, useMintEnabled } from "@/api/minting";
 import { useTimeData } from "@/api/user";
 import { FILTERS, COOKIE_WINDDOWN } from "@/constants";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useNativeBalance } from "@/api/balance";
 import { useUserPools } from "@/api/pool";
+import { useEarn } from "@/api/earn";
 import { COINS } from "@/config/coin";
 import { toNumber } from "@/utils";
 import { useRouter } from "next/router";
@@ -46,6 +49,7 @@ export default function Home() {
     const balance = useNativeBalance(mainToken?.address!, mainToken?.address !== undefined);
     const userPools = useUserPools(mainToken?.address!, COINS.filter(coin => coin.isFAssetCoin && coin.enabled).map(coin => coin.type), fetchPools);
     const mintEnabled = useMintEnabled();
+    const earn = useEarn();
     const isMounted = useMounted();
     const cookies = new Cookies();
     const router = useRouter();
@@ -54,7 +58,6 @@ export default function Home() {
     const totalLotsAssets = balance.data?.filter(balance => 'lots' in balance).length;
     const hasNoAssets = zeroBalanceAssets === totalLotsAssets
         && userPools?.data !== undefined && userPools.data?.filter(pool => toNumber(pool.userPoolNatBalance!) > 0).length === 0;
-    const isSingleFassetEnabled = COINS.filter(coin => coin.isFAssetCoin && coin.enabled).length === 1;
 
     useEffect(() => {
         if (!isMounted || !isConnected) return;
@@ -163,7 +166,7 @@ export default function Home() {
                     }}
                 >
                     {isConnected &&
-                        <Grid.Col span={12} className="pb-0">
+                        <Grid.Col span={12}>
                             <Grid
                                 styles={{
                                     root: {
@@ -174,13 +177,13 @@ export default function Home() {
                             >
                                 {(!hasNoAssets || isMobile) &&
                                     <>
-                                        <Grid.Col span={{ base: 12, lg: isSingleFassetEnabled ? 5 : 6 }} className="px-0 min-[1200px]:pr-[10px] mt-5 md:mt-0 pl-0">
+                                        <Grid.Col span={{ base: 12, lg: 5 }} className="px-0 min-[1200px]:pr-[10px] mt-5 md:mt-0 pl-0">
                                             <FAssetPositionCard
                                                 balance={balance.data}
                                                 isLoading={balance.isPending}
                                             />
                                         </Grid.Col>
-                                        <Grid.Col span={{ base: 12, lg: isSingleFassetEnabled ? 7 : 6 }} className="px-0 min-[1200px]:pl-[10px] mt-5 md:mt-0">
+                                        <Grid.Col span={{ base: 12, lg: 7 }} className="px-0 min-[1200px]:pl-[10px] mt-5 md:mt-0">
                                             <MyPoolsPositionCard
                                                 pools={userPools.data}
                                                 isLoading={userPools.isPending}
@@ -203,16 +206,15 @@ export default function Home() {
                         <FassetsOverviewCard
                             ecoSystemInfo={ecoSystemInfo.data}
                             timeData={timeData.data}
-                            mintEnabled={mintEnabled.data}
                         />
                     </Grid.Col>
-                    <Grid.Col span={{ base: 12, sm: 6, lg: 3 }} className="mt-5 md:mt-0">
+                    <Grid.Col span={{base: 12, sm: 6, lg: 3 }} className="mt-5 md:mt-0">
                         <CollateralCard
                             ecoSystemInfo={ecoSystemInfo.data}
                             timeData={timeData.data}
                         />
                     </Grid.Col>
-                    <Grid.Col span={{ base: 12, sm: 6, lg: 3 }} className="mt-5 md:mt-0">
+                    <Grid.Col span={{base: 12, sm: 6, lg: 3 }} className="mt-5 md:mt-0">
                         <CoreVaultCard
                             ecoSystemInfo={ecoSystemInfo.data}
                             timeData={timeData.data}
@@ -231,6 +233,20 @@ export default function Home() {
                             filter={activeFilter}
                         />
                     </Grid.Col>
+                    <Grid.Col span={12} className="mt-5 md:mt-0">
+                        <ProofOfReservesCard
+                            timeData={timeData.data}
+                            ecoSystemInfo={ecoSystemInfo.data}
+                            filter={activeFilter}
+                        />
+                    </Grid.Col>
+                    {earn.data && Object.keys(earn.data).length > 0 &&
+                        <Grid.Col span={12} className="mt-5 md:mt-0">
+                            <EarnCard
+                                earn={earn.data}
+                            />
+                        </Grid.Col>
+                    }
                 </Grid>
             </Container>
             {disabledFassets.length > 0 &&

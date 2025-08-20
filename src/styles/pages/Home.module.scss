@@ -7,6 +7,14 @@
 .filters {
     scrollbar-width: none;
 }
+.mantineTabsRoot {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
 .tab {
     &[data-active="true"] {
         color: var(--flr-pink);

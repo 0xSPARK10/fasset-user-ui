@@ -225,6 +225,8 @@ export default function MintModal({ opened, onClose, fAssetCoin }: IMintModal) {
                                         setHighMintingFee={(mintingFee) => {
                                             if (mintingFee !== undefined) {
                                                 setErrorMessage(t('mint_modal.minting_fee_high_warning_label'));
+                                            } else {
+                                                setErrorMessage('');
                                             }
                                             setHighMintingFee(mintingFee);
                                         }}

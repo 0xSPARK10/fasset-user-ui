@@ -159,7 +159,6 @@ const MintForm = forwardRef<FormRef, IMintForm>(
                     name: response?.agentName,
                     address: response?.agentAddress,
                     feeBIPS: response?.feeBIPS,
-                    handshakeType: response?.handshakeType,
                     underlyingAddress: response?.underlyingAddress,
                     infoUrl: response?.infoUrl
                 });
@@ -203,7 +202,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
     }, []);
 
     useEffect(() => {
-        if (!mintingFee || !selectedAgent || selectedAgent.handshakeType === 0 || fAssetCoin.type.toLowerCase().includes('xrp')) {
+        if (!mintingFee || !selectedAgent || fAssetCoin.type.toLowerCase().includes('xrp')) {
             form.setFieldValue(
                 'minterUnderlyingAddresses',
                 fAssetCoin.type.toLowerCase().includes('xrp') ? [fAssetCoin.address!] : []
@@ -357,7 +356,6 @@ const MintForm = forwardRef<FormRef, IMintForm>(
             name: agent.agentName,
             address: agent.vault,
             feeBIPS: agent.feeBIPS,
-            handshakeType: agent.handshakeType,
             underlyingAddress: agent.underlyingAddress,
             infoUrl: agent.url,
         });
@@ -391,58 +389,6 @@ const MintForm = forwardRef<FormRef, IMintForm>(
             refetchBestAgent(false);
         }
     }
-
-    const HandshakeBlock = memo(({ agent }: { agent: ISelectedAgent | undefined }) => {
-        let url = agent ? agent.infoUrl : '';
-        if (!/^https?:\/\//i.test(url)) {
-            url = 'https://' + url;
-        }
-
-        return (
-            <div className="inline-block">
-                <Text
-                    className="text-12 uppercase"
-                    fw={400}
-                    c="var(--flr-gray)"
-                >
-                    {t('mint_modal.form.handshake_required_label')}
-                </Text>
-                <div className="flex justify-between">
-                    <Text
-                        className="text-16"
-                        fw={400}
-                        c="var(--flr-black)"
-                    >
-                        {!isManualSelectedAgent && bestAgent.isPending
-                            ? <Loader size={14} />
-                            : (
-                                (lots || isManualSelectedAgent) && agent?.address
-                                    ? t(agent?.handshakeType !== 0 ? 'mint_modal.form.yes_label' : 'mint_modal.form.no_label')
-                                    : <span>&mdash;</span>
-                            )
-                        }
-                    </Text>
-                    {(lots || isManualSelectedAgent) && agent && agent?.infoUrl?.length > 0 && agent.handshakeType !== 0 &&
-                        <Anchor
-                            underline="always"
-                            href={url}
-                            target="_blank"
-                            className="inline-flex items-center text-16"
-                            c="var(--flr-black)"
-                            fw={700}
-                        >
-                            {t('mint_modal.form.tou_label')}
-                            <IconArrowUpRight
-                                size={20}
-                                className="ml-1 flex-shrink-0"
-                            />
-                        </Anchor>
-                    }
-                </div>
-            </div>
-        );
-    });
-    HandshakeBlock.displayName = 'handshakeBlock';
 
     return (
         <div ref={popoverSize.ref}>
@@ -621,9 +567,6 @@ const MintForm = forwardRef<FormRef, IMintForm>(
                         </Popover.Dropdown>
                     </Popover>
                 </div>
-                <HandshakeBlock
-                    agent={selectedAgent}
-                />
                 <div>
                     <Text
                         c={isMintingFeeHigh ? 'var(--flr-red)' : 'var(--flr-gray)'}

@@ -62,7 +62,6 @@ export default function PoolsTable({ pools, className, style, type, showAll }: I
     const [isDepositToPoolModalActive, setIsDepositToPoolModalActive] = useState<boolean>(false);
     const [isWithdrawalFromPoolModalActive, setIsWithdrawalFromPoolModalActive] = useState<boolean>(false);
     const [isClaimRewardsFromPoolModalActive, setIsClaimRewardsPoolModalActive] = useState<boolean>(false);
-    const [isSendCPTsModalActive, setIsSendCPTsModalActive] = useState<boolean>(false);
     const [isDrawerActive, setIsDrawerActive] = useState<boolean>(false);
     const [isShowAllActive, setIsShowAllActive] = useState<boolean>(false);
     const [isMenuOpened, setIsMenuOpened] = useState<Record<string, boolean>>({});
@@ -878,16 +877,6 @@ export default function PoolsTable({ pools, className, style, type, showAll }: I
         setSelectedCollateralPool(undefined);
     }
 
-    const onSendCPTs = (pool: IPool) => {
-        setIsSendCPTsModalActive(true);
-        setSelectedCollateralPool(pool);
-    }
-
-    const onCloseSendCPTs = async () => {
-        setIsSendCPTsModalActive(false);
-        setSelectedCollateralPool(undefined);
-    }
-
     return (
         <div className={className} style={style}>
             <Drawer
@@ -951,6 +940,7 @@ export default function PoolsTable({ pools, className, style, type, showAll }: I
                     <div className="flex flex-col">
                         <Popover
                             position="bottom-end"
+                            width="auto"
                         >
                             <div className="flex items-center justify-end">
                                 <Popover.Target>

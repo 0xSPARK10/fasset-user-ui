@@ -38,13 +38,6 @@ export default function PoolCollateralCard({ pool }: IPoolCollateralCard) {
             iconColor: '!bg-[var(--flr-green)] border-[var(--flr-green)]'
         },
         {
-            key: 'poolTopupCR',
-            label: t('agent_details.topup_cr_label', { amount: pool?.poolTopupCR }),
-            amount: toNumber(pool?.poolTopupCR ?? '0'),
-            iconName: 'IconArrowUp',
-            iconColor: '!bg-[var(--flr-warning)] border-[var(--flr-warning)]'
-        },
-        {
             key: 'poolSafetyCR',
             label: t('agent_details.safety_cr_label', {amount: pool?.poolSafetyCR }),
             amount: toNumber(pool?.poolSafetyCR ?? '0'),
@@ -55,13 +48,6 @@ export default function PoolCollateralCard({ pool }: IPoolCollateralCard) {
             key: 'poolMinCR',
             label: t('agent_details.minimum_cr_label', {amount: pool?.poolMinCR }),
             amount: toNumber(pool?.poolMinCR ?? '0'),
-            iconName: 'IconArrowDown',
-            iconColor: '!bg-[var(--flr-red)] border-[var(--flr-red)]'
-        },
-        {
-            key: 'poolCCBCR',
-            label: t('agent_details.ccb_cr_label', {amount: pool?.poolCCBCR }),
-            amount: toNumber(pool?.poolCCBCR ?? '0'),
             iconName: 'IconArrowDown',
             iconColor: '!bg-[var(--flr-red)] border-[var(--flr-red)]'
         }
@@ -114,7 +100,10 @@ export default function PoolCollateralCard({ pool }: IPoolCollateralCard) {
                 >
                     {t('agent_details.pool_collateral_label')}
                 </Title>
-                <Popover withArrow>
+                <Popover
+                    withArrow
+                    width="auto"
+                >
                     <Popover.Target>
                         <IconInfoHexagon
                             style={{width: rem(16), height: rem(16)}}

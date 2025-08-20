@@ -18,7 +18,8 @@ import {
     NETWORK_BTC,
     NETWORK_BTC_TESTNET,
     NETWORK_DOGE,
-    NETWORK_DOGE_TESTNET, NETWORK_FLARE,
+    NETWORK_DOGE_TESTNET,
+    NETWORK_FLARE,
     NETWORK_FLARE_COSTON2_TESTNET,
     NETWORK_FLARE_COSTON_TESTNET,
     NETWORK_SONGBIRD,
@@ -32,11 +33,14 @@ const enabledUnderlyingFassets = process.env.ENABLED_UNDERLYING_FASSETS && proce
     : [];
 
 const isMainnet = process.env.NETWORK === 'mainnet';
+const mainnetChain = isMainnet
+    ? process.env.MAINNET_CHAIN
+    : undefined;
 const testnetChain = !isMainnet
     ? process.env.TESTNET_CHAIN
     : undefined;
 
-export const CFLR_COIN: ICoin = {
+export const CFLR: ICoin = {
     type: CoinEnum.CFLR,
     icon: (props) => <CflrIcon width="32" height="32" className="flex-shrink-0" {...props} />,
     nativeName: 'CFLR',
@@ -132,18 +136,6 @@ export const TEST_USDT: ICoin = {
     decimals: 2
 }
 
-export const USDT0: ICoin = {
-    type: CoinEnum.USDT0,
-    icon: (props) => <Usdt0Icon width="32" height="32" className="flex-shrink-0" {...props} />,
-    lotSize: 0,
-    minWalletBalance: 0,
-    network: NETWORK_FLARE,
-    enabled: isMainnet,
-    isFAssetCoin: false,
-    isStableCoin: true,
-    decimals: 2
-}
-
 export const TEST_USDC: ICoin = {
     type: CoinEnum.TestUSDC,
     icon: (props) => <UsdcIcon width="32" height="32" className="flex-shrink-0" {...props} />,
@@ -175,7 +167,7 @@ export const SGB: ICoin = {
     lotSize: 1,
     minWalletBalance: 2,
     network: NETWORK_SONGBIRD,
-    enabled: isMainnet,
+    enabled: isMainnet && mainnetChain === 'SGB',
     isFAssetCoin: false,
     supportedWallets: [WALLET.WALLET_CONNECT, WALLET.META_MASK, WALLET.LEDGER],
     decimals: 2,
@@ -240,8 +232,36 @@ export const USDX: ICoin = {
     decimals: 2
 }
 
+export const FLR: ICoin = {
+    type: CoinEnum.FLR,
+    icon: (props) => <CflrIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    nativeName: 'FLR',
+    nativeIcon: (props) => <CflrIcon width="18" height="18" {...props} />,
+    lotSize: 1,
+    minWalletBalance: 2,
+    network: NETWORK_FLARE,
+    enabled: isMainnet && mainnetChain === 'FLR',
+    isFAssetCoin: false,
+    supportedWallets: [WALLET.WALLET_CONNECT, WALLET.META_MASK, WALLET.LEDGER],
+    decimals: 2,
+    isMainToken: true,
+    bipPath: BIP44_PATH.MAINNET.ETH,
+}
+
+export const USDT0: ICoin = {
+    type: CoinEnum.USDT0,
+    icon: (props) => <UsdtIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    lotSize: 0,
+    minWalletBalance: 0,
+    network: NETWORK_FLARE,
+    enabled: isMainnet,
+    isFAssetCoin: false,
+    isStableCoin: true,
+    decimals: 2
+}
+
 export const COINS = [
-    CFLR_COIN,
+    CFLR,
     C2FLR_COIN,
     FTEST_XRP,
     FTEST_BTC,
@@ -250,6 +270,7 @@ export const COINS = [
     TEST_USDC,
     TEST_ETH,
     SGB,
+    FLR,
     FXRP,
     FBTC,
     FDOGE,

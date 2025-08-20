@@ -133,7 +133,6 @@ const WithdrawalFromPoolForm = forwardRef<FormRef, IWithdrawalFromPoolForm>(({ c
                 userAddress: mainToken?.address!,
                 poolAddress: collateralPool?.pool!,
                 tokenShare: value === maxWithdrawal ? collateralPool.userPoolTokensFull! : parseUnits(value, 18).toString(),
-                exitType: 0,
                 getGasFee: true
             });
 
@@ -272,37 +271,6 @@ const WithdrawalFromPoolForm = forwardRef<FormRef, IWithdrawalFromPoolForm>(({ c
                         className="text-16 w-12"
                     >
                         {mainToken?.type}
-                    </Text>
-                </div>
-            </div>
-            <div className="flex justify-between mt-2">
-                <Text
-                    className="text-16"
-                    fw={400}
-                    c="var(--flr-black)"
-                >
-                    {t('withdrawal_from_pool_modal.form.rewards_label')}
-                </Text>
-                <div className="flex items-center">
-                    {collateralToken && collateralToken.icon({ width: "18", height: "18" })}
-                    <Text
-                        className="text-16 mx-2"
-                        fw={400}
-                        c="var(--flr-black)"
-                    >
-                        {amount && maxWithdraw.isPending
-                            ? <Loader size={14}/>
-                            : maxWithdraw?.data?.fees
-                                ? maxWithdraw.data.fees
-                                : <span>&mdash;</span>
-                        }
-                    </Text>
-                    <Text
-                        c="var(--flr-gray)"
-                        fw={400}
-                        className="text-16 w-12"
-                    >
-                        {collateralPool.vaultType}
                     </Text>
                 </div>
             </div>

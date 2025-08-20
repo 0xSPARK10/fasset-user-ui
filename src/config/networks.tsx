@@ -164,5 +164,3 @@ export const NETWORK_FLARE: INetwork = {
     explorerTxUrl: 'https://flare-explorer.flare.network/tx',
     mainnet: true
 }
-
-

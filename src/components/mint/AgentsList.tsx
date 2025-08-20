@@ -87,23 +87,6 @@ export default function AgentsList({ agents, setAgent, lots }: IAgentList) {
                                 />
                             </div>
                         </div>
-                        <div className="max-[360px]:w-[40px] w-[55px] md:w-[72px] max-w-none">
-                            <Text
-                                c="var(--flr-gray)"
-                                className="uppercase mb-1 text-12"
-                                fw={400}
-                                truncate="end"
-                            >
-                                {t('mint_modal.form.change_agent_table.handshake_label')}
-                            </Text>
-                            <Text
-                                className="mb-0 sm:mb-2 text-14"
-                            >
-                                {t(agent?.handshakeType !== 0 ?
-                                    'mint_modal.form.yes_label' : 'mint_modal.form.no_label')
-                                }
-                            </Text>
-                        </div>
                         <div className="max-[360px]:w-[30px] w-[40px] md:w-[72px] max-w-none">
                             <Text
                                 c="var(--mantine-color-gray-6)"

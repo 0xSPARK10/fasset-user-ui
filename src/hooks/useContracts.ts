@@ -56,8 +56,7 @@ export function useReserveCollateral() {
                 maxMintingFeeBIPS,
                 executorAddress,
                 userAddress,
-                totalNatFee,
-                minterUnderlyingAddresses
+                totalNatFee
             }: {
                 assetManagerAddress: string,
                 agentVaultAddress: string,
@@ -65,8 +64,7 @@ export function useReserveCollateral() {
                 maxMintingFeeBIPS: number,
                 executorAddress: string,
                 userAddress: string,
-                totalNatFee: number,
-                minterUnderlyingAddresses: string[]
+                totalNatFee: number
             }
         ) => {
             if (!provider) return;
@@ -80,7 +78,6 @@ export function useReserveCollateral() {
                     lots,
                     maxMintingFeeBIPS,
                     executorAddress,
-                    minterUnderlyingAddresses,
                     {
                         from: userAddress,
                         value: totalNatFee.toLocaleString('fullwide', { useGrouping: false })
@@ -222,15 +219,11 @@ export function useEnterCollateralPool() {
         mutationFn: async ({
             userAddress,
             poolAddress,
-            fAssets,
-            enterWithFullAssets,
             value,
             getGasFee = false
         }: {
             userAddress: string,
             poolAddress: string,
-            fAssets: number,
-            enterWithFullAssets: boolean,
             value: string,
             getGasFee?: boolean
         }) => {
@@ -242,7 +235,7 @@ export function useEnterCollateralPool() {
 
                 if (getGasFee) {
                     const gasPrice = (await getFeeData(mainToken!)).gasPrice;
-                    const gasLimit = await contract.enter.estimateGas(fAssets, enterWithFullAssets, {
+                    const gasLimit = await contract.enter.estimateGas({
                         from: userAddress,
                         value: value
                     });
@@ -254,7 +247,7 @@ export function useEnterCollateralPool() {
                     return undefined;
                 }
 
-                const tx = await contract.enter(fAssets, enterWithFullAssets, {
+                const tx = await contract.enter({
                     from: userAddress,
                     value: value
                 });
@@ -282,13 +275,11 @@ export function useExitCollateralPool() {
             userAddress,
             poolAddress,
             tokenShare,
-            exitType,
             getGasFee = false
        }: {
             userAddress: string,
             poolAddress: string,
             tokenShare: string,
-            exitType: number,
             getGasFee?: boolean
        }) => {
            if (!provider) return;
@@ -299,7 +290,7 @@ export function useExitCollateralPool() {
 
                if (getGasFee) {
                    const gasPrice = (await getFeeData(mainToken!)).gasPrice;
-                   const gasLimit = await contract.exit.estimateGas(tokenShare, exitType, {
+                   const gasLimit = await contract.exit.estimateGas(tokenShare, {
                        from: userAddress
                    });
 
@@ -310,7 +301,7 @@ export function useExitCollateralPool() {
                    return undefined;
                }
 
-               const tx = await contract.exit(tokenShare, exitType, {
+               const tx = await contract.exit(tokenShare, {
                    from: userAddress
                });
 

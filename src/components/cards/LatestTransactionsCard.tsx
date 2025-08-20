@@ -124,6 +124,7 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
                     <span className="flex-shrink-0">{t('latest_transactions_card.partial_redeem_label')}</span>
                     <Popover
                         withArrow
+                        width="auto"
                     >
                         <Popover.Target>
                             <IconInfoHexagon

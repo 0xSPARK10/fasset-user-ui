@@ -281,6 +281,19 @@
         "title": "Deposit to Pool",
         "want_to_deposit_title": "I want to deposit"
     },
+    "earn_card": {
+        "borrow/lend_label": "Borrow / lend",
+        "dex_label": "DEX",
+        "eligible_assets_label": "Eligible Asset(s)",
+        "fxrp_label": "FXRP",
+        "open_app_button": "Open App",
+        "pools_pair_label": "Pools Pairs",
+        "restaking_label": "Restaking",
+        "stxrp_label": "stXRP",
+        "title": "Earn",
+        "usdt0_label": "USDT0",
+        "vaults_label": "Vaults"
+    },
     "error": {
         "error_message": "Error: {{message}}",
         "title": "Something went wrong",
@@ -394,13 +407,16 @@
     "layout": {
         "fasset_system_paused_label": "The FAsset System is currently paused for {{tokens}}.",
         "footer": {
+            "be_version": "Backend API v{{version}}",
             "become_an_fasset_agent_label": "Become an FAsset Agent",
             "copyright_label": "Copyright Flare {{year}}",
-            "documentation_label": "Documentation"
+            "documentation_label": "Documentation",
+            "fe_version": "Frontend v{{version}}"
         },
         "header": {
             "agents_label": "Pools",
             "beta_label": "beta",
+            "flare_label": "Flare",
             "home_label": "Home",
             "mint_label": "Mint",
             "quest_label": "Quest",
@@ -579,6 +595,12 @@
         "tvl_label": "TVL",
         "what_are_collateral_pools_label": "What are collateral pools?",
         "your_position_label": "Your position"
+    },
+    "proof_of_reserves_card": {
+        "ratio_label": "Ratio",
+        "title": "Proof of reserves",
+        "total_label": "Total {{fasset}}",
+        "xrp_reserve_label": "XRP reserve"
     },
     "redeem_finished_modal": {
         "amount_label": "Amount",

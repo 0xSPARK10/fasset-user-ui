@@ -69,25 +69,3 @@ export function useRequestRedemptionDefault() {
     });
 }
 
-export function useTrailingFee(fAsset: string, enabled: boolean = true) {
-    return useQuery({
-        queryKey: [REDEMPTION_KEY.TRAILING_FEE],
-        queryFn: async () => {
-            const response = await apiClient.get(`trailingFee/${fAsset}`);
-            return response.data as ITrailingFee;
-        },
-        enabled: enabled
-    })
-}
-
-export function useRedemptionFeeData(enabled: boolean = true) {
-    return useQuery({
-        queryKey: [REDEMPTION_KEY.REDEMPTION_FEE_DATA],
-        queryFn: async () => {
-            const response = await apiClient.get('redemptionFeeData');
-            return response.data as IRedemptionFeeData;
-        },
-        enabled: enabled
-    })
-}
-

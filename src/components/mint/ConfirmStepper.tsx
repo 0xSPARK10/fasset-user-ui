@@ -23,7 +23,6 @@ import CryptoJS from "crypto-js";
 import MintWaitingModal from "@/components/modals/MintWaitingModal";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
 import WalletConnectOpenWalletCard from "@/components/cards/WalletConnectOpenWalletCard";
-import HandshakeCard from "@/components/mint/HandshakeCard";
 import { ICrStatus, IFAssetCoin, ISelectedAgent, INetwork, IUtxo } from "@/types";
 import { WALLET } from "@/constants";
 import { useAssetManagerAddress, useExecutor } from "@/api/user";
@@ -86,15 +85,13 @@ export default function ConfirmStepper({
     const prepareUtxos = usePrepareUtxos();
     const utxosForTransaction = useUtxosForTransaction();
 
-    const hasHandShake = selectedAgent.handshakeType !== 0;
-
     useEffect(() => {
         if (!isMounted || reserveCollateral.isPending || (mainToken?.connectedWallet === WALLET.LEDGER && currentStep === STEP_WALLET_RESERVATION)) return;
         reserve();
     }, [isMounted]);
 
     useEffect(() => {
-        if (!txHash || hasHandShake || fAssetCoin.connectedWallet === WALLET.LEDGER) return;
+        if (!txHash || fAssetCoin.connectedWallet === WALLET.LEDGER) return;
         mintRequest();
     }, [txHash]);
 
@@ -108,7 +105,7 @@ export default function ConfirmStepper({
             setIsLedgerButtonDisabled(true);
 
             let signTransactionResponse: any;
-            if (hasHandShake && fAssetCoin.network.namespace === BTC_NAMESPACE && fAssetCoin.connectedWallet !== WALLET.LEDGER) {
+            if (fAssetCoin.network.namespace === BTC_NAMESPACE && fAssetCoin.connectedWallet !== WALLET.LEDGER) {
                 const utxosResponse = await prepareUtxos.mutateAsync({
                     fAsset: fAssetCoin.type,
                     amount: toNumber(response?.paymentAmount!),
@@ -208,7 +205,7 @@ export default function ConfirmStepper({
             const assetManagerResponse = await assetManagerAddress.refetch();
             let minterUnderlyingAddresses = formValues.minterUnderlyingAddresses;
 
-            if (hasHandShake && fAssetCoin.network.namespace === BTC_NAMESPACE && fAssetCoin.connectedWallet === WALLET.LEDGER) {
+            if (fAssetCoin.network.namespace === BTC_NAMESPACE && fAssetCoin.connectedWallet === WALLET.LEDGER) {
                 let amount = fromLots(formValues.lots, fAssetCoin.lotSize) as number;
                 amount += (amount * (toNumber(formValues.feeBIPS)) / 10000);
                 const utxosForTransactionResponse = await utxosForTransaction.mutateAsync({
@@ -226,11 +223,10 @@ export default function ConfirmStepper({
                 maxMintingFeeBIPS: formValues.feeBIPS,
                 executorAddress: executorResponse?.data?.executorAddress!,
                 userAddress: mainToken?.address!,
-                totalNatFee: Number(formValues.collateralReservationFee) + Number(executorResponse?.data?.executorFee),
-                minterUnderlyingAddresses: minterUnderlyingAddresses
+                totalNatFee: Number(formValues.collateralReservationFee) + Number(executorResponse?.data?.executorFee)
             });
             setTxHash(response.hash);
-            setCurrentStep(hasHandShake ? STEP_HANDSHAKE : STEP_WALLET_DEPOSIT);
+            setCurrentStep(STEP_WALLET_DEPOSIT);
         } catch (error: any) {
             if (isError(error, 'ACTION_REJECTED')) {
                 onError(t('notifications.request_rejected_by_user_label'));
@@ -244,14 +240,6 @@ export default function ConfirmStepper({
         } finally {
             setIsLoading(false);
             setIsLedgerButtonDisabled(false);
-        }
-    }
-
-    const onHandshakeAccepted = (status: ICrStatus) => {
-        crStatus.current = status;
-        setCurrentStep(STEP_WALLET_DEPOSIT);
-        if (fAssetCoin?.connectedWallet !== WALLET.LEDGER) {
-            mintRequest();
         }
     }
 
@@ -371,38 +359,6 @@ export default function ConfirmStepper({
                     }
                     loading={currentStep === STEP_WALLET_RESERVATION}
                 />
-                {hasHandShake &&
-                    <Stepper.Step
-                        label={
-                            <Text
-                                className="text-14"
-                                fw={500}
-                                c="var(--flr-black)"
-                            >
-                                {t('mint_modal.handshake_step_label', { stepIndex: 2 })}
-                            </Text>
-                        }
-                        description={
-                            <Text
-                                className="text-12"
-                                fw={400}
-                                c={lighten('var(--flr-gray)', 0.378)}
-                            >
-                                {t('mint_modal.handshake_step_description_label')}
-                            </Text>
-                        }
-                        icon={
-                            <IconInfoHexagon size={16} />
-                        }
-                        completedIcon={
-                            <IconCheck
-                                size={16}
-                                color="var(--flr-black)"
-                            />
-                        }
-                        loading={currentStep === STEP_HANDSHAKE && !isHandshakeRejected}
-                    />
-                }
                 <Stepper.Step
                     label={
                         <Text
@@ -411,7 +367,7 @@ export default function ConfirmStepper({
                             c="var(--flr-black)"
                         >
                             {t('mint_modal.deposit_step_label', {
-                                stepIndex: hasHandShake ? 3 : 2,
+                                stepIndex: 2,
                                 fAsset: fAssetCoin.nativeName
                             })}
                         </Text>
@@ -470,16 +426,6 @@ export default function ConfirmStepper({
                     />
                     <WalletConnectOpenWalletCard />
                 </>
-            }
-            {currentStep === STEP_HANDSHAKE &&
-                <HandshakeCard
-                    assetManagerAddress={assetManagerAddress?.data?.address ?? ''}
-                    txHash={txHash ?? ''}
-                    fAssetCoin={fAssetCoin}
-                    onClose={() => onClose(false)}
-                    onRejected={() => setIsHandshakeRejected(true)}
-                    accepted={onHandshakeAccepted}
-                />
             }
             <MintWaitingModal
                 opened={isMintWaitingModalActive}

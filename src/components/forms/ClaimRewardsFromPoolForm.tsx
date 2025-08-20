@@ -30,8 +30,6 @@ import { parseUnits, formatUnit, toNumber } from "@/utils";
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { ErrorDecoder } from "ethers-decode-error";
 import { CollateralPoolTokenAbi } from "@/abi";
-import { useTrailingFee } from "@/api/redemption";
-import { XRP_NAMESPACE } from "@/config/networks";
 
 interface IClaimRewardsFromPoolForm {
     collateralPool: IPool
@@ -43,19 +41,16 @@ export type FormRef = {
 
 const ClaimRewardsFromPoolForm = forwardRef<FormRef, IClaimRewardsFromPoolForm>(({ collateralPool }: IClaimRewardsFromPoolForm, ref)  => {
     const [amount, setAmount] = useState<number>();
-    const [trailingFees, setTrailingFees] = useState<string>();
     const [fee, setFee] = useState<number>();
     const [maxWithdrawal, setMaxWithdrawal] = useState<number>();
     const { t } = useTranslation();
     const mediaQueryMatches = useMediaQuery('(max-width: 40em)');
     const { mainToken, connectedCoins } = useWeb3();
     const claimRewardsCollateralPool = useWithdrawFeesCollateralPool();
-    const trailingFee = useTrailingFee(collateralPool.vaultType);
 
     const withdrawLabelSize = useElementSize();
     const feeLabelSize = useElementSize();
-    const trailingFeeSize = useElementSize();
-    const labelWidth = Math.max(withdrawLabelSize.width, feeLabelSize.width, trailingFeeSize.width);
+    const labelWidth = Math.max(withdrawLabelSize.width, feeLabelSize.width);
 
     const fAssetCoin = connectedCoins.find(coin => coin.type === collateralPool.vaultType);
     const inputStep = collateralPool.vaultType.toLowerCase().includes('btc') || collateralPool.vaultType.toLowerCase().includes('doge')
@@ -93,14 +88,6 @@ const ClaimRewardsFromPoolForm = forwardRef<FormRef, IClaimRewardsFromPoolForm>(
         if (!collateralPool) return;
         setMaxWithdrawal(Math.floor(toNumber(collateralPool.userPoolFees!) * Math.pow(10, decimalScale)) / Math.pow(10, decimalScale));
     }, [collateralPool]);
-
-    useEffect(() => {
-        if (!trailingFee.data || trailingFee.data.trailingFee === "0" || !amount) return;
-        const decimals = fAssetCoin?.network.namespace === XRP_NAMESPACE ? 6 : 8;
-        let fee = ((amount * Math.pow(10, decimals)) * toNumber(trailingFee.data.trailingFee)) / Math.pow(10, 6);
-        fee = fee / Math.pow(10, decimals);
-        setTrailingFees(formatNumber(fee, decimals));
-    }, [trailingFee.data, amount]);
 
     const debounceSetAmount = useDebouncedCallback(async (value) => {
         if (!value || value === amount) return;
@@ -271,41 +258,6 @@ const ClaimRewardsFromPoolForm = forwardRef<FormRef, IClaimRewardsFromPoolForm>(
             >
                 {t('claim_rewards_from_pool_modal.form.fees_label')}
             </Text>
-            {trailingFees &&
-                <div className="flex justify-between mb-2">
-                    <Text
-                        className="text-16"
-                        fw={400}
-                        c="var(--flr-black)"
-                    >
-                        {t('claim_rewards_from_pool_modal.form.trailing_fees_label')}
-                    </Text>
-                    <div className="flex items-center">
-                        {fAssetCoin && fAssetCoin.icon &&
-                            fAssetCoin.icon({
-                                width: "18",
-                                height: "18"
-                            })
-                        }
-                        <Text
-                            className="text-16 mx-2"
-                            fw={400}
-                            c="var(--flr-black)"
-                        >
-                            {trailingFees}
-                        </Text>
-                        <Text
-                            ref={trailingFeeSize.ref}
-                            className="text-16"
-                            fw={400}
-                            c="var(--flr-gray)"
-                            style={{ width: labelWidth > 0 ? `${labelWidth}px` : 'auto' }}
-                        >
-                            {fAssetCoin?.type}
-                        </Text>
-                    </div>
-                </div>
-            }
             <div className="flex justify-between">
                 <Text
                     className="text-16"

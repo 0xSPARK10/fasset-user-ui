@@ -399,14 +399,16 @@ export default function TimeToRedeemCard({ tokens }: ITimeToRedeemCard) {
                         >
                             {t('time_to_redeem_card.title')}
                         </Title>
-                        <Text
-                            className="text-18 underline cursor-pointer"
-                            fw={400}
-                            c="var(--flr-black)"
-                            onClick={openModal}
-                        >
-                            {t('time_to_redeem_card.how_it_works_label')}
-                        </Text>
+                        {process.env.INCENTIVES_MODAL === 'true' &&
+                            <Text
+                                className="text-18 underline cursor-pointer"
+                                fw={400}
+                                c="var(--flr-black)"
+                                onClick={openModal}
+                            >
+                                {t('time_to_redeem_card.how_it_works_label')}
+                            </Text>
+                        }
                     </div>
                     {localTokens?.map((token, index) => (
                         <div

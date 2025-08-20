@@ -95,8 +95,6 @@ const DepositToPoolForm = forwardRef<FormRef, IDepositToPoolForm>(({ collateralP
             const estimatedGas = await enterCollateralPool.mutateAsync({
             userAddress: mainToken?.address!,
                 poolAddress: collateralPool?.pool!,
-                fAssets: 0,
-                enterWithFullAssets: false,
                 value: parseUnits(value, 18).toString(),
                 getGasFee: true
             });

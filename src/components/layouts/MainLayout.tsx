@@ -1,10 +1,10 @@
 import {
     AppShell,
-    Container,
-    Title,
-    Text,
     Burger,
-    Drawer
+    Container,
+    Drawer, 
+    Text,
+    Title
 } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 import Head from "next/head";
@@ -12,16 +12,19 @@ import Link from "next/link";
 import { useInterval } from "@mantine/hooks";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { IconAlertTriangle } from "@tabler/icons-react";
+import { IconAlertTriangle, IconBrandDiscordFilled, IconBrandX } from "@tabler/icons-react";
 import ConnectWalletButton from "@/components/elements/ConnectWalletButton";
 import LogoIcon from "@/components/icons/LogoIcon";
 import FlrIcon from "@/components/icons/FlrIcon";
 import SgbAltIcon from "@/components/icons/SgbAltIcon";
+import CflrIcon from "@/components/icons/CflrIcon";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useFassetState } from "@/api/user";
 import { usePools, useUserPools } from "@/api/pool";
 import { useModalState } from "@/hooks/useModalState";
 import { COINS } from "@/config/coin";
+import { CoinEnum } from "@/types";
+import { useVersion } from "@/api/version";
 
 export interface ILayout {
     children?: React.ReactNode;
@@ -36,6 +39,9 @@ export default function Layout({ children, ...props }: ILayout) {
     const { t } = useTranslation();
     const { walletConnectConnector, isConnected, connectedCoins, mainToken } = useWeb3();
     const { isMintModalActive, isRedeemModalActive } = useModalState();
+
+    const isTestnet = process.env.NETWORK === 'testnet';
+    const version = useVersion(isTestnet);
 
     const pools = usePools(COINS.filter(coin => coin.isFAssetCoin && coin.enabled).map(coin => coin.type), false);
     const userPools = useUserPools(
@@ -147,7 +153,10 @@ export default function Layout({ children, ...props }: ILayout) {
                                 </Title>
                                 <div className="flex items-center">
                                     {mainToken?.network?.mainnet
-                                        ? <SgbAltIcon width="18" height="18" />
+                                        ? (mainToken?.type === CoinEnum.SGB
+                                            ? <SgbAltIcon width="18" height="18" />
+                                            : <CflrIcon width="18" height="18" />
+                                        )
                                         : <FlrIcon width="10" height="10" />
                                     }
                                     <Text
@@ -156,7 +165,10 @@ export default function Layout({ children, ...props }: ILayout) {
                                         c="var(--flr-dark-gray)"
                                     >
                                         {mainToken?.network?.mainnet
-                                            ? t('layout.header.songbird_label')
+                                            ? (mainToken?.type === CoinEnum.SGB
+                                                    ? t('layout.header.songbird_label')
+                                                    : t('layout.header.flare_label')
+                                            )
                                             : t('layout.header.beta_label')
                                         }
                                     </Text>
@@ -217,6 +229,20 @@ export default function Layout({ children, ...props }: ILayout) {
                             >
                                 {t('layout.footer.become_an_fasset_agent_label')}
                             </Link>
+                            {isTestnet &&
+                                <>
+                                    <p
+                                        className="inline font-normal text-12 border-r pr-3 mr-3 border-[--flr-border-color]"
+                                    >
+                                        {t('layout.footer.fe_version', { version: process.env.APP_VERSION })}
+                                    </p>
+                                    <p
+                                        className="inline font-normal text-12"
+                                    >
+                                        {t('layout.footer.be_version', { version: version.data })}
+                                    </p>
+                                </>
+                            }
                         </div>
                     </Container>
                 </AppShell.Main>

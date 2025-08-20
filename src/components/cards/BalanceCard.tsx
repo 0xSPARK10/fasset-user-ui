@@ -10,7 +10,7 @@ import {
     Title,
     Tooltip
 } from "@mantine/core";
-import { IconArrowUpRight, IconExclamationCircle } from "@tabler/icons-react";
+import { IconArrowUpRight } from "@tabler/icons-react";
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useInterval, useMediaQuery } from "@mantine/hooks";
@@ -144,7 +144,7 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
             <div className="sm:hidden">
                 <div className="flex items-center justify-between">
                     <Title fw={500} className="text-15 mr-3">
-                        {localMainToken?.network.mainnet
+                        {localMainToken?.nativeName?.toLowerCase()?.includes('sgb')
                             ? t('balance_card.sgb_address_label')
                             : t('balance_card.flr_address_label')
                         }
@@ -180,7 +180,7 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
             <div className="hidden sm:flex justify-between items-baseline">
                 <div className="flex items-center">
                     <Title fw={500} className="text-15 mr-3">
-                        {localMainToken?.network.mainnet
+                        {localMainToken?.nativeName?.toLowerCase()?.includes('sgb')
                             ? t('balance_card.sgb_address_label')
                             : t('balance_card.flr_address_label')
                         }
@@ -230,7 +230,7 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                         fw={300}
                         className="mt-5 text-24"
                     >
-                        {localMainToken?.network.mainnet
+                        {localMainToken?.nativeName?.toLowerCase()?.includes('sgb')
                             ? t('balance_card.sgb_title')
                             : t('balance_card.flare_title')
                         }

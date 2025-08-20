@@ -57,6 +57,8 @@ export default function CollateralHealthCard({ ecoSystemInfo, timeData }: IColla
             color = 'var(--flr-pink)';
         } else if (supply.symbol.toLowerCase().includes('eth') || supply.symbol.toLowerCase().includes('usdx')) {
             color = 'var(--flr-black)';
+        } else if (supply.symbol.toLowerCase().includes('usdt0')) {
+            color = '#00B988';
         } else if (supply.symbol.toLowerCase().includes('usdt')) {
             color = 'var(--flr-teal)';
         } else if (supply.symbol.toLowerCase().includes('usdc')) {

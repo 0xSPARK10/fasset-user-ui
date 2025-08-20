@@ -53,7 +53,10 @@ export default function VaultCapacityCard({ pool }: IVaultCapacityCard) {
                     >
                         {t('agent_details.vault_capacity_label')}
                     </Title>
-                    <Popover withArrow>
+                    <Popover
+                        withArrow
+                        width="auto"
+                    >
                         <Popover.Target>
                             <IconInfoHexagon
                                 style={{ width: rem(16), height: rem(16) }}

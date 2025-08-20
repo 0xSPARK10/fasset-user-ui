@@ -13,7 +13,6 @@ export const truncateString = (text: string, from: number = 4, to: number = 4) =
     mwei = 10^6
     ether = 1
  */
-
 export const parseUnits = (value: string | number, unit: number) => {
     const number = new BigNumber(value);
     return ethers.parseUnits(number.toFixed(), unit);

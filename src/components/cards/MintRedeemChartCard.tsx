@@ -95,7 +95,7 @@ export default function MintRedeemChartCard({ timeData, filter, ecoSystemInfo }:
         <div className="flex flex-col h-full max-[768px]:border-t-0 border-x-0 md:border-x border border-[var(--flr-border-color)]">
             <div className="flex items-center flex-wrap justify-between px-[15px] lg:px-6 py-2 min-h-14">
                 <Title
-                    className="text-16 uppercase mr-2 max-[402px]:mb-2"
+                    className="text-16 uppercase mr-2"
                     fw={400}
                     c="var(--flr-dark-gray)"
                 >
@@ -115,7 +115,7 @@ export default function MintRedeemChartCard({ timeData, filter, ecoSystemInfo }:
                         value={activeTab}
                         onChange={setActiveTab}
                         classNames={{
-                            root: 'flex',
+                            root: `flex overflow-x-auto ${classes.mantineTabsRoot}`,
                             list: 'ml-auto flex-nowrap',
                             tab: `text-[--flr-gray] ${classes.tab}`
                         }}
@@ -193,7 +193,7 @@ export default function MintRedeemChartCard({ timeData, filter, ecoSystemInfo }:
                         curveType="bump"
                         tickLine="none"
                         gridAxis="none"
-                        valueFormatter={(value) => `$${formatNumberWithSuffix(value, 0)}`}
+                        valueFormatter={(value) => `$${formatNumberWithSuffix(value, 2)}`}
                         withDots={false}
                         classNames={{
                             root: 'pl-[2px]'
@@ -221,7 +221,7 @@ export default function MintRedeemChartCard({ timeData, filter, ecoSystemInfo }:
                         curveType="bump"
                         tickLine="none"
                         gridAxis="none"
-                        valueFormatter={(value) => `$${formatNumberWithSuffix(value, 0)}`}
+                        valueFormatter={(value) => `$${formatNumberWithSuffix(value, 2)}`}
                         withDots={false}
                         classNames={{
                             root: 'pl-[2px]'
@@ -243,7 +243,7 @@ export default function MintRedeemChartCard({ timeData, filter, ecoSystemInfo }:
                         curveType="bump"
                         tickLine="none"
                         gridAxis="none"
-                        valueFormatter={(value) => `$${formatNumberWithSuffix(value, 0)}`}
+                        valueFormatter={(value) => `$${formatNumberWithSuffix(value, 2)}`}
                         withDots={false}
                         classNames={{
                             root: 'pl-[2px]'
@@ -276,7 +276,7 @@ export default function MintRedeemChartCard({ timeData, filter, ecoSystemInfo }:
                             fw={400}
                             c="var(--flr-black)"
                         >
-                            {formatNumberWithSuffix(ecoSystemInfo?.agentCollateral ?? 0)}
+                            {formatNumberWithSuffix(ecoSystemInfo?.agentCollateral ?? 0, 2)}
                         </Text>
                     </div>
                 </Grid.Col>
@@ -298,7 +298,7 @@ export default function MintRedeemChartCard({ timeData, filter, ecoSystemInfo }:
                             fw={400}
                             c="var(--flr-black)"
                         >
-                            {formatNumberWithSuffix(ecoSystemInfo?.numLiquidations ?? 0, 0)}
+                            {ecoSystemInfo?.numLiquidations ?? 0}
                         </Text>
                     </div>
                 </Grid.Col>

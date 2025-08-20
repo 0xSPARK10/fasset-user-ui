@@ -29,6 +29,7 @@ export default function CopyIcon({ text, color, className = '', size = 15 }: ICo
             withArrow
             opened={isPopoverActive}
             onChange={() => setIsPopoverActive(false)}
+            width="auto"
         >
             <Popover.Target>
                 <IconCopy

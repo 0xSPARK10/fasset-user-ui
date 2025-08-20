@@ -20,7 +20,6 @@ export default function VaultCollateralCard({ pool }: IVaultCollateralCard) {
         const mintingVaultCR = toNumber(pool?.mintingVaultCR ?? '0');
         const vaultSafetyCR = toNumber(pool?.vaultSafetyCR ?? '0');
         const vaultMinCR = toNumber(pool?.vaultMinCR ?? '0');
-        const vaultCCBCR = toNumber(pool?.vaultCCBCR ?? '0');
 
         if (vaultCR >= mintingVaultCR) {
             return ['mintingVaultCR'];
@@ -28,18 +27,11 @@ export default function VaultCollateralCard({ pool }: IVaultCollateralCard) {
         if (vaultCR >= vaultSafetyCR && vaultCR < mintingVaultCR) {
             return ['vaultSafetyCR'];
         }
-        if (vaultCR > vaultCCBCR && vaultCR <= vaultMinCR) {
+        if (vaultCR <= vaultMinCR) {
             return ['vaultMinCR'];
-        }
-        if (vaultCR <= vaultCCBCR) {
-            return ['vaultCCBCR'];
         }
 
         const ranges = [
-            {
-                key: 'vaultCCBCR',
-                value: vaultCCBCR
-            },
             {
                 key: 'vaultMinCR',
                 value: vaultMinCR
@@ -93,7 +85,10 @@ export default function VaultCollateralCard({ pool }: IVaultCollateralCard) {
                     >
                         {t('agent_details.vault_collateral_label')}
                     </Title>
-                    <Popover withArrow>
+                    <Popover
+                        withArrow
+                        width="auto"
+                    >
                         <Popover.Target>
                             <IconInfoHexagon
                                 style={{width: rem(16), height: rem(16)}}
@@ -257,32 +252,6 @@ export default function VaultCollateralCard({ pool }: IVaultCollateralCard) {
                                 }
                                 classNames={{
                                     stepIcon: selectedCr().includes('vaultMinCR')
-                                        ? '!bg-[var(--flr-red)] border-[var(--flr-red)]'
-                                        : 'bg-transparent'
-                                }}
-                            />
-                            <Stepper.Step
-                                icon={
-                                    <IconArrowDown
-                                        color={selectedCr().includes('vaultCCBCR')
-                                            ? 'var(--flr-white)'
-                                            : 'var(--flr-black)'
-                                        }
-                                        size={18}
-                                    />
-                                }
-                                color="transparent"
-                                withIcon
-                                label={
-                                    <Text
-                                        className="text-12"
-                                        c="var(--flr-gray)"
-                                    >
-                                        {t('agent_details.ccb_cr_label', { amount: pool?.vaultCCBCR })}
-                                    </Text>
-                                }
-                                classNames={{
-                                    stepIcon: selectedCr().includes('vaultCCBCR')
                                         ? '!bg-[var(--flr-red)] border-[var(--flr-red)]'
                                         : 'bg-transparent'
                                 }}

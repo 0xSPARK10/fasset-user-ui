@@ -190,15 +190,15 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
                 ${formatNumberWithSuffix(totalClaimed ?? 0)}
             </Text>
             <div className="flex items-center">
-                {position?.rewards?.map((reward, index) => (
-                    <div
-                        className={`flex items-center ${index < position.rewards.length - 1 ? 'mr-5' : ''}`}
-                        key={index}
-                    >
-                        {reward.icon !== undefined && reward.icon}
+            {position?.rewards?.map((reward, index) => (
+                <div
+                    className={`flex items-center ${index < position.rewards.length - 1 ? 'mr-5' : ''}`}
+                    key={index}
+                >
+                    {reward.icon !== undefined && reward.icon}
                         <span className="ml-1 text-16 text-[var(--flr-dark-gray)]">{formatNumberWithSuffix(reward.claimed)}</span>
-                    </div>
-                ))}
+                </div>
+            ))}
             </div>
         </div>
     </>;
@@ -238,47 +238,19 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
                     </Button>
                 </div>
             </div>
-            {isSingleFassetEnabled
-                ? <SimpleGrid
-                    cols={{ base: 1, sm: 3 }}
-                    styles={{
-                        root: {
-                            '--sg-spacing-y': 0
-                        }
-                    }}
-                    className="bg-[var(--flr-lightest-gray)] border-t border-b md:border-b-0 border-[var(--flr-border-color)] h-full"
-                >
-                    <div className="px-5 border-b md:border-b-0 md:border-r border-[var(--flr-border-color)] py-3 md:py-7">{myPositionBlock}</div>
-                    <div className="px-5 border-b md:border-b-0  md:border-r border-[var(--flr-border-color)] py-3 md:py-7">{availablePoolRewardsBlock}</div>
-                    <div className="px-5 py-3 md:py-7">{earnedRewardsBlock}</div>
-                </SimpleGrid>
-                : <div
-                    className="flex flex-wrap bg-[var(--flr-lightest-gray)] border-t border-b md:border-b-0 border-[var(--flr-border-color)] h-full"
-                >
-                    {!isLoading && hasNoAssets &&
-                        <div className="px-[15px] lg:px-5 py-5 md:hidden">
-                            <Text
-                                className="text-16"
-                                fw={400}
-                                c="var(--flr-gray)"
-                            >
-                                {t('my_pools_position_card.no_assets_label')}
-                            </Text>
-                        </div>
+            <SimpleGrid
+                cols={{ base: 1, sm: 3 }}
+                styles={{
+                    root: {
+                        '--sg-spacing-y': 0
                     }
-                    <div
-                        className={`${hasNoAssets ? 'hidden md:flex' : 'flex'} flex-col justify-center basis-full min-[430px]:basis-6/12 px-[15px] lg:px-6 py-4 grow min-[430px]:border-r border-b border-[var(--flr-border-color)]`}
-                    >
-                        {myPositionBlock}
-                    </div>
-                    <div className={`${hasNoAssets ? 'hidden md:flex' : 'flex'} flex-col justify-center basis-full min-[430px]:basis-6/12 px-[15px] lg:px-6 py-4 grow md:border-t-0 border-b border-[var(--flr-border-color)]`}>
-                        {availablePoolRewardsBlock}
-                    </div>
-                    <div className="flex flex-col justify-center px-[15px] lg:px-6 py-3 min-h-[71px]">
-                        {earnedRewardsBlock}
-                    </div>
-                </div>
-            }
+                }}
+                className="bg-[var(--flr-lightest-gray)] border-t border-b md:border-b-0 border-[var(--flr-border-color)] h-full"
+            >
+                <div className="px-5 border-b md:border-b-0 md:border-r border-[var(--flr-border-color)] py-3 md:py-7">{myPositionBlock}</div>
+                <div className="px-5 border-b md:border-b-0  md:border-r border-[var(--flr-border-color)] py-3 md:py-7">{availablePoolRewardsBlock}</div>
+                <div className="px-5 py-3 md:py-7">{earnedRewardsBlock}</div>
+            </SimpleGrid>
         </div>
     );
 }
