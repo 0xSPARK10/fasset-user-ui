@@ -214,7 +214,7 @@ export default function Layout({ children, ...props }: ILayout) {
                         fluid
                         className="flex flex-col md:flex-row justify-between md:items-center px-[15px] py-3 w-full mt-5 bg-[var(--flr-lightest-gray)]"
                     >
-                        <div className="pb-4 md:pb-0 md:ml-0 md:mr-5">
+                        <div className="flex flex-wrap items-center pb-4 md:pb-0 md:ml-0 md:mr-5">
                             <Link
                                 href="https://dev.flare.network/fassets/overview/"
                                 target="_blank"
@@ -225,12 +225,12 @@ export default function Layout({ children, ...props }: ILayout) {
                             <Link
                                 href="https://dev.flare.network/fassets/guides/deploy-fassets-agent"
                                 target="_blank"
-                                className={`font-normal text-12 md:pr-3 md:mr-3 ${!mainToken?.network.mainnet ? 'md:border-r md:border-[--flr-border-color]' : ''}`}
+                                className={`font-normal text-12 ${isTestnet ? 'pr-3 mr-3 border-r border-[--flr-border-color]' : ''}`}
                             >
                                 {t('layout.footer.become_an_fasset_agent_label')}
                             </Link>
                             {isTestnet &&
-                                <>
+                                <div className="inline">
                                     <p
                                         className="inline font-normal text-12 border-r pr-3 mr-3 border-[--flr-border-color]"
                                     >
@@ -241,7 +241,7 @@ export default function Layout({ children, ...props }: ILayout) {
                                     >
                                         {t('layout.footer.be_version', { version: version.data })}
                                     </p>
-                                </>
+                                </div>
                             }
                         </div>
                     </Container>

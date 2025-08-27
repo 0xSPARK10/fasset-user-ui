@@ -193,6 +193,20 @@ export default function PoolsPositionCard({ className, pools }: IPoolsPositionCa
                     {t('pools_position_card.what_are_collateral_pools_label')}
                 </Link>
             </div>
+            {positions?.map(((position, index) => (
+                <div
+                style={{
+                    width: 0,
+                    height: 0,
+                    overflow: 'hidden',
+                    position: 'absolute',
+                    pointerEvents: 'none',
+                }}
+                key={index}
+                >
+                {position.icon !== undefined && position.icon}
+                </div>
+            )))}
             {isConnected &&
                 <Tabs
                     defaultValue="position"

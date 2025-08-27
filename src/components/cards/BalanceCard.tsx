@@ -20,7 +20,7 @@ import { useTranslation } from "react-i18next";
 import MintModal from "@/components/modals/MintModal";
 import RedeemModal from "@/components/modals/RedeemModal";
 import CopyIcon from "@/components/icons/CopyIcon";
-import { useUserProgress } from "@/api/user";
+import { useFassetState, useUserProgress } from "@/api/user";
 import { useModalState } from "@/hooks/useModalState";
 import { ICoin, IFAssetCoin } from "@/types";
 import { COINS } from "@/config/coin";
@@ -51,7 +51,9 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
     const nativeBalance = useNativeBalance(localMainToken?.address ?? '', localMainToken !== undefined);
     const poolsBalances = usePoolsBalance(localMainToken?.address ?? '', fAssetCoins.map(c => c.type), localMainToken !== undefined && fAssetCoins.length > 0);
     const userProgress = useUserProgress(mainToken?.address ?? '', false);
+    const fassetState = useFassetState();
 
+    const pausedTokens = fassetState.data?.filter(item => item.state)?.map(item => item.fasset) ?? [];
     const pendingTransactions = userProgress.data
          ? userProgress.data.filter(progress => !progress.status).length
          : 0;
@@ -89,6 +91,10 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                } else {
                    fAssetCoin = { ...coin } as IFAssetCoin;
                    fAssetCoin.balance = balance?.balance || "0";
+                   fAssetCoin.enabled = false;
+               }
+
+               if (pausedTokens.includes(fAssetCoin.type)) {
                    fAssetCoin.enabled = false;
                }
 
