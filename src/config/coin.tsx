@@ -7,6 +7,7 @@ import FDogeIcon from "@/components/icons/FDogeIcon";
 import BtcIcon from "@/components/icons/BtcIcon";
 import DogeIcon from "@/components/icons/DogeIcon";
 import CflrIcon from "@/components/icons/CflrIcon";
+import FlrIcon from "@/components/icons/FlrIcon";
 import SgbIcon from "@/components/icons/SgbIcon";
 import EthIcon from "@/components/icons/EthIcon";
 import UsdcIcon from "@/components/icons/UsdcIcon";
@@ -57,7 +58,7 @@ export const CFLR: ICoin = {
     bipPath: BIP44_PATH.TESTNET.ETH
 }
 
-export const C2FLR_COIN: ICoin = {
+export const C2FLR: ICoin = {
     type: CoinEnum.C2FLR,
     icon: (props) => <C2FlrIcon width="32" height="32" className="flex-shrink-0" {...props} />,
     nativeName: 'C2FLR',
@@ -234,9 +235,9 @@ export const USDX: ICoin = {
 
 export const FLR: ICoin = {
     type: CoinEnum.FLR,
-    icon: (props) => <CflrIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    icon: (props) => <FlrIcon width="32" height="32" className="flex-shrink-0" {...props} />,
     nativeName: 'FLR',
-    nativeIcon: (props) => <CflrIcon width="18" height="18" {...props} />,
+    nativeIcon: (props) => <FlrIcon width="18" height="18" {...props} />,
     lotSize: 1,
     minWalletBalance: 2,
     network: NETWORK_FLARE,
@@ -250,7 +251,7 @@ export const FLR: ICoin = {
 
 export const USDT0: ICoin = {
     type: CoinEnum.USDT0,
-    icon: (props) => <UsdtIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    icon: (props) => <Usdt0Icon width="32" height="32" className="flex-shrink-0" {...props} />,
     lotSize: 0,
     minWalletBalance: 0,
     network: NETWORK_FLARE,
@@ -262,7 +263,7 @@ export const USDT0: ICoin = {
 
 export const COINS = [
     CFLR,
-    C2FLR_COIN,
+    C2FLR,
     FTEST_XRP,
     FTEST_BTC,
     FTEST_DOGE,

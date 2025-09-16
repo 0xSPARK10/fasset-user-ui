@@ -237,7 +237,7 @@ export function useEnterCollateralPool() {
                     const gasPrice = (await getFeeData(mainToken!)).gasPrice;
                     const gasLimit = await contract.enter.estimateGas({
                         from: userAddress,
-                        value: value
+                        value: ethers.toBigInt(value)
                     });
 
                     if (gasPrice) {

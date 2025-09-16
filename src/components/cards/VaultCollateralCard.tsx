@@ -2,7 +2,7 @@ import { Grid, rem, Stepper, Text, Title, Popover } from "@mantine/core";
 import { IconArrowDown, IconArrowUp, IconInfoHexagon } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import UsdcIcon from "@/components/icons/UsdcIcon";
-import UsdtIcon from "@/components/icons/UsdtIcon";
+import Usdt0Icon from "@/components/icons/Usdt0Icon";
 import EthIcon from "@/components/icons/EthIcon";
 import { IPool } from "@/types";
 import { formatNumberWithSuffix, toNumber, isMaxCRValue } from "@/utils";
@@ -64,7 +64,7 @@ export default function VaultCollateralCard({ pool }: IVaultCollateralCard) {
         if (pool.collateralToken.toLowerCase().includes('usdc')) {
             return <UsdcIcon width="40" height="40" className="flex-shrink-0" />;
         } else if (pool.collateralToken.toLowerCase().includes('usdt')) {
-            return <UsdtIcon width="40" height="40" className="flex-shrink-0" />;
+            return <Usdt0Icon width="40" height="40" className="flex-shrink-0" />;
         } else if (pool.collateralToken.toLowerCase().includes('eth')) {
             return <EthIcon width="40" height="40" className="flex-shrink-0" />;
         } else if (pool.collateralToken.toLowerCase().includes('usdx')) {

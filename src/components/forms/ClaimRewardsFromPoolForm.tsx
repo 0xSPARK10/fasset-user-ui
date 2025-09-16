@@ -154,7 +154,6 @@ const ClaimRewardsFromPoolForm = forwardRef<FormRef, IClaimRewardsFromPoolForm>(
                                 }}
                                 parent={Text}
                                 fw={400}
-                                className="text-18"
                             />
                             <Text className="flex items-center text-14" fw={400}>
                                 {truncateString(collateralPool.vault, 5, 5)}
@@ -189,7 +188,6 @@ const ClaimRewardsFromPoolForm = forwardRef<FormRef, IClaimRewardsFromPoolForm>(
                     }}
                     parent={Text}
                     fw={400}
-                    className="text-18"
                 />
                 <Text className="flex items-center ml-2 text-14" fw={400}>
                     {truncateString(collateralPool.vault, 5, 5)}

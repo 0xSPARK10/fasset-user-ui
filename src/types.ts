@@ -70,6 +70,7 @@ export interface ICoin {
 export interface INetwork {
     chainId: string;
     name: string;
+    shortName?: string;
     rpcUrl: string;
     namespace: string;
     methods: INamespaceMethods;

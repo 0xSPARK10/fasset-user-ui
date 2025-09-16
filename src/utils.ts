@@ -19,6 +19,7 @@ export const parseUnits = (value: string | number, unit: number) => {
 }
 
 export const formatUnit = (value: number | bigint, unit: number) => {
+    value = typeof value === 'number' ? BigInt(Math.ceil(value)) : value;
     return ethers.formatUnits(value, unit);
 }
 

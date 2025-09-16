@@ -13,8 +13,7 @@ import {
     IconCheck,
     IconCircleCheck,
     IconFilePlus,
-    IconSettings,
-    IconInfoHexagon
+    IconSettings
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { isError } from "ethers";
@@ -23,7 +22,7 @@ import CryptoJS from "crypto-js";
 import MintWaitingModal from "@/components/modals/MintWaitingModal";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
 import WalletConnectOpenWalletCard from "@/components/cards/WalletConnectOpenWalletCard";
-import { ICrStatus, IFAssetCoin, ISelectedAgent, INetwork, IUtxo } from "@/types";
+import { IFAssetCoin, ISelectedAgent, INetwork, IUtxo } from "@/types";
 import { WALLET } from "@/constants";
 import { useAssetManagerAddress, useExecutor } from "@/api/user";
 import { AssetManagerAbi } from "@/abi";
@@ -46,9 +45,8 @@ interface IConfirmStepper {
 }
 
 const STEP_WALLET_RESERVATION = 0;
-const STEP_HANDSHAKE = 1;
-const STEP_WALLET_DEPOSIT = 2;
-const STEP_WALLET_COMPLETED = 3;
+const STEP_WALLET_DEPOSIT = 1;
+const STEP_WALLET_COMPLETED = 2;
 
 export default function ConfirmStepper({
    fAssetCoin,
@@ -63,9 +61,7 @@ export default function ConfirmStepper({
     const [signedTransactionTxHash, setSignedTransactionTxHash] = useState<string>();
     const [transferredAssetAmount, setTransferredAssetAmount] = useState<number>();
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [isHandshakeRejected, setIsHandshakeRejected] = useState<boolean>(false);
     const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
-    const crStatus = useRef<ICrStatus>();
     const isMintRequestActive = useRef<boolean>(false);
 
     const { t } = useTranslation();
@@ -99,7 +95,7 @@ export default function ConfirmStepper({
         if (isMintRequestActive.current) return;
         
         try {
-            const response = crStatus.current ?? (await crEvent.refetch()).data;
+            const response = (await crEvent.refetch()).data;
             isMintRequestActive.current = true;
             setIsLoading(true);
             setIsLedgerButtonDisabled(true);
@@ -191,6 +187,7 @@ export default function ConfirmStepper({
                 onError(error?.response?.data?.message ?? error.message);
             }
         } finally {
+            isMintRequestActive.current = false;
             setIsLoading(false);
             setIsLedgerButtonDisabled(false);
         }
@@ -311,7 +308,7 @@ export default function ConfirmStepper({
                 fw={300}
                 c="var(--flr-black)"
             >
-                {t('mint_modal.confirm_step_title')}
+                {currentStep === STEP_WALLET_RESERVATION ? t('mint_modal.confirm_step_title') : t('mint_modal.confirm_second_step_title')}
             </Title>
             <Text
                 className="my-5 text-16"
@@ -364,7 +361,7 @@ export default function ConfirmStepper({
                         <Text
                             className="text-14"
                             fw={500}
-                            c="var(--flr-black)"
+                            c={currentStep === STEP_WALLET_RESERVATION ? 'var(--flr-light-gray)' : 'var(--flr-black)'}
                         >
                             {t('mint_modal.deposit_step_label', {
                                 stepIndex: 2,
@@ -376,12 +373,17 @@ export default function ConfirmStepper({
                         <Text
                             className="text-12"
                             fw={400}
-                            c={lighten('var(--flr-gray)', 0.378)}
+                            c={currentStep === STEP_WALLET_RESERVATION ? 'var(--flr-light-gray)' : lighten('var(--flr-gray)', 0.378)}
                         >
                             {t('mint_modal.deposit_step_description', { fAsset: fAssetCoin.nativeName })}
                         </Text>
                     }
-                    icon={<IconSettings size={16} />}
+                    icon={
+                        <IconSettings
+                            size={16}
+                            color={currentStep === STEP_WALLET_RESERVATION ? 'var(--flr-light-gray)' : undefined}
+                        />
+                    }
                     completedIcon={
                         <IconCheck
                             size={16}

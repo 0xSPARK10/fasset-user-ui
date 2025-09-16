@@ -58,49 +58,6 @@ export default function Mint() {
             >
                 {t('dashboard.balance_title')}
             </Title>
-            {disabledFassets.length > 0 &&
-                <div className="flex items-center border border-[var(--flr-green)] bg-[var(--flr-lightest-green)] rounded-sm p-2">
-                    <IconExclamationCircle
-                        size={25}
-                        color="var(--flr-green)"
-                        className="mr-2 flex-shrink-0"
-                    />
-                    <Trans
-                        i18nKey={`dashboard.winddown_label`}
-                        values={{ fAssets: disabledFassets.join(', ') }}
-                        components={{
-                            a1: <Anchor
-                                underline="always"
-                                href={process.env.WIND_DOWN_BLOG_URL}
-                                target="_blank"
-                                className="inline-flex"
-                                fw={400}
-                                c="var(--flr-black)"
-                            />,
-                            a2: <Anchor
-                                underline="always"
-                                href="https://v3.dex.enosys.global/"
-                                target="_blank"
-                                className="inline-flex"
-                                fw={400}
-                                c="var(--flr-black)"
-                            />,
-                            a3: <Anchor
-                                underline="always"
-                                href="https://app.blazeswap.xyz/swap/"
-                                target="_blank"
-                                className="inline-flex"
-                                fw={400}
-                                c="var(--flr-black)"
-                            />
-                        }}
-                        parent={Text}
-                        fw={400}
-                        className="text-16"
-                        c="var(--flr-black)"
-                    />
-                </div>
-            }
             <Grid gutter="md">
                 <Grid.Col span={{ base: 12, md: 6 }} className="mt-5">
                     <BalanceCard

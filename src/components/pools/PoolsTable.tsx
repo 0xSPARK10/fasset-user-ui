@@ -41,11 +41,13 @@ import DepositToPoolModal from "@/components/modals/DepositToPoolModal";
 import WithdrawalFromPoolModal from "@/components/modals/WithdrawalFromPoolModal";
 import ClaimRewardsFromPoolModal from "@/components/modals/ClaimRewardsFromPoolModal";
 import type { IFAssetColumn } from "@/components/elements/FAssetTable";
-import { IPool, ITableRowAction } from "@/types";
+import { CoinEnum, IPool, ITableRowAction } from "@/types";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { truncateString, formatNumber, isMaxCRValue, toNumber, formatNumberWithSuffix } from "@/utils";
 import { COINS } from "@/config/coin";
 import classes from "@/styles/pages/Agents.module.scss";
+import SgbAltIcon from "@/components/icons/SgbAltIcon";
+import FlareIcon from "@/components/icons/FlareIcon";
 
 const TYPE_ACTIVE_POOLS = 'active';
 const TYPE_OTHER_POOLS = 'others';
@@ -219,10 +221,9 @@ export default function PoolsTable({ pools, className, style, type, showAll }: I
     const renderHealthStatus = useCallback((pool: IPool) => {
         const status: { [key: number]: string } = {
             0: t('agents.table.health_status_healthy_label'),
-            1: t('agents.table.health_status_ccb_label'),
-            2: t('agents.table.health_status_in_liquidation_label'),
-            3: t('agents.table.health_status_in_full_liquidation_label'),
-            4: t('agents.table.health_status_closing_label'),
+            1: t('agents.table.health_status_in_liquidation_label'),
+            2: t('agents.table.health_status_in_full_liquidation_label'),
+            3: t('agents.table.health_status_closing_label'),
         };
 
         let textColor = 'var(--mantine-color-gray-7)';
@@ -382,7 +383,7 @@ export default function PoolsTable({ pools, className, style, type, showAll }: I
         return (
             <div>
                 <div className="flex items-center">
-                    {mainToken?.network.mainnet
+                    {mainToken?.type === CoinEnum.SGB
                         ? <SgbIcon width="15" height="15" />
                         : <FlrAltIcon width="15" height="15" />
                     }

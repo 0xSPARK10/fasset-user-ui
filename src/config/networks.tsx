@@ -1,5 +1,6 @@
 import React from "react";
 import CflrIcon from "@/components/icons/CflrIcon";
+import FlrIcon from "@/components/icons/FlrIcon";
 import XrpIcon from "@/components/icons/XrpIcon";
 import BtcIcon from "@/components/icons/BtcIcon";
 import DogeIcon from "@/components/icons/DogeIcon";
@@ -31,6 +32,7 @@ export const BTC_NAMESPACE_METHODS: INamespaceMethods = [
 export const NETWORK_FLARE_COSTON_TESTNET: INetwork = {
     chainId: '16',
     name: 'Flare Testnet Coston',
+    shortName: 'Coston',
     rpcUrl: 'https://coston-api.flare.network/ext/C/rpc',
     namespace: ETH_NAMESPACE,
     methods: ETH_NAMESPACE_METODS,
@@ -46,6 +48,7 @@ export const NETWORK_FLARE_COSTON_TESTNET: INetwork = {
 export const NETWORK_FLARE_COSTON2_TESTNET: INetwork = {
     chainId: '114',
     name: 'Flare Testnet Coston2',
+    shortName: 'Coston2',
     rpcUrl: 'https://coston2-api.flare.network/ext/C/rpc',
     namespace: ETH_NAMESPACE,
     methods: ETH_NAMESPACE_METODS,
@@ -99,6 +102,7 @@ export const NETWORK_DOGE_TESTNET: INetwork = {
 export const NETWORK_SONGBIRD: INetwork = {
     chainId: '19',
     name: 'Songbird Canary-Network',
+    shortName: 'Songbird',
     rpcUrl: 'https://songbird-api.flare.network/ext/C/rpc',
     namespace: ETH_NAMESPACE,
     methods: ETH_NAMESPACE_METODS,
@@ -153,12 +157,13 @@ export const NETWORK_XRPL: INetwork = {
 export const NETWORK_FLARE: INetwork = {
     chainId: '14',
     name: 'Flare Mainnet',
-    rpcUrl: 'https://flare-api.flare.network/ext/C/rpc"',
+    shortName: 'Flare',
+    rpcUrl: 'https://flare-api.flare.network/ext/C/rpc',
     namespace: ETH_NAMESPACE,
     methods: ETH_NAMESPACE_METODS,
     addRpcMap: true,
     ledgerApp: LEDGER_APP.FLARE,
-    icon: (props) => <CflrIcon width="32" height="32" {...props} />,
+    icon: (props) => <FlrIcon width="32" height="32" {...props} />,
     isMandatory: true,
     explorerAddressUrl: 'https://flare-explorer.flare.network/address',
     explorerTxUrl: 'https://flare-explorer.flare.network/tx',

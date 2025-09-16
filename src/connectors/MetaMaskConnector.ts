@@ -37,6 +37,19 @@ export default function MetaMaskConnector(): IMetaMaskConnector {
         //@ts-ignore
         const ethereum = window.ethereum;
 
+        await ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [{
+                chainId: `0x${Number(mainToken?.network?.chainId!).toString(16)}`,
+                rpcUrls: [mainToken?.network?.rpcUrl],
+                chainName: mainToken?.network?.name,
+                nativeCurrency: {
+                    name: mainToken?.nativeName,
+                    symbol: mainToken?.type,
+                    decimals: 18
+                }
+            }]
+        });
         if (ethereum.providers && ethereum.providers.length > 1) {
             const provider = ethereum.providers.find((provider: { isMetaMask: boolean; }) => provider.isMetaMask);
             return await provider.request({
@@ -86,6 +99,31 @@ export default function MetaMaskConnector(): IMetaMaskConnector {
     }
 
     const getSigner = async() => {
+        //@ts-ignore
+        const ethereum = window.ethereum;
+        const chainId = await ethereum.request({ method: 'eth_chainId' });
+
+        if (ethers.toNumber(chainId) !== parseInt(mainToken?.network?.chainId!)) {
+            await ethereum.request({
+                method: "wallet_addEthereumChain",
+                params: [{
+                    chainId: `0x${Number(mainToken?.network?.chainId!).toString(16)}`,
+                    rpcUrls: [mainToken?.network?.rpcUrl],
+                    chainName: mainToken?.network?.name,
+                    nativeCurrency: {
+                        name: mainToken?.nativeName,
+                        symbol: mainToken?.type,
+                        decimals: 18
+                    }
+                }]
+            });
+
+            await ethereum.request({
+                method: "wallet_switchEthereumChain",
+                params: [{ chainId: `0x${Number(mainToken?.network?.chainId!).toString(16)}` }]
+            });
+        }
+
         //@ts-ignore
         const provider = new ethers.BrowserProvider(window?.ethereum);
         return provider.getSigner();

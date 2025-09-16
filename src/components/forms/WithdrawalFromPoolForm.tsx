@@ -15,7 +15,7 @@ import React, {
 } from "react";
 import { useDebouncedCallback, useMediaQuery } from "@mantine/hooks";
 import { yupResolver } from "mantine-form-yup-resolver";
-import {formatNumber, formatUnit, parseUnits, truncateString} from "@/utils";
+import { formatNumber, formatUnit, parseUnits, truncateString } from "@/utils";
 import CopyIcon from "@/components/icons/CopyIcon";
 import * as yup from "yup";
 import { useTranslation, Trans } from "react-i18next";
@@ -49,8 +49,6 @@ const WithdrawalFromPoolForm = forwardRef<FormRef, IWithdrawalFromPoolForm>(({ c
     const maxWithdraw = useMaxWithdraw(collateralPool?.vaultType!, collateralPool?.pool!, mainToken?.address!, amount!, false);
     const maxCptWithdraw = useMaxCptWithdraw(collateralPool?.vaultType!, collateralPool?.pool!);
     const exitCollateralPool = useExitCollateralPool();
-
-    const collateralToken = COINS.find(coin => coin.type === collateralPool?.vaultType)
 
     const schema = yup.object().shape({
         amount: yup.number()

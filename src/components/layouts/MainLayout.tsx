@@ -12,12 +12,12 @@ import Link from "next/link";
 import { useInterval } from "@mantine/hooks";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { IconAlertTriangle, IconBrandDiscordFilled, IconBrandX } from "@tabler/icons-react";
+import { IconAlertTriangle } from "@tabler/icons-react";
 import ConnectWalletButton from "@/components/elements/ConnectWalletButton";
 import LogoIcon from "@/components/icons/LogoIcon";
-import FlrIcon from "@/components/icons/FlrIcon";
+import FlareIcon from "@/components/icons/FlareIcon";
 import SgbAltIcon from "@/components/icons/SgbAltIcon";
-import CflrIcon from "@/components/icons/CflrIcon";
+import ChainSwitcher from "@/components/elements/ChainSwitcher";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useFassetState } from "@/api/user";
 import { usePools, useUserPools } from "@/api/pool";
@@ -152,12 +152,9 @@ export default function Layout({ children, ...props }: ILayout) {
                                     {t('layout.header.title')}
                                 </Title>
                                 <div className="flex items-center">
-                                    {mainToken?.network?.mainnet
-                                        ? (mainToken?.type === CoinEnum.SGB
-                                            ? <SgbAltIcon width="18" height="18" />
-                                            : <CflrIcon width="18" height="18" />
-                                        )
-                                        : <FlrIcon width="10" height="10" />
+                                    {mainToken?.type === CoinEnum.SGB
+                                        ? <SgbAltIcon width="18" height="18" />
+                                        : <FlareIcon width="10" height="10" />
                                     }
                                     <Text
                                         className="ml-1 text-10"
@@ -196,6 +193,7 @@ export default function Layout({ children, ...props }: ILayout) {
                             </Link>
                         </div>
                         <div className="flex items-center">
+                            <ChainSwitcher className="mr-2 sm:mr-5" />
                             <ConnectWalletButton />
                             <Burger
                                 opened={isMenuOpened}

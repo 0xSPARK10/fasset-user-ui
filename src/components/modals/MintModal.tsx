@@ -105,7 +105,7 @@ export default function MintModal({ opened, onClose, fAssetCoin }: IMintModal) {
             queryKey: [MINTING_KEY.MAX_LOTS, fAssetCoin.type],
             exact: true,
         });
-        onClose(false);
+        onClose(true);
     }
 
     const onCloseHighMintingFeeModal = (proceed: boolean) => {

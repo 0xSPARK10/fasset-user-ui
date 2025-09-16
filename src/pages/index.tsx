@@ -8,7 +8,6 @@ import {
     Grid,
     Text
 } from "@mantine/core";
-import { Cookies } from "react-cookie";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery, useMounted }  from "@mantine/hooks";
 import BlingIcon from "@/components/icons/BlingIcon";
@@ -17,29 +16,25 @@ import MintRedeemChartCard from "@/components/cards/MintRedeemChartCard";
 import FAssetPositionCard from "@/components/cards/FAssetPositionCard";
 import MyPoolsPositionCard from "@/components/cards/MyPoolsPositionCard";
 import EcoSystemInformationCard from "@/components/cards/EcoSystemInformationCard";
-import FAssetWindDownModal from "@/components/modals/FAssetWindDownModal";
 import FassetsOverviewCard from "@/components/cards/FassetsOverviewCard";
 import CollateralCard from "@/components/cards/CollateralCard";
 import CoreVaultCard from "@/components/cards/CoreVaultCard";
 import EarnCard from "@/components/cards/EarnCard";
 import ProofOfReservesCard from "@/components/cards/ProofOfReservesCard";
-import { useEcosystemInfo, useMintEnabled } from "@/api/minting";
+import { useEcosystemInfo } from "@/api/minting";
 import { useTimeData } from "@/api/user";
-import { FILTERS, COOKIE_WINDDOWN } from "@/constants";
+import { FILTERS } from "@/constants";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useNativeBalance } from "@/api/balance";
 import { useUserPools } from "@/api/pool";
 import { useEarn } from "@/api/earn";
 import { COINS } from "@/config/coin";
 import { toNumber } from "@/utils";
-import { useRouter } from "next/router";
 import classes from "@/styles/pages/Home.module.scss";
 
 export default function Home() {
     const [activeFilter, setActiveFilter] = useState<string | null>(FILTERS.LAST_WEEK);
     const [fetchPools, setFetchPools] = useState<boolean>(false);
-    const [isFAssetWindDownModalActive, setIsFAssetWindDownModalActive] = useState<boolean>(false);
-    const [disabledFassets, setDisabledFAssets] = useState<string[]>([]);
 
     const { t } = useTranslation();
     const { isConnected, mainToken } = useWeb3();
@@ -48,12 +43,8 @@ export default function Home() {
     const timeData = useTimeData(activeFilter as string);
     const balance = useNativeBalance(mainToken?.address!, mainToken?.address !== undefined);
     const userPools = useUserPools(mainToken?.address!, COINS.filter(coin => coin.isFAssetCoin && coin.enabled).map(coin => coin.type), fetchPools);
-    const mintEnabled = useMintEnabled();
     const earn = useEarn();
     const isMounted = useMounted();
-    const cookies = new Cookies();
-    const router = useRouter();
-
     const zeroBalanceAssets = balance.data?.filter(balance => balance.balance === '0' && 'lots' in balance).length;
     const totalLotsAssets = balance.data?.filter(balance => 'lots' in balance).length;
     const hasNoAssets = zeroBalanceAssets === totalLotsAssets
@@ -66,26 +57,6 @@ export default function Home() {
             setFetchPools(true);
         }
     }, [isMounted, isConnected]);
-
-    useEffect(() => {
-        if (!mintEnabled.data) return;
-
-        const cookieFassets = cookies.get(COOKIE_WINDDOWN) ? Object.keys(cookies.get(COOKIE_WINDDOWN)).map(key => key) : [];
-        const fAssets = mintEnabled.data.filter(item => !item.status && !cookieFassets.includes(item.fasset)).map(item => item.fasset);
-        setDisabledFAssets(fAssets);
-
-        if (fAssets.length > 0) {
-            setIsFAssetWindDownModalActive(true);
-        }
-    }, [mintEnabled.data]);
-
-    const onFAssetWindDownModalClose = async (redirect: boolean) => {
-        setIsFAssetWindDownModalActive(false);
-
-        if (redirect) {
-            await router.push('/mint');
-        }
-    }
 
     return (
         <div>
@@ -249,13 +220,6 @@ export default function Home() {
                     }
                 </Grid>
             </Container>
-            {disabledFassets.length > 0 &&
-                <FAssetWindDownModal
-                    opened={isFAssetWindDownModalActive}
-                    onClose={onFAssetWindDownModalClose}
-                    fAssets={disabledFassets}
-                />
-            }
         </div>
     );
 }

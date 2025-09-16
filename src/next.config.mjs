@@ -57,7 +57,11 @@ const nextConfig = {
         TERM_OF_SERVICE_URL: process.env.TERMS_OF_SERVICE_URL,
         INCENTIVES_MODAL: process.env.INCENTIVES_MODAL,
         WIND_DOWN_DATE: process.env.WIND_DOWN_DATE,
-        WIND_DOWN_BLOG_URL: process.env.WIND_DOWN_BLOG_URL
+        WIND_DOWN_BLOG_URL: process.env.WIND_DOWN_BLOG_URL,
+        FLR_URL: process.env.FLR_URL,
+        SGB_URL: process.env.SGB_URL,
+        CFLR_URL: process.env.CFLR_URL,
+        C2FLR_URL: process.env.C2FLR_URL
     },
     output: "standalone"
 };

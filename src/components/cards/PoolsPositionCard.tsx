@@ -195,16 +195,16 @@ export default function PoolsPositionCard({ className, pools }: IPoolsPositionCa
             </div>
             {positions?.map(((position, index) => (
                 <div
-                style={{
-                    width: 0,
-                    height: 0,
-                    overflow: 'hidden',
-                    position: 'absolute',
-                    pointerEvents: 'none',
-                }}
-                key={index}
+                    style={{
+                        width: 0,
+                        height: 0,
+                        overflow: 'hidden',
+                        position: 'absolute',
+                        pointerEvents: 'none',
+                    }}
+                    key={index}
                 >
-                {position.icon !== undefined && position.icon}
+                    {position.icon !== undefined && position.icon}
                 </div>
             )))}
             {isConnected &&
