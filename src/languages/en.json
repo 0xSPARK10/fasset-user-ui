@@ -138,6 +138,8 @@
             "description_label": "Now minting is paused but you can still redeem and withdraw collateral from {{fAssets}}.",
             "title": "Wind down Process has started"
         },
+        "exchange_remaining_fassets_description_label": "FAssets system is not able to redeem partial lots. Use <a1>Blazeswap</a1> or <a2>Enosys</a2>.",
+        "exchange_remaining_fassets_title": "Exchange your remaining {{fAssets}} on DEXs",
         "fassets_title": "FAssets",
         "flare_title": "Flare",
         "flr_address_label": "FLR Address",
@@ -421,7 +423,7 @@
             "mint_label": "Mint",
             "quest_label": "Quest",
             "songbird_label": "Songbird",
-            "title": "FAsset"
+            "title": "FAssets"
         }
     },
     "ledger": {
@@ -455,6 +457,9 @@
         "won_label_ordinal_two": "You have won {{count}}nd prize",
         "won_title": "You have won the lottery!"
     },
+    "meta": {
+        "title": "FAssets | Bring XRP into DeFi"
+    },
     "mint_modal": {
         "amount_label": "Amount",
         "amount_step_title": "I want to mint",
@@ -473,7 +478,7 @@
         "form": {
             "address_label": "Address",
             "agent_label": "Agent",
-            "amounted_based_label": "Amount based on your {{nativeName}} balance and Agent limits plus applicable fees.",
+            "amounted_based_label": "Based on your {{nativeName}} balance (min. 13 {{nativeName}}), agent limits, and applicable fees.",
             "change_agent_button": "Change Agent",
             "change_agent_table": {
                 "agent_name_label": "Agent name",

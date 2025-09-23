@@ -200,18 +200,6 @@ export default function ConfirmStepper({
             setTransferredAssetAmount(fromLots(parseInt(formValues.lots), fAssetCoin.lotSize) as number);
             const executorResponse = await executor.refetch();
             const assetManagerResponse = await assetManagerAddress.refetch();
-            let minterUnderlyingAddresses = formValues.minterUnderlyingAddresses;
-
-            if (fAssetCoin.network.namespace === BTC_NAMESPACE && fAssetCoin.connectedWallet === WALLET.LEDGER) {
-                let amount = fromLots(formValues.lots, fAssetCoin.lotSize) as number;
-                amount += (amount * (toNumber(formValues.feeBIPS)) / 10000);
-                const utxosForTransactionResponse = await utxosForTransaction.mutateAsync({
-                    fAsset: fAssetCoin?.type!,
-                    xpub: CryptoJS.AES.decrypt(fAssetCoin?.xpub!, process.env.XPUB_SECRET!).toString(CryptoJS.enc.Utf8),
-                    amount: toSatoshi(amount)
-                });
-                minterUnderlyingAddresses = utxosForTransactionResponse.returnAddresses;
-            }
 
             const response = await reserveCollateral.mutateAsync({
                 assetManagerAddress: assetManagerResponse?.data?.address!,

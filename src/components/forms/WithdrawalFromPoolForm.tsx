@@ -60,7 +60,8 @@ const WithdrawalFromPoolForm = forwardRef<FormRef, IWithdrawalFromPoolForm>(({ c
         mode: 'uncontrolled',
         initialValues: {
             amount: undefined,
-            natReturn: ''
+            natReturn: '',
+            isMaxAmount: false
         },
         validate: yupResolver(schema),
         onValuesChange: (values: any) => {
@@ -135,6 +136,7 @@ const WithdrawalFromPoolForm = forwardRef<FormRef, IWithdrawalFromPoolForm>(({ c
             });
 
             setFee(Number(formatUnit(estimatedGas, 9)));
+            form.setFieldValue('isMaxAmount', value === maxWithdrawal);
         } catch (error) {
             const errorDecoder = ErrorDecoder.create([CollateralPoolAbi]);
             const decodedError = await errorDecoder.decode(error);

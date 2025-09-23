@@ -233,23 +233,25 @@ export function useEnterCollateralPool() {
                 const signer = await provider.getSigner(userAddress);
                 const contract = new ethers.Contract(poolAddress, CollateralPoolAbi, signer);
 
+                const feeData = await getFeeData(mainToken!);
+                let gasLimit = await contract.enter.estimateGas({
+                    from: userAddress,
+                    value: ethers.toBigInt(value)
+                });
+                gasLimit = (gasLimit * BigInt(150)) / BigInt(100);
+
                 if (getGasFee) {
-                    const gasPrice = (await getFeeData(mainToken!)).gasPrice;
-                    const gasLimit = await contract.enter.estimateGas({
-                        from: userAddress,
-                        value: ethers.toBigInt(value)
-                    });
-
-                    if (gasPrice) {
-                        return Number(formatUnit(gasPrice, 9)) * Number(gasLimit);
-                    }
-
-                    return undefined;
+                    return feeData.gasPrice
+                        ? Number(formatUnit(feeData.gasPrice, 9)) * Number(gasLimit)
+                        : undefined;
                 }
 
                 const tx = await contract.enter({
                     from: userAddress,
-                    value: value
+                    value: value,
+                    gasLimit: gasLimit,
+                    maxFeePerGas: feeData.maxFeePerGas!,
+                    maxPriorityFeePerGas: feeData.maxPriorityFeePerGas!
                 });
 
                 const receipt = await tx.wait();
@@ -288,21 +290,23 @@ export function useExitCollateralPool() {
                const signer = await provider.getSigner(userAddress);
                const contract = new ethers.Contract(poolAddress, CollateralPoolAbi, signer);
 
+               const feeData = await getFeeData(mainToken!);
+               let gasLimit = await contract.exit.estimateGas(tokenShare, {
+                   from: userAddress
+               });
+               gasLimit = (gasLimit * BigInt(150)) / BigInt(100);
+
                if (getGasFee) {
-                   const gasPrice = (await getFeeData(mainToken!)).gasPrice;
-                   const gasLimit = await contract.exit.estimateGas(tokenShare, {
-                       from: userAddress
-                   });
-
-                   if (gasPrice) {
-                       return Number(formatUnit(gasPrice, 9)) * Number(gasLimit);
-                   }
-
-                   return undefined;
+                   return feeData.gasPrice
+                       ? Number(formatUnit(feeData.gasPrice, 9)) * Number(gasLimit)
+                       : undefined;
                }
 
                const tx = await contract.exit(tokenShare, {
-                   from: userAddress
+                   from: userAddress,
+                   gasLimit: gasLimit,
+                   maxFeePerGas: feeData.maxFeePerGas!,
+                   maxPriorityFeePerGas: feeData.maxPriorityFeePerGas!
                });
 
                const receipt = await tx.wait();

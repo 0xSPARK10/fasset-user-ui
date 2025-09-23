@@ -4,11 +4,9 @@ import React, {
     forwardRef,
     useImperativeHandle,
     useCallback,
-    memo,
     useRef
 } from "react";
 import {
-    Anchor,
     Button,
     Divider,
     Loader,
@@ -21,7 +19,6 @@ import {
 } from "@mantine/core";
 import CryptoJS from "crypto-js";
 import { useForm, UseFormReturnType } from "@mantine/form";
-import { IconArrowUpRight } from "@tabler/icons-react";
 import { yupResolver } from "mantine-form-yup-resolver";
 import * as yup from "yup";
 import { useDebouncedCallback, useElementSize, useMediaQuery } from "@mantine/hooks";
@@ -30,7 +27,7 @@ import { AxiosError } from "axios";
 import CopyIcon from "@/components/icons/CopyIcon";
 import AgentsList from "@/components/mint/AgentsList";
 import { showErrorNotification } from "@/hooks/useNotifications";
-import { truncateString, fromLots, toLots, toNumber, formatNumber, toSatoshi } from "@/utils";
+import { truncateString, fromLots, toLots, toNumber, formatNumber, toSatoshi, parseUnits } from "@/utils";
 import { IAgent, IFAssetCoin, ISelectedAgent } from "@/types";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useMaxLots, useReturnAddresses } from "@/api/minting";
@@ -224,6 +221,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
     }, [mintingFee, selectedAgent]);
 
     useEffect(() => {
+        if (!mintingFee) return;
         if (isMintingFeeHigh) {
             setHighMintingFee(mintingFee);
         } else {
@@ -364,7 +362,6 @@ const MintForm = forwardRef<FormRef, IMintForm>(
         let balance = toNumber(underlyingBalance?.data?.balance!);
         const fee = transfer! * ((Number(agent.feeBIPS) ?? 0) / 10000);
         setMintingFee(fee);
-
         // substract fee from balance and recalculate max lots to mint
         balance -= fee;
         // wallet needs to have minimal 10 coins
@@ -389,6 +386,10 @@ const MintForm = forwardRef<FormRef, IMintForm>(
             refetchBestAgent(false);
         }
     }
+
+    const reservationFee = lots && bestAgent?.data?.collateralReservationFee
+        ? BigInt(bestAgent?.data?.collateralReservationFee) + parseUnits(mainToken?.minWalletBalance!, 18)
+        : undefined;
 
     return (
         <div ref={popoverSize.ref}>
@@ -690,8 +691,8 @@ const MintForm = forwardRef<FormRef, IMintForm>(
                         >
                             {bestAgent.isPending
                                 ? <Loader size={14} />
-                                : (lots && bestAgent?.data?.collateralReservationFee
-                                    ? (Number(bestAgent?.data?.collateralReservationFee) / 1000000000000000000).toLocaleString('en-US', { maximumFractionDigits: 2 })
+                                : (reservationFee
+                                    ? Number(Number(reservationFee) / 1e18).toLocaleString('en-US', { maximumFractionDigits: 2 })
                                     : <span>&mdash;</span>)
                             }
                         </Text>

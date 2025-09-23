@@ -4,19 +4,19 @@ import {
     Divider,
     Loader,
     LoadingOverlay,
-    Paper,
+    Paper, rem,
     SimpleGrid,
     Text,
     Title,
     Tooltip
 } from "@mantine/core";
-import { IconArrowUpRight } from "@tabler/icons-react";
+import { IconArrowUpRight, IconExclamationCircle } from "@tabler/icons-react";
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useInterval, useMediaQuery } from "@mantine/hooks";
 import { useNativeBalance, usePoolsBalance } from "@/api/balance";
 import { useWeb3 } from "@/hooks/useWeb3";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import MintModal from "@/components/modals/MintModal";
 import RedeemModal from "@/components/modals/RedeemModal";
 import CopyIcon from "@/components/icons/CopyIcon";
@@ -24,8 +24,8 @@ import { useFassetState, useUserProgress } from "@/api/user";
 import { useModalState } from "@/hooks/useModalState";
 import { ICoin, IFAssetCoin } from "@/types";
 import { COINS } from "@/config/coin";
-import { truncateString } from "@/utils";
-import { NETWORK_FLARE, NETWORK_FLARE_COSTON2_TESTNET } from "@/config/networks";
+import { toNumber, truncateString } from "@/utils";
+import { NETWORK_FLARE, NETWORK_FLARE_COSTON2_TESTNET, NETWORK_SONGBIRD } from "@/config/networks";
 
 interface IBalanceCard {
     className?: string;
@@ -37,7 +37,7 @@ const BALANCE_FETCH_INTERVAL = 60000;
 const USER_PROGRESS_FETCH_INTERVAL = 60000;
 
 export default function BalanceCard({ className, onViewPendingTransactionsClick, disabledFassets }: IBalanceCard) {
-    const [fAssetCoins, setfAssetCoins] = useState<IFAssetCoin[]>([]);
+    const [fAssetCoins, setfAssetCoins] = useState<(IFAssetCoin & { cantRedeem?: boolean })[]>([]);
     const [isMintModalActive, setIsMintModalActive] = useState<boolean>(false);
     const [isRedeemModalActive, setIsRedeemModalActive] = useState<boolean>(false);
     const { connectedCoins, mainToken } = useWeb3();
@@ -57,6 +57,7 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
     const pendingTransactions = userProgress.data
          ? userProgress.data.filter(progress => !progress.status).length
          : 0;
+    const isPartialRedeemCardActive = mainToken?.network?.name === NETWORK_SONGBIRD.name && fAssetCoins.filter(fAssetCoin => fAssetCoin?.cantRedeem).length > 0;
 
     const nativeBalanceFetchInterval = useInterval(() => {
         nativeBalance.refetch();
@@ -83,19 +84,22 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
             if (!coin) return;
 
             if ('lots' in balance) {
-               let fAssetCoin;
+               let fAssetCoin: IFAssetCoin & { cantRedeem?: boolean };
 
                if (connectedCoin) {
-                   fAssetCoin = { ...connectedCoin } as IFAssetCoin;
+                   fAssetCoin = { ...connectedCoin, cantRedeem: false } as IFAssetCoin & { cantRedeem?: boolean };
                    fAssetCoin.balance = balance?.balance || "0";
                } else {
-                   fAssetCoin = { ...coin } as IFAssetCoin;
+                   fAssetCoin = { ...coin, cantRedeem: false } as IFAssetCoin & { cantRedeem?: boolean };
                    fAssetCoin.balance = balance?.balance || "0";
                    fAssetCoin.enabled = false;
                }
 
                if (pausedTokens.includes(fAssetCoin.type)) {
                    fAssetCoin.enabled = false;
+               }
+               if ((toNumber(balance?.balance || "0") / fAssetCoin.lotSize) < 1) {
+                   fAssetCoin.cantRedeem = true;
                }
 
                fAssetCoins.push(fAssetCoin);
@@ -337,6 +341,48 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                             </div>
                         }
                     </div>
+                    {isPartialRedeemCardActive &&
+                        <div className="flex items-center mt-2 rounded p-3 bg-[#FCEBE2] whitespace-pre-line">
+                            <IconExclamationCircle
+                                style={{ width: rem(25), height: rem(25) }}
+                                color="var(--flr-orange)"
+                                className="mr-3 flex-shrink-0"
+                            />
+                            <div>
+                                <Text>{
+                                    t('balance_card.exchange_remaining_fassets_title', {
+                                        fAssets: fAssetCoins.filter(fAssetCoin => fAssetCoin.cantRedeem).map(fAssetCoin => fAssetCoin.type).join(', ')
+                                    })}
+                                </Text>
+                                <Trans
+                                    i18nKey="balance_card.exchange_remaining_fassets_description_label"
+                                    components={{
+                                        a1: <Anchor
+                                            underline="always"
+                                            href="https://app.blazeswap.xyz/swap/"
+                                            target="_blank"
+                                            fw={400}
+                                            c="var(--flr-black)"
+                                            className="text-12"
+                                        />,
+                                        a2: <Anchor
+                                            underline="always"
+                                            href="https://v3.dex.enosys.global/"
+                                            target="_blank"
+                                            fw={400}
+                                            c="var(--flr-black)"
+                                            className="text-12"
+                                        />
+                                    }}
+                                    parent={Text}
+                                    c="var(--flr-black)"
+                                    className="text-12"
+                                    fw={400}
+                                />
+                            </div>
+
+                        </div>
+                    }
                     {fAssetCoins.map((fAssetCoin) => (
                         <div
                             key={fAssetCoin.type}

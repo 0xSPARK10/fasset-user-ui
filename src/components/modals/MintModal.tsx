@@ -59,7 +59,9 @@ export default function MintModal({ opened, onClose, fAssetCoin }: IMintModal) {
         if (status?.hasErrors || !form) return;
 
         const nativeBalance = nativeBalances.data && nativeBalances.data.find(nativeBalance => nativeBalance.symbol.toLowerCase() === mainToken?.type.toLowerCase());
-        if (nativeBalance && parseUnits(nativeBalance.balance.replace(/,/g, ''), 18) < Number(values.collateralReservationFee)) {
+        const minFee = BigInt(values.collateralReservationFee) + parseUnits(mainToken?.minWalletBalance!, 18);
+
+        if (nativeBalance && parseUnits(nativeBalance.balance.replace(/,/g, ''), 18) < minFee) {
             setErrorMessage(t('mint_modal.form.error_insufficient_balance_label', { tokenName: mainToken?.type }));
             return;
         }

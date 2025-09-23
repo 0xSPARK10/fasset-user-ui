@@ -7,7 +7,7 @@ import {
     Anchor,
     rem
 } from "@mantine/core";
-import { IconArrowUpRight, IconExclamationCircle } from "@tabler/icons-react";
+import { IconArrowUpRight } from "@tabler/icons-react";
 import { useScrollIntoView } from "@mantine/hooks";
 import { useTranslation, Trans } from "react-i18next";
 import UnderlyingBalanceCard from "@/components/cards/UnderlyingBalanceCard";
@@ -19,7 +19,7 @@ import { useWeb3 } from "@/hooks/useWeb3";
 import { COINS } from "@/config/coin";
 import classes from "@/styles/pages/Mint.module.scss";
 import { useMintEnabled } from "@/api/minting";
-import { NETWORK_FLARE, NETWORK_FLARE_COSTON2_TESTNET, NETWORK_SONGBIRD } from "@/config/networks";
+import { NETWORK_FLARE, NETWORK_SONGBIRD } from "@/config/networks";
 
 export default function Mint() {
     const [fAssetCoins, setFAssetCoins] = useState<IFAssetCoin[]>([]);

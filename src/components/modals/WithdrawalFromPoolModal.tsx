@@ -54,8 +54,8 @@ export default function WithdrawalFromPoolModal({ opened, onClose, collateralPoo
     const [currentStep, setCurrentStep] = useState<number>(STEP_AMOUNT);
     const [currentWalletStep, setCurrentWalletStep] = useState<number>(STEP_WALLET_WITHDRAWAL);
     const [errorMessage, setErrorMessage] = useState<string>();
-    const [formValues, setFormValues] = useState<any>();
     const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
+    const formValues = useRef<any>(null);
 
     const { t } = useTranslation();
     const formRef = useRef<FormRef>(null);
@@ -94,7 +94,9 @@ export default function WithdrawalFromPoolModal({ opened, onClose, collateralPoo
             await exitCollateralPool.mutateAsync({
                 userAddress: mainToken?.address!,
                 poolAddress: collateralPool?.pool!,
-                tokenShare: parseUnits(values?.amount || formValues.amount, 18).toString(),
+                tokenShare: values?.isMaxAmount || formValues.current.isMaxAmount
+                    ? collateralPool?.userPoolTokensFull!
+                    : parseUnits(values?.amount || formValues.current.amount, 18).toString(),
             });
             setCurrentWalletStep(STEP_WALLET_COMPLETED);
             nativeBalances.refetch();
@@ -139,7 +141,7 @@ export default function WithdrawalFromPoolModal({ opened, onClose, collateralPoo
         }
 
         const values = form.getValues();
-        setFormValues(values);
+        formValues.current = values;
         setCurrentStep(STEP_CONFIRM);
 
         if (mainToken?.connectedWallet === WALLET.LEDGER) return;
