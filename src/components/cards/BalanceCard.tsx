@@ -98,7 +98,7 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                if (pausedTokens.includes(fAssetCoin.type)) {
                    fAssetCoin.enabled = false;
                }
-               if ((toNumber(balance?.balance || "0") / fAssetCoin.lotSize) < 1) {
+               if (toNumber(balance?.balance || "0") > 0 && toNumber(balance?.balance || "0") < 10) {
                    fAssetCoin.cantRedeem = true;
                }
 

@@ -97,7 +97,7 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
         >
             {t('my_pools_position_card.your_position_label')}
         </Text>
-        <div className="flex items-center">
+        <div className="flex items-baseline">
             <Text
                 className="text-28"
                 fw={300}
@@ -105,10 +105,10 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
                 ${formatNumberWithSuffix(position?.totalFassetsUSD ?? 0)}
             </Text>
             {!hasNoAssets &&
-                <div className="ml-2 flex items-center">
+                <div className="ml-2 flex items-baseline">
                     {mainToken?.icon({width: "20", height: "20"})}
                     <Text
-                        className="ml-2 text-16"
+                        className="ml-2 mb-1 text-16"
                         fw={400}
                         c="var(--flr-dark-gray)"
                     >
@@ -136,7 +136,7 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
         >
             {t('my_pools_position_card.available_rewards_label')}
         </Text>
-        <div className="flex items-center flex-wrap">
+        <div className="flex items-baseline flex-wrap">
             <Text
                 className="text-28"
                 fw={300}
@@ -144,10 +144,10 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
                 ${formatNumberWithSuffix(position?.totalRewardsUSD ?? 0)}
             </Text>
             {!hasNoAssets &&
-                <div className="ml-2 flex items-center">
+                <div className="ml-2 flex items-baseline">
                     {position?.rewards?.map((reward, index) => (
                         <div
-                            className={`flex items-center ${index < position.rewards.length - 1 ? 'mr-8' : ''}`}
+                            className={`flex items-baseline ${index < position.rewards.length - 1 ? 'mr-8' : ''}`}
                             key={index}
                         >
                             {reward.icon !== undefined && reward.icon}
@@ -182,17 +182,17 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
         >
             {t('my_pools_position_card.pools_rewards_earned_label')}
         </Text>
-        <div className="flex items-center">
+        <div className="flex items-baseline">
             <Text
                 className="text-28 mr-2"
                 fw={300}
             >
                 ${formatNumberWithSuffix(totalClaimed ?? 0)}
             </Text>
-            <div className="flex items-center">
+            <div className="flex items-baseline">
             {position?.rewards?.map((reward, index) => (
                 <div
-                    className={`flex items-center ${index < position.rewards.length - 1 ? 'mr-5' : ''}`}
+                    className={`flex items-baseline ${index < position.rewards.length - 1 ? 'mr-5' : ''}`}
                     key={index}
                 >
                     {reward.icon !== undefined && reward.icon}

@@ -6,15 +6,17 @@ interface ILedgerConfirmTransactionCard {
     isDisabled: boolean;
     appName: string;
     onClick: () => void;
+    confirmLabel?: string;
+    className?: string;
 }
 
-export default function LedgerConfirmTransactionCard({ isLoading, isDisabled, onClick, appName } : ILedgerConfirmTransactionCard) {
+export default function LedgerConfirmTransactionCard({ isLoading, isDisabled, onClick, appName, confirmLabel, className } : ILedgerConfirmTransactionCard) {
     const { t } = useTranslation();
 
     return (
         <Paper
             radius="lg"
-            className="p-8 mt-8 mb-4"
+            className={`p-8 mt-8 mb-4 ${className ? className : ''}`}
             styles={{
                 root: {
                     backgroundColor: 'var(--flr-lightest-blue)'
@@ -39,7 +41,7 @@ export default function LedgerConfirmTransactionCard({ isLoading, isDisabled, on
                 loading={isLoading}
                 disabled={isDisabled}
             >
-                {t('ledger.confirm_transaction_button')}
+                {confirmLabel ? confirmLabel : t('ledger.confirm_transaction_button')}
             </Button>
         </Paper>
     );

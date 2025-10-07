@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueries } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import apiClient from "@/api/apiClient";
 import {
     IAgent,
@@ -20,7 +20,8 @@ export const USER_KEY = {
     LIFETIME_CLAIMED: 'user.lifetimeClaimed',
     TIME_DATA: 'user.timeData',
     FASSET_STATE: 'user.fassetState',
-    FASSET_PRICE: 'user.fassetPrice'
+    FASSET_PRICE: 'user.fassetPrice',
+    UNDERLYING_STATUS: 'user.underlyingStatus'
 }
 
 export function useBestAgent() {
@@ -115,6 +116,17 @@ export function useFassetPrice(fAsset: string, enabled: boolean = true) {
         queryFn: async () => {
             const response = await apiClient.get(`fassetPrice/${fAsset}`);
             return response.data as IFassetPrice;
+        },
+        enabled: enabled
+    })
+}
+
+export function useUnderlyingStatus(fAsset: string, paymentReference: string, enabled: boolean = true) {
+    return useQuery({
+        queryKey: [USER_KEY.UNDERLYING_STATUS, fAsset, paymentReference],
+        queryFn: async () => {
+            const response = await apiClient.get(`underlyingStatus/${fAsset}/${paymentReference}`);
+            return response.data as boolean;
         },
         enabled: enabled
     })

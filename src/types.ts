@@ -145,7 +145,11 @@ export interface IAssetManagerAddress {
     address: string;
 }
 
-export interface IUnderylingBalance {
+export interface IUnderlyingBalance {
+    accountInfo: {
+        depositAuth: boolean;
+        requireDestTag: boolean;
+    },
     balance: string | null;
 }
 
@@ -278,6 +282,13 @@ export interface IUserProgress {
     takenOver?: boolean;
     rejectionDefaulted?: boolean;
     txhash: string;
+    missingUnderlying: boolean;
+    underlyingTransactionData: {
+        amount: string;
+        destinationAddress: string;
+        paymentReference: string;
+        agentName: string;
+    };
 }
 
 export interface IEstimateFee {

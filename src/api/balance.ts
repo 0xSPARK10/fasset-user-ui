@@ -5,7 +5,7 @@ import qs from "qs";
 import {
     INativeBalance,
     IPoolsBalance,
-    IUnderylingBalance
+    IUnderlyingBalance
 } from "@/types";
 
 export const BALANCE_KEY = {
@@ -43,9 +43,9 @@ export function useUnderlyingBalance(address: string, fAsset: string, enabled: b
         queryFn: async () => {
             try {
                 const response = await apiClient.get(`${resource}/underlying/${fAsset}/${address}`, config);
-                return response.data as IUnderylingBalance;
+                return response.data as IUnderlyingBalance;
             } catch (error) {
-                return { balance: "error" } as IUnderylingBalance;
+                return { balance: "error" } as IUnderlyingBalance;
             }
         },
         enabled: enabled
@@ -80,7 +80,8 @@ export function useUnderlyingBalances(
                     const response = await apiClient.get(`${resource}/xpub/${asset.fAsset}/${asset.address}`);
                     return {
                         fAsset: asset.fAsset,
-                        balance: response.data.balance
+                        balance: response.data.balance,
+                        accountInfo: response.data.accountInfo
                     }
                 },
                 enabled: enabled
@@ -93,7 +94,8 @@ export function useUnderlyingBalances(
                 const response = await apiClient.get(`${resource}/underlying/${asset.fAsset}/${asset.address}`, config);
                 return {
                     fAsset: asset.fAsset,
-                    balance: response.data.balance
+                    balance: response.data.balance,
+                    accountInfo: response.data.accountInfo
                 }
             },
             enabled: enabled
@@ -144,7 +146,7 @@ export function useXpubBalance(xpub: string, fAsset: string, enabled: boolean = 
         queryKey: [BALANCE_KEY.XPUB_BALANCE, xpub, fAsset],
         queryFn: async () => {
             const response = await apiClient.get(`${resource}/xpub/${fAsset}/${xpub}`);
-            return response.data as IUnderylingBalance;
+            return response.data as IUnderlyingBalance;
         },
         enabled: enabled
     })

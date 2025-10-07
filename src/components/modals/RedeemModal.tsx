@@ -28,7 +28,7 @@ import WalletConnectOpenWalletCard from "@/components/cards/WalletConnectOpenWal
 import { useInterval } from "@mantine/hooks";
 import FAssetModal from "@/components/modals/FAssetModal";
 import RedeemFinishedModal from "@/components/modals/RedeemFinishedModal";
-import { useNativeBalance } from "@/api/balance";
+import { useNativeBalance, useUnderlyingBalance } from "@/api/balance";
 import { ErrorDecoder } from "ethers-decode-error";
 import { AssetManagerAbi } from "@/abi";
 import { ICoin, IFAssetCoin } from "@/types";
@@ -37,6 +37,8 @@ import { fromLots, toNumber, toLots } from "@/utils";
 import { COOKIE_WINDDOWN, WALLET } from "@/constants";
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { Cookies } from "react-cookie";
+import CryptoJS from "crypto-js";
+import { useWeb3 } from "@/hooks/useWeb3";
 
 interface IRedeemModal {
     opened: boolean;
@@ -75,6 +77,8 @@ export default function RedeemModal({ opened, onClose, fAssetCoin, flareCoin }: 
     const [isNextButtonDisabled, setIsNextButtonDisabled] = useState<boolean>(false);
     const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
 
+    const { connectedCoins } = useWeb3();
+    const connectedCoin = connectedCoins.find(coin => coin.type == fAssetCoin.type);
     const cookies = new Cookies();
     const assetManagerAddress = useAssetManagerAddress(fAssetCoin.type, opened);
     const redeem = useRedeem();
@@ -82,6 +86,14 @@ export default function RedeemModal({ opened, onClose, fAssetCoin, flareCoin }: 
     const requestRedemptionDefault = useRequestRedemptionDefault();
     const redemptionStatus = useRedemptionStatus(fAssetCoin.type, txHash!, false);
     const redemptionDefaultStatus = useRedemptionDefaultStatus(txHash!, false);
+    const underlyingBalance = useUnderlyingBalance(
+        connectedCoin && connectedCoin.connectedWallet === WALLET.LEDGER && connectedCoin.xpub !== undefined
+            ? CryptoJS.AES.decrypt(connectedCoin.xpub!, process.env.XPUB_SECRET!).toString(CryptoJS.enc.Utf8)
+            : fAssetCoin?.address!,
+        fAssetCoin.type,
+        fAssetCoin?.address !== undefined,
+        connectedCoin && connectedCoin.connectedWallet === WALLET.LEDGER && connectedCoin.xpub !== undefined
+    );
 
     const redemptionStatusFetchInterval = useInterval(async () => {
         const response = await redemptionStatus.refetch();
@@ -384,6 +396,25 @@ export default function RedeemModal({ opened, onClose, fAssetCoin, flareCoin }: 
                                             c="var(--flr-black)"
                                         >
                                             {coreVaultErrorMessage}
+                                        </Text>
+                                    </div>
+                                }
+                                {(underlyingBalance.data?.accountInfo?.depositAuth || underlyingBalance.data?.accountInfo?.requireDestTag) &&
+                                    <div className="flex items-center mb-5 border border-red-700 p-3 bg-red-100">
+                                        <IconExclamationCircle
+                                            style={{ width: rem(25), height: rem(25) }}
+                                            color="var(--flr-red)"
+                                            className="mr-3 flex-shrink-0"
+                                        />
+                                        <Text
+                                            className="text-16"
+                                            fw={400}
+                                            c="var(--flr-red)"
+                                        >
+                                            {underlyingBalance.data?.accountInfo?.depositAuth
+                                                ? t('redeem_modal.limited_deposit_auth_settings_label')
+                                                : t(t('redeem_modal.limited_destination_tags_settings_label'))
+                                            }
                                         </Text>
                                     </div>
                                 }

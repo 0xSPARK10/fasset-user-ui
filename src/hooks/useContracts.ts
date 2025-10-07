@@ -6,7 +6,7 @@ import { useWeb3 } from "@/hooks/useWeb3";
 import { XRP_NAMESPACE } from "@/config/networks";
 import { formatUnit } from "@/utils";
 import { ICoin, INetwork, IUtxo } from "@/types";
-import { WALLET } from "@/constants";
+import { WALLET, ABI_ERRORS } from "@/constants";
 import { POOL_KEY } from "@/api/pool";
 
 function getProvider(address: string) {
@@ -31,7 +31,11 @@ function getProvider(address: string) {
 }
 
 function handleErrors(error: any) {
-    if (error.message.includes('could not coalesce error')) {
+    const errorCode = error?.error?.data ?? error?.data ?? error?.error?.error?.data;
+
+    if (errorCode in ABI_ERRORS) {
+        throw new Error(i18next.t('errors.abi_custom_error_label', { error: ABI_ERRORS[errorCode] }));
+    } else if (error.message.includes('could not coalesce error')) {
         throw new Error(i18next.t('errors.try_reconnecting_label'));
     }
 
@@ -72,7 +76,6 @@ export function useReserveCollateral() {
             try {
                 const signer = await provider?.getSigner(userAddress);
                 const contract = new ethers.Contract(assetManagerAddress ?? '', AssetManagerAbi, signer);
-
                 const tx = await contract.reserveCollateral(
                     agentVaultAddress,
                     lots,

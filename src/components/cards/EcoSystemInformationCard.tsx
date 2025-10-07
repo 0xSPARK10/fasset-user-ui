@@ -39,7 +39,7 @@ export default function EcoSystemInformationCard({ ecoSystemInfo }: IEcoSystemIn
                         fw={400}
                         c="var(--flr-black)"
                     >
-                        {formatNumberWithSuffix(ecoSystemInfo?.numHolders ?? 0, 0)}
+                        {formatNumberWithSuffix(ecoSystemInfo?.numHolders ?? 0, 2)}
                     </Text>
                 </div>
             </Grid.Col>
@@ -61,7 +61,7 @@ export default function EcoSystemInformationCard({ ecoSystemInfo }: IEcoSystemIn
                         fw={400}
                         c="var(--flr-black)"
                     >
-                        {formatNumberWithSuffix(ecoSystemInfo?.numMints ?? 0, 0)}
+                        {formatNumberWithSuffix(ecoSystemInfo?.numMints ?? 0, 2)}
                     </Text>
                 </div>
             </Grid.Col>

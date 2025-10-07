@@ -5,7 +5,7 @@ import {
     Grid,
     Text,
     Anchor,
-    rem
+    rem, Button
 } from "@mantine/core";
 import { IconArrowUpRight } from "@tabler/icons-react";
 import { useScrollIntoView } from "@mantine/hooks";
@@ -28,6 +28,7 @@ export default function Mint() {
     const { scrollIntoView, targetRef } = useScrollIntoView<HTMLDivElement>({
         offset: 60,
     });
+    const [latestTransactionCardKey, setLatestTransactionCardKey] = useState<number>(0);
 
     const mintEnabled = useMintEnabled();
     const disabledFassets = mintEnabled.data?.filter(item => !item.status)?.map(item => item.fasset) ?? [];
@@ -103,14 +104,26 @@ export default function Mint() {
             >
                 {t('dashboard.latest_transactions_title')}
             </Title>
-            <Title
-                fw={300}
-                className="mb-5 text-18"
-                ref={targetRef}
-            >
-                {t('dashboard.latest_transactions_subtitle')}
-            </Title>
-            <LatestTransactionsCard />
+            <div className="block sm:flex items-center justify-between mb-5 max-w-[1080px]">
+                <Title
+                    fw={300}
+                    className="text-18"
+                    ref={targetRef}
+                >
+                    {t('dashboard.latest_transactions_subtitle')}
+                </Title>
+                <Button
+                    variant="gradient"
+                    size="xs"
+                    radius="xl"
+                    fw={400}
+                    onClick={() => setLatestTransactionCardKey(latestTransactionCardKey + 1)}
+                    className="mt-2 sm:mt-0"
+                >
+                    {t('dashboard.refresh_button')}
+                </Button>
+            </div>
+            <LatestTransactionsCard refreshKey={latestTransactionCardKey} />
         </Container>
     );
 }

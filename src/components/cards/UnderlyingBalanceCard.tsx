@@ -11,7 +11,7 @@ import { showErrorNotification } from "@/hooks/useNotifications";
 import { useConnectWalletModal } from "@/hooks/useWeb3Modal";
 import { useUnderlyingBalance } from "@/api/balance"
 import { WALLET } from "@/constants";
-import { BTC_NAMESPACE, XRP_NAMESPACE } from "@/config/networks";
+import { BTC_NAMESPACE } from "@/config/networks";
 import classes from "@/styles/components/cards/UnderlyingBalanceCard.module.scss";
 
 interface IUnderlyingBalanceCard {
@@ -248,6 +248,35 @@ export default function UnderlyingBalanceCard({ className, fAssetCoin }: IUnderl
                                     {t('underlying_balance_card.update_balance_label')}
                                 </Text>
                             }
+                        </div>
+                    </Paper>
+                }
+                {(underlyingBalance.data?.accountInfo?.depositAuth || underlyingBalance.data?.accountInfo?.requireDestTag) &&
+                    <Paper
+                        radius="lg"
+                        className={`relative p-4 md:ml-8 mt-5 ${classes.paperArrow}`}
+                        styles={{
+                            root: {
+                                backgroundColor: 'rgba(230, 30, 87, 0.09)'
+                            }
+                        }}
+                    >
+                        <div className="flex items-center">
+                            <IconExclamationCircle
+                                style={{ width: rem(30), height: rem(30) }}
+                                className="flex-shrink-0 mr-3"
+                                color="var(--mantine-color-red-6)"
+                            />
+                            <Text
+                                className="text-12"
+                                fw={400}
+                                c="var(--flr-black)"
+                            >
+                                {underlyingBalance.data?.accountInfo?.depositAuth
+                                    ? t('underlying_balance_card.limited_deposit_auth_settings_label')
+                                    : t(t('underlying_balance_card.limited_destination_tags_settings_label'))
+                                }
+                            </Text>
                         </div>
                     </Paper>
                 }

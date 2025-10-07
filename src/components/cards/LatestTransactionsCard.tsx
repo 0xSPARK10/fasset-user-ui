@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { IconInfoHexagon } from "@tabler/icons-react";
 import Link from "next/link";
-import { Text, Badge, Table, rem, Popover, lighten } from "@mantine/core";
+import { Text, Badge, Table, rem, Popover, lighten, Button, Tooltip } from "@mantine/core";
 import { useInterval, useMediaQuery } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
 import moment from "moment";
@@ -13,10 +13,12 @@ import { COINS } from "@/config/coin";
 import CopyIcon from "@/components/icons/CopyIcon";
 import { toNumber, truncateString } from "@/utils";
 import { groupBy, map, orderBy } from "lodash-es";
+import RetryMintModal from "@/components/modals/RetryMintModal";
 import classes from "@/styles/components/cards/LatestTransactionsCard.module.scss";
 
 interface ILatestTransactionsCard {
     className?: string;
+    refreshKey?: number;
 }
 
 interface ITransaction extends IUserProgress {
@@ -25,7 +27,16 @@ interface ITransaction extends IUserProgress {
         value: string;
         type: string;
         status: boolean;
-    }[]
+    }[];
+}
+
+interface IUnderlyingTransaction {
+    fAsset: string;
+    fAssetAmount: string;
+    amount: string;
+    destinationAddress: string;
+    paymentReference: string;
+    agentName: string;
 }
 
 const USER_PROGRESS_FETCH_INTERVAL = 60000;
@@ -33,16 +44,24 @@ const USER_PROGRESS_FETCH_INTERVAL = 60000;
 const ACTION_TYPE_MINT = 'mint';
 const ACTION_TYPE_REDEEM = 'redeem';
 
-export default function LatestTransactionsCard({ className }: ILatestTransactionsCard) {
+export default function LatestTransactionsCard({ className, refreshKey }: ILatestTransactionsCard) {
     const [transactions, setTransactions] = useState<ITransaction[]>();
+    const [mintingTransaction, setMintingTransaction] = useState<{[id: string]: boolean}>({});
+    const [isRetryMintModalActive, setIsRetryMintModalActive] = useState<boolean>(false);
     const { t } = useTranslation();
-    const { mainToken } = useWeb3();
+    const { mainToken, connectedCoins } = useWeb3();
+
+    const underlyingTransaction = useRef<IUnderlyingTransaction>();
     const userProgressFetchInterval = useInterval(() => {
         userProgress.refetch();
     }, USER_PROGRESS_FETCH_INTERVAL);
 
     const userProgress = useUserProgress(mainToken?.address ?? '', mainToken !== undefined);
     const isMobile = useMediaQuery('(max-width: 768px)');
+
+    useEffect(() => {
+        userProgress.refetch();
+    }, [refreshKey]);
 
     useEffect(() => {
         if (!userProgress.data) return;
@@ -74,6 +93,24 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
     }, [userProgress.data]);
 
     const renderTimestamp = (progress: ITransaction) => {
+        const isTryAgainButtonVisible = progress.missingUnderlying &&
+            progress?.underlyingTransactionData?.paymentReference &&
+            (!mintingTransaction[progress.underlyingTransactionData.paymentReference] ||
+                mintingTransaction[progress.underlyingTransactionData.paymentReference] === false
+            );
+
+        if (isTryAgainButtonVisible) {
+            return <div className="flex min-h-[30px] items-center">
+                <Text
+                    className="text-14"
+                    fw={400}
+                >
+                    {moment(progress.timestamp).format('DD.MM.YYYY HH:mm')}
+                </Text>
+            </div>
+        }
+
+
         return <Text
             className="text-14"
             fw={400}
@@ -94,16 +131,57 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
                 : '#';
         }
 
+        const isHash = /^0x[a-fA-F0-9]{64}$/.test(progress.txhash) || /^[A-F0-9]{64}$/.test(progress.txhash);
+        const isTryAgainDisabled = connectedCoins.find(coin => coin.type.toLowerCase() === progress.fasset.toLowerCase()) === undefined;
+        const showTryAgainButton = progress.missingUnderlying &&
+            progress?.underlyingTransactionData?.paymentReference &&
+            (!mintingTransaction[progress.underlyingTransactionData.paymentReference] ||
+                mintingTransaction[progress.underlyingTransactionData.paymentReference] === false
+            );
+
         return <div className="flex items-center">
-            <Link
-                href={href}
-                target="_blank"
-                className="text-14 underline font-normal"
-            >
-                <span className="hidden sm:block">{progress.txhash}</span>
-                <span className="block sm:hidden">{truncateString(progress.txhash, 7, 7)}</span>
-            </Link>
-            <CopyIcon text={progress.txhash} color="var(--mantine-color-gray-5)" />
+            {!isHash
+                ? <span>{
+                    progress.defaulted ? t('latest_transactions_card.defaulted_label') : progress.txhash}
+                </span>
+                : <Link
+                    href={href}
+                    target="_blank"
+                    className="text-14 underline font-normal"
+                >
+                    <span className="hidden sm:block">{progress.txhash}</span>
+                    <span className="block sm:hidden">{truncateString(progress.txhash, 7, 7)}</span>
+                </Link>
+            }
+            {isHash &&
+                <CopyIcon text={progress.txhash} color="var(--mantine-color-gray-5)" />
+            }
+            {showTryAgainButton &&
+                <Tooltip
+                    label={t('latest_transactions_card.connect_tooltip')}
+                    withArrow
+                    disabled={!isTryAgainDisabled}
+                >
+                    <Button
+                        variant="gradient"
+                        size="xs"
+                        radius="xl"
+                        fw={400}
+                        disabled={isTryAgainDisabled}
+                        onClick={() => {
+                            underlyingTransaction.current = {
+                                ...progress.underlyingTransactionData,
+                                fAsset: progress.fasset,
+                                fAssetAmount: progress.amount
+                            };
+                            setIsRetryMintModalActive(true);
+                        }}
+                        className="ml-auto px-2"
+                    >
+                        {t('latest_transactions_card.try_again_button')}
+                    </Button>
+                </Tooltip>
+            }
         </div>
     }
 
@@ -310,7 +388,7 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
         {
             id: 'timestamp',
             label: t('latest_transactions_card.table.date_label'),
-            thClass: `${classes.fitWidth} align-top !text-12`,
+            thClass: `${classes.fitWidth} align-middle !text-12`,
             tdClass: `${classes.fitWidth} align-top`,
             render: (progress: ITransaction) => {
                 return renderTimestamp(progress);
@@ -322,7 +400,7 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
             render: (progress: ITransaction) => {
                 return renderTransaction(progress);
             },
-            thClass: `align-top ${classes.fitWidth} !text-12`,
+            thClass: `align-middle ${classes.fitWidth} !text-12`,
             tdClass: `align-top ${classes.fitWidth}`,
         },
         {
@@ -379,8 +457,8 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
             render: (progress: ITransaction) => {
                 return renderTransaction(progress);
             },
-            thClass: `align-top ${classes.fitWidth}`,
-            tdClass: `align-top ${classes.fitWidth}`,
+            thClass: `align-top min-w-[450px] ${classes.fitWidth}`,
+            tdClass: `align-top min-w-[450px] ${classes.fitWidth}`,
         },
         {
             id: 'action',
@@ -437,108 +515,132 @@ export default function LatestTransactionsCard({ className }: ILatestTransaction
         return userProgressFetchInterval.stop;
     }, []);
 
-    return (
-        <FAssetTable
-            items={transactions ?? []}
-            loading={userProgress.isPending}
-            columns={isMobile ? mobileColumns : columns}
-            style={{ maxWidth: '1080px' }}
-            emptyLabel={t('latest_transactions_card.empty_label')}
-            pagination={true}
-            perPage={10}
-            scrollContainerWidth={500}
-            mobileBreakPoint={768}
-            appendColumn={(item: ITransaction) => {
-                if (item.action.toLowerCase() === ACTION_TYPE_MINT) {
-                    return <Table.Tr>
-                        <Table.Td
-                            className="font-normal !text-12 uppercase align-top"
-                            style={{
-                                color: 'rgba(119, 119, 119, 1)',
-                                backgroundColor: 'rgba(251, 251, 251, 1)',
-                                borderBottom: '1px solid rgba(231, 231, 231, 1)'
-                            }}
-                        >
-                            {t('latest_transactions_card.table.status_label')}
-                        </Table.Td>
-                        <Table.Td>
-                            <Badge
-                                color={item.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
-                                variant="outline"
-                                radius="xs"
-                                size="md"
-                                className="font-normal"
-                            >
-                                <div className="flex items-center">
-                                    <span
-                                        className="status-dot mr-1"
-                                        style={{ backgroundColor: item.status ? 'var(--flr-green)' : 'var(--flr-warning)' }}
-                                    />
-                                    <Text
-                                        className="text-10"
-                                        fw={400}
-                                        c={item.status ? 'var(--flr-green)' : 'var(--flr-warning)'}
-                                    >
-                                        {t(`latest_transactions_card.${item.status ? 'finished_label' : 'in_progress_label'}`)}
-                                    </Text>
-                                </div>
-                            </Badge>
-                        </Table.Td>
-                    </Table.Tr>;
-                }
+    const tableKey = `${connectedCoins.map(coin => coin.type).sort().join(',')}-${Object.keys(mintingTransaction).join(',')}`;
 
-                return item?.tickets?.map((ticket, index) => (
-                    <Table.Tr key={`${ticket.ticketId}-${index}`}>
-                        <Table.Td
-                            className="font-normal text-sm uppercase align-top"
-                            style={{
-                                color: 'rgba(119, 119, 119, 1)',
-                                backgroundColor: 'rgba(251, 251, 251, 1)',
-                                borderBottom: '1px solid rgba(231, 231, 231, 1)'
-                            }}
-                        >
-                            {t('latest_transactions_card.table.ticket_id_label')}
-                        </Table.Td>
-                        <Table.Td>
-                            <div className="flex items-center justify-between">
-                                <Text className="text-14" fw={400}>{ticket.ticketId}</Text>
+    return (
+        <>
+            <FAssetTable
+                key={tableKey}
+                items={transactions ?? []}
+                loading={userProgress.isPending}
+                columns={isMobile ? mobileColumns : columns}
+                style={{ maxWidth: '1080px' }}
+                emptyLabel={t('latest_transactions_card.empty_label')}
+                pagination={true}
+                perPage={10}
+                scrollContainerWidth={500}
+                mobileBreakPoint={768}
+                appendColumn={(item: ITransaction) => {
+                    if (item.action.toLowerCase() === ACTION_TYPE_MINT) {
+                        return <Table.Tr>
+                            <Table.Td
+                                className="font-normal !text-12 uppercase align-top"
+                                style={{
+                                    color: 'rgba(119, 119, 119, 1)',
+                                    backgroundColor: 'rgba(251, 251, 251, 1)',
+                                    borderBottom: '1px solid rgba(231, 231, 231, 1)'
+                                }}
+                            >
+                                {t('latest_transactions_card.table.status_label')}
+                            </Table.Td>
+                            <Table.Td>
                                 <Badge
-                                    color={ticket.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
+                                    color={item.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
                                     variant="outline"
                                     radius="xs"
                                     size="md"
                                     className="font-normal"
                                 >
                                     <div className="flex items-center">
+                                    <span
+                                        className="status-dot mr-1"
+                                        style={{ backgroundColor: item.status ? 'var(--flr-green)' : 'var(--flr-warning)' }}
+                                    />
+                                        <Text
+                                            className="text-10"
+                                            fw={400}
+                                            c={item.status ? 'var(--flr-green)' : 'var(--flr-warning)'}
+                                        >
+                                            {t(`latest_transactions_card.${item.status ? 'finished_label' : 'in_progress_label'}`)}
+                                        </Text>
+                                    </div>
+                                </Badge>
+                            </Table.Td>
+                        </Table.Tr>;
+                    }
+
+                    return item?.tickets?.map((ticket, index) => (
+                        <Table.Tr key={`${ticket.ticketId}-${index}`}>
+                            <Table.Td
+                                className="font-normal !text-12 uppercase align-top"
+                                style={{
+                                    color: 'rgba(119, 119, 119, 1)',
+                                    backgroundColor: 'rgba(251, 251, 251, 1)',
+                                    borderBottom: '1px solid rgba(231, 231, 231, 1)'
+                                }}
+                            >
+                                {t('latest_transactions_card.table.ticket_id_label')}
+                            </Table.Td>
+                            <Table.Td>
+                                <div className="flex items-center justify-between">
+                                    <Text className="text-14" fw={400}>{ticket.ticketId}</Text>
+                                    <Badge
+                                        color={ticket.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
+                                        variant="outline"
+                                        radius="xs"
+                                        size="md"
+                                        className="font-normal"
+                                    >
+                                        <div className="flex items-center">
                                         <span
                                             className="status-dot mr-1"
                                             style={{ backgroundColor: ticket.status ? 'var(--flr-green)' : 'var(--flr-warning)' }}
                                         />
-                                        <Text
-                                            className="text-10"
-                                            fw={400}
-                                            c={ticket.status ? 'var(--flr-green)' : 'var(--flr-warning)'}
-                                        >
-                                            {t(`latest_transactions_card.${ticket.status ? 'finished_label' : 'in_progress_label'}`)}
-                                        </Text>
-                                    </div>
-                                </Badge>
-                            </div>
-                            <div className="flex items-center mt-1">
-                                <Text className="text-14 mr-1" fw={400}>
-                                    {ticket.value}
-                                </Text>
-                                <Text
-                                    c="var(--flr-gray)"
-                                    className="text-14 w-16"
-                                >
-                                    {ticket.type}
-                                </Text>
-                            </div>
-                        </Table.Td>
-                    </Table.Tr>
-                ));
-            }}
-        />
+                                            <Text
+                                                className="text-10"
+                                                fw={400}
+                                                c={ticket.status ? 'var(--flr-green)' : 'var(--flr-warning)'}
+                                            >
+                                                {t(`latest_transactions_card.${ticket.status ? 'finished_label' : 'in_progress_label'}`)}
+                                            </Text>
+                                        </div>
+                                    </Badge>
+                                </div>
+                                <div className="flex items-center mt-1">
+                                    <Text className="text-14 mr-1" fw={400}>
+                                        {ticket.value}
+                                    </Text>
+                                    <Text
+                                        c="var(--flr-gray)"
+                                        className="text-14 w-16"
+                                    >
+                                        {ticket.type}
+                                    </Text>
+                                </div>
+                            </Table.Td>
+                        </Table.Tr>
+                    ));
+                }}
+            />
+            {isRetryMintModalActive && underlyingTransaction.current &&
+                <RetryMintModal
+                    opened={isRetryMintModalActive}
+                    onClose={(isMinting: boolean) => {
+                        setIsRetryMintModalActive(false);
+                        const id = underlyingTransaction.current?.paymentReference!;
+                        if (isMinting && id) {
+                            setMintingTransaction(prev => ({ ...prev, [id]: true }));
+
+                            setTimeout(() => {
+                                setMintingTransaction(prev => ({ ...prev, [id]: false }));
+                            }, 30000);
+                        }
+
+                        underlyingTransaction.current = undefined;
+                    }}
+                    underlyingTransaction={underlyingTransaction.current}
+                />
+            }
+        </>
     );
 }

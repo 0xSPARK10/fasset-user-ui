@@ -126,7 +126,7 @@ export default function ProofOfReservesCard({ timeData, filter, ecoSystemInfo }:
                                     >
                                         {t('proof_of_reserves_card.xrp_reserve_label')}
                                     </Title>
-                                    <div className="flex items-center mt-2">
+                                    <div className="flex items-baseline mt-2">
                                         <XrpIcon
                                             width="24"
                                             height="24"

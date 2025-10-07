@@ -257,6 +257,7 @@
         "know_more_label": "Want to know more? Please see our video for <a>detailed instructions<icon></icon></a>",
         "latest_transactions_subtitle": "Displaying all mints and redeems in last 7 days.",
         "latest_transactions_title": "Latest transactions",
+        "refresh_button": "Refresh",
         "winddown_label": "We have successfully completed the testing of {{fAssets}} and are winding down. Details are in <a1>our blog post here.</a1> Have partial lots you’d like to redeem? Use our partner DEXs (<a2>Enosys</a2>, <a3>BlazeSwap</a3>)."
     },
     "deposit_to_pool_modal": {
@@ -302,6 +303,7 @@
         "try_again_label": "Please try again in few minutes"
     },
     "errors": {
+        "abi_custom_error_label": "Execution reverted: {{error}}",
         "ledger_error_label": "Declined - Check ledger device for more information.",
         "transaction_failed_label": "Transaction failed.",
         "try_reconnecting_label": "Could not coalesce error - Try reconnecting your wallet."
@@ -389,6 +391,7 @@
     },
     "latest_transactions_card": {
         "completed_label": "Completed",
+        "connect_tooltip": "To enable deposit, connect to underlying network.",
         "defaulted_label": "Defaulted",
         "empty_label": "No transactions available",
         "finished_label": "Finished",
@@ -404,7 +407,8 @@
             "ticket_id_label": "Ticket ID",
             "transaction_label": "Transaction",
             "type_label": "Type"
-        }
+        },
+        "try_again_button": "Try Again"
     },
     "layout": {
         "fasset_system_paused_label": "The FAsset System is currently paused for {{tokens}}.",
@@ -655,6 +659,8 @@
             "single_redemption_limit_error": "Current limitation for single redemption request is {{lots}} lots.",
             "you_will_receive_label": "You will receive"
         },
+        "limited_deposit_auth_settings_label": "XRP Limitation: Receiving XRP is limited due to the account's Deposit Authorization setting being FALSE. This may cause the redemption transaction to fail.",
+        "limited_destination_tags_settings_label": "XRP Limitation: Receiving XRP is limited due to the account's Require Destination Tags setting being FALSE. This may cause the redemption transaction to fail.",
         "next_button": "Next",
         "payment_redemption_step_description": "Confirm the redemption transaction to initiate the redemption process.",
         "payment_redemption_step_label": "Payment Redemption",
@@ -674,6 +680,18 @@
             "title": "Waiting",
             "title_partial_redemption": "Waiting (partial redemption) ..."
         }
+    },
+    "retry_mint_modal": {
+        "confirm_label": "Confirm deposit of XRP to the agent.",
+        "continue_button": "Continue",
+        "description_label": "The previous attempt to credit your XRP deposit was not successful. By clicking the button below, you will send a new transaction request to your wallet.",
+        "mint_defaulted_description_label": "The XRP payment was not completed in time, causing the mint to be defaulted.",
+        "mint_defaulted_title": "Mint defaulted",
+        "new_transfer_label": "This action will execute a new transfer of XRP funds from your wallet. Before proceeding, please verify that the previous transaction has not been executed.",
+        "retry_title": "Retry XRP deposit",
+        "sum_label": "Sum of XRP in transaction",
+        "title": "Mint {{coinName}}",
+        "xrp_deposit_label": "XRP deposit"
     },
     "select_network_modal": {
         "connect_button": "Connect",
@@ -765,6 +783,8 @@
     "underlying_balance_card": {
         "balance_unavailable_label": "We are not able to get a balance from {{coinName}} for your {{coinName}} address. This may result in minting and redemption not working.",
         "copied_label": "Copied",
+        "limited_deposit_auth_settings_label": "Receiving XRP is limited due to the account's Deposit Authorization setting being FALSE. This may cause the redemption transaction to fail.",
+        "limited_destination_tags_settings_label": "Receiving XRP is limited due to the account's Require Destination Tags setting being FALSE. This may cause the redemption transaction to fail.",
         "manage_connection_button": "Manage connection",
         "not_connected_label": "Not connected",
         "refresh_button": "Refresh",
