@@ -659,8 +659,8 @@
             "single_redemption_limit_error": "Current limitation for single redemption request is {{lots}} lots.",
             "you_will_receive_label": "You will receive"
         },
-        "limited_deposit_auth_settings_label": "XRP Limitation: Receiving XRP is limited due to the account's Deposit Authorization setting being FALSE. This may cause the redemption transaction to fail.",
-        "limited_destination_tags_settings_label": "XRP Limitation: Receiving XRP is limited due to the account's Require Destination Tags setting being FALSE. This may cause the redemption transaction to fail.",
+        "limited_deposit_auth_settings_label": "XRP Limitation: Receiving XRP is limited due to the account's Deposit Authorization setting being TRUE. This may cause the redemption transaction to fail.",
+        "limited_destination_tags_settings_label": "XRP Limitation: Receiving XRP is limited due to the account's Require Destination Tags setting being TRUE. This may cause the redemption transaction to fail.",
         "next_button": "Next",
         "payment_redemption_step_description": "Confirm the redemption transaction to initiate the redemption process.",
         "payment_redemption_step_label": "Payment Redemption",
@@ -783,8 +783,8 @@
     "underlying_balance_card": {
         "balance_unavailable_label": "We are not able to get a balance from {{coinName}} for your {{coinName}} address. This may result in minting and redemption not working.",
         "copied_label": "Copied",
-        "limited_deposit_auth_settings_label": "Receiving XRP is limited due to the account's Deposit Authorization setting being FALSE. This may cause the redemption transaction to fail.",
-        "limited_destination_tags_settings_label": "Receiving XRP is limited due to the account's Require Destination Tags setting being FALSE. This may cause the redemption transaction to fail.",
+        "limited_deposit_auth_settings_label": "Receiving XRP is limited due to the account's Deposit Authorization setting being TRUE. This may cause the redemption transaction to fail.",
+        "limited_destination_tags_settings_label": "Receiving XRP is limited due to the account's Require Destination Tags setting being TRUE. This may cause the redemption transaction to fail.",
         "manage_connection_button": "Manage connection",
         "not_connected_label": "Not connected",
         "refresh_button": "Refresh",
