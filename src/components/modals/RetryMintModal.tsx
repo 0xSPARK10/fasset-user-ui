@@ -20,6 +20,7 @@ import MintWaitingModal from "@/components/modals/MintWaitingModal";
 import { modals } from "@mantine/modals";
 import { useNativeBalance, useUnderlyingBalance } from "@/api/balance";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
+import XamanOpenWalletCard from "@/components/cards/XamanOpenWalletCard";
 
 interface IRetryMintModal {
     opened: boolean;
@@ -306,9 +307,12 @@ export default function RetryMintModal({ opened, onClose, underlyingTransaction 
                                 </Text>
                             </div>
                         </Paper>
-                        {fAssetCoin?.connectedWallet === WALLET.WALLET_CONNECT && (
+                        {[WALLET.WALLET_CONNECT, WALLET.XAMAN].includes(fAssetCoin?.connectedWallet!) && (
                             isLoading ? (
-                                <WalletConnectOpenWalletCard />
+                                fAssetCoin?.connectedWallet === WALLET.WALLET_CONNECT
+                                    ? <WalletConnectOpenWalletCard />
+                                    : <XamanOpenWalletCard />
+
                             ) : (
                                 <Button
                                     variant="filled"

@@ -15,6 +15,7 @@ import { uniq } from "lodash-es";
 import WalletConnectConnector, { IWalletConnectConnector } from "@/connectors/WalletConnectConnector";
 import MetaMaskConnector, { IMetaMaskConnector } from "@/connectors/MetaMaskConnector";
 import LedgerConnector, { ILedgerConnector } from "@/connectors/LedgerConnector";
+import XamanConnector, { IXamanConnector } from "@/connectors/XamanConnector";
 
 interface IWeb3Context {
     connect: (wallet: string, networks: INetwork[]) => Promise<boolean>;
@@ -26,6 +27,7 @@ interface IWeb3Context {
     ledgerConnector: ILedgerConnector;
     walletConnectConnector: IWalletConnectConnector;
     metaMaskConnector: IMetaMaskConnector;
+    xamanConnector: IXamanConnector;
 }
 
 export const Web3Context = createContext<IWeb3Context>({} as IWeb3Context);
@@ -37,6 +39,7 @@ export function Web3Provider({ children }: { children: ReactNode | ReactNode[] }
     const ledgerConnector = LedgerConnector();
     const walletConnectConnector = WalletConnectConnector();
     const metaMaskConnector = MetaMaskConnector();
+    const xamanConnector = XamanConnector();
 
     // Computed values
     const connectedCoins: ICoin[] = localConnectedCoins
@@ -76,6 +79,8 @@ export function Web3Provider({ children }: { children: ReactNode | ReactNode[] }
             await walletConnectConnector.disconnect(redirect);
         } else if (wallet === WALLET.META_MASK) {
             await metaMaskConnector.disconnect();
+        } else if (wallet === WALLET.XAMAN) {
+            await xamanConnector.disconnect();
         }
 
         await resetApp(redirect);
@@ -86,8 +91,10 @@ export function Web3Provider({ children }: { children: ReactNode | ReactNode[] }
             return await metaMaskConnector.connect();
         } else if (wallet === WALLET.LEDGER) {
             return await ledgerConnector.connect(networks[0]);
-        } else {
+        } else if (wallet === WALLET.WALLET_CONNECT) {
             return await walletConnectConnector.connect(networks);
+        } else {
+            return await xamanConnector.connect();
         }
     };
 
@@ -96,8 +103,12 @@ export function Web3Provider({ children }: { children: ReactNode | ReactNode[] }
         : COINS.find(coin => !coin.isFAssetCoin && !coin.isStableCoin && coin.enabled && coin.isMainToken);
 
     useEffect(() => {
-        if (walletConnectConnector.universalProvider) return;
-        walletConnectConnector.init();
+        if (!walletConnectConnector.universalProvider) {
+            walletConnectConnector.init();
+        }
+        if (!xamanConnector.client) {
+            xamanConnector.init();
+        }
     }, []);
 
     const value = useMemo(
@@ -110,7 +121,8 @@ export function Web3Provider({ children }: { children: ReactNode | ReactNode[] }
             mainToken,
             ledgerConnector,
             walletConnectConnector,
-            metaMaskConnector
+            metaMaskConnector,
+            xamanConnector
         }),
         [
             connectedCoins,
@@ -121,7 +133,8 @@ export function Web3Provider({ children }: { children: ReactNode | ReactNode[] }
             mainToken,
             ledgerConnector,
             walletConnectConnector,
-            metaMaskConnector
+            metaMaskConnector,
+            xamanConnector
         ],
     );
 

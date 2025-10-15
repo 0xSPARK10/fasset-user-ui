@@ -10,6 +10,7 @@ import {
 
 export const BALANCE_KEY = {
     UNDERLYING_BALANCE: 'balance.underlyingBalance',
+    UNDERLYING_BALANCES: 'balance.underlyingBalances',
     NATIVE_BALANCE: 'balance.nativeBalance',
     POOLS_BALANCE: 'balance.poolsBalance',
     XPUB_BALANCE: 'balance.xpub'
@@ -89,7 +90,7 @@ export function useUnderlyingBalances(
         }
 
         return {
-            queryKey: [BALANCE_KEY.UNDERLYING_BALANCE, asset.fAsset, asset.address, config?.params?.changeAddresses, config?.params?.receiveAddresses],
+            queryKey: [BALANCE_KEY.UNDERLYING_BALANCES, asset.fAsset, asset.address, config?.params?.changeAddresses, config?.params?.receiveAddresses],
             queryFn: async () => {
                 const response = await apiClient.get(`${resource}/underlying/${asset.fAsset}/${asset.address}`, config);
                 return {

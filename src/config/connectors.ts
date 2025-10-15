@@ -1,9 +1,10 @@
 import WalletConnectIcon from '@/components/icons/WalletConnectIcon';
 import MetaMaskIcon from "@/components/icons/MetaMaskIcon";
 import LedgerIcon from "@/components/icons/LedgerIcon";
+import XamanIcon from "@/components/icons/XamanIcon";
 import { WALLET } from "@/constants";
 
-export type SupportedWallets = 'walletConnect' | 'metaMask' | 'ledger';
+export type SupportedWallets = 'walletConnect' | 'metaMask' | 'ledger' | 'xaman';
 
 export interface IIconProps {
     width?: string;
@@ -42,5 +43,11 @@ export const wallets: { [wallet in SupportedWallets]: IWallet; } = {
         name: 'Ledger',
         icon: LedgerIcon,
         enabled: isEnabled(WALLET.LEDGER)
+    },
+    xaman: {
+        id: WALLET.XAMAN,
+        name: 'Xaman Wallet',
+        icon: XamanIcon,
+        enabled: isEnabled(WALLET.XAMAN)
     }
 }

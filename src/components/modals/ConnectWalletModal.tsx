@@ -133,6 +133,11 @@ export default function ConnectWalletModal({ opened, onClose }: IConnectWalletMo
                                     selectNetwork={true}
                                 />
                             }
+                            {wallets.xaman.enabled &&
+                                <SelectWalletButton
+                                    wallet={wallets.xaman}
+                                />
+                            }
                         </Stack>
                     </Stack>
                 </FAssetModal.Body>

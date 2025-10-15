@@ -61,7 +61,8 @@ const nextConfig = {
         FLR_URL: process.env.FLR_URL,
         SGB_URL: process.env.SGB_URL,
         CFLR_URL: process.env.CFLR_URL,
-        C2FLR_URL: process.env.C2FLR_URL
+        C2FLR_URL: process.env.C2FLR_URL,
+        XAMAN_API_KEY: process.env.XAMAN_API_KEY
     },
     output: "standalone"
 };

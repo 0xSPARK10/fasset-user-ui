@@ -5,6 +5,7 @@ import {
     Button,
     Text,
     Divider,
+    Paper,
     lighten
 } from "@mantine/core";
 import { modals } from "@mantine/modals";
@@ -22,6 +23,7 @@ import CryptoJS from "crypto-js";
 import MintWaitingModal from "@/components/modals/MintWaitingModal";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
 import WalletConnectOpenWalletCard from "@/components/cards/WalletConnectOpenWalletCard";
+import XamanOpenWalletCard from "@/components/cards/XamanOpenWalletCard";
 import { IFAssetCoin, ISelectedAgent, INetwork, IUtxo } from "@/types";
 import { WALLET } from "@/constants";
 import { useAssetManagerAddress, useExecutor } from "@/api/user";
@@ -30,7 +32,7 @@ import { useReserveCollateral, useSignPsbt, useSignTransaction } from "@/hooks/u
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { useCrEvent, usePrepareUtxos, useRequestMinting, useUtxosForTransaction } from "@/api/minting";
 import { BTC_NAMESPACE, XRP_NAMESPACE } from "@/config/networks";
-import { fromLots, toNumber, toSatoshi } from "@/utils";
+import { fromLots, toNumber } from "@/utils";
 import { useNativeBalance, useUnderlyingBalance } from "@/api/balance";
 import { useWeb3 } from "@/hooks/useWeb3";
 
@@ -382,7 +384,7 @@ export default function ConfirmStepper({
                 />
             </Stepper>
             {((currentStep === STEP_WALLET_RESERVATION && mainToken?.connectedWallet === WALLET.LEDGER)
-                    || (currentStep === STEP_WALLET_DEPOSIT && fAssetCoin?.connectedWallet === WALLET.LEDGER)) &&
+                || (currentStep === STEP_WALLET_DEPOSIT && fAssetCoin?.connectedWallet === WALLET.LEDGER)) &&
                 <>
                     <Divider
                         className="my-8"
@@ -416,6 +418,9 @@ export default function ConfirmStepper({
                     />
                     <WalletConnectOpenWalletCard />
                 </>
+            }
+            {currentStep === STEP_WALLET_DEPOSIT && fAssetCoin?.connectedWallet === WALLET.XAMAN &&
+                <XamanOpenWalletCard />
             }
             <MintWaitingModal
                 opened={isMintWaitingModalActive}

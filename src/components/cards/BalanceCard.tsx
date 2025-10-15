@@ -4,7 +4,8 @@ import {
     Divider,
     Loader,
     LoadingOverlay,
-    Paper, rem,
+    Paper,
+    rem,
     SimpleGrid,
     Text,
     Title,
@@ -14,7 +15,7 @@ import { IconArrowUpRight, IconExclamationCircle } from "@tabler/icons-react";
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useInterval, useMediaQuery } from "@mantine/hooks";
-import { useNativeBalance, usePoolsBalance } from "@/api/balance";
+import { useNativeBalance, usePoolsBalance, useUnderlyingBalances } from "@/api/balance";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { Trans, useTranslation } from "react-i18next";
 import MintModal from "@/components/modals/MintModal";
@@ -25,7 +26,9 @@ import { useModalState } from "@/hooks/useModalState";
 import { ICoin, IFAssetCoin } from "@/types";
 import { COINS } from "@/config/coin";
 import { toNumber, truncateString } from "@/utils";
-import { NETWORK_FLARE, NETWORK_FLARE_COSTON2_TESTNET, NETWORK_SONGBIRD } from "@/config/networks";
+import { NETWORK_FLARE, NETWORK_FLARE_COSTON2_TESTNET, NETWORK_SONGBIRD, XRP_NAMESPACE } from "@/config/networks";
+import { WALLET } from "@/constants";
+import CryptoJS from "crypto-js";
 
 interface IBalanceCard {
     className?: string;
@@ -37,7 +40,7 @@ const BALANCE_FETCH_INTERVAL = 60000;
 const USER_PROGRESS_FETCH_INTERVAL = 60000;
 
 export default function BalanceCard({ className, onViewPendingTransactionsClick, disabledFassets }: IBalanceCard) {
-    const [fAssetCoins, setfAssetCoins] = useState<(IFAssetCoin & { cantRedeem?: boolean })[]>([]);
+    const [fAssetCoins, setfAssetCoins] = useState<(IFAssetCoin & { cantRedeem?: boolean, redeemDisabled?: boolean })[]>([]);
     const [isMintModalActive, setIsMintModalActive] = useState<boolean>(false);
     const [isRedeemModalActive, setIsRedeemModalActive] = useState<boolean>(false);
     const { connectedCoins, mainToken } = useWeb3();
@@ -53,6 +56,21 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
     const userProgress = useUserProgress(mainToken?.address ?? '', false);
     const fassetState = useFassetState();
 
+    const underlyingBalances = useUnderlyingBalances(
+        connectedCoins
+            .filter(c => c.address && c.isFAssetCoin)
+            .map(coin => {
+                return {
+                    address: coin.connectedWallet === WALLET.LEDGER && coin.xpub !== undefined
+                        ? CryptoJS.AES.decrypt(coin.xpub!, process.env.XPUB_SECRET!).toString(CryptoJS.enc.Utf8)
+                        : coin.address!,
+                    fAsset: coin.type,
+                    isXpub: coin.connectedWallet === WALLET.LEDGER && coin.xpub !== undefined
+                }
+            }),
+        connectedCoins.filter(c => c.address && c.isFAssetCoin).length > 0
+    );
+
     const pausedTokens = fassetState.data?.filter(item => item.state)?.map(item => item.fasset) ?? [];
     const pendingTransactions = userProgress.data
          ? userProgress.data.filter(progress => !progress.status).length
@@ -67,7 +85,7 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
     }, USER_PROGRESS_FETCH_INTERVAL);
 
     useEffect(() => {
-        if (nativeBalance.isPending) return;
+        if (nativeBalance.isPending || underlyingBalances.isPending) return;
 
         const mainBalance = nativeBalance?.data?.find(nativeBalance => 'wrapped' in nativeBalance);
         if (mainToken) {
@@ -84,13 +102,13 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
             if (!coin) return;
 
             if ('lots' in balance) {
-               let fAssetCoin: IFAssetCoin & { cantRedeem?: boolean };
+               let fAssetCoin: IFAssetCoin & { cantRedeem?: boolean, redeemDisabled?: boolean };
 
                if (connectedCoin) {
-                   fAssetCoin = { ...connectedCoin, cantRedeem: false } as IFAssetCoin & { cantRedeem?: boolean };
+                   fAssetCoin = { ...connectedCoin, cantRedeem: false, redeemDisabled: false } as IFAssetCoin & { cantRedeem?: boolean, redeemDisabled?: boolean };
                    fAssetCoin.balance = balance?.balance || "0";
                } else {
-                   fAssetCoin = { ...coin, cantRedeem: false } as IFAssetCoin & { cantRedeem?: boolean };
+                   fAssetCoin = { ...coin, cantRedeem: false, redeemDisabled: false } as IFAssetCoin & { cantRedeem?: boolean, redeemDisabled?: boolean };
                    fAssetCoin.balance = balance?.balance || "0";
                    fAssetCoin.enabled = false;
                }
@@ -100,6 +118,11 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                }
                if (toNumber(balance?.balance || "0") > 0 && toNumber(balance?.balance || "0") < 10) {
                    fAssetCoin.cantRedeem = true;
+               }
+
+               const fAssetUnderlyingBalance = underlyingBalances.data.find(underlyingBalance => underlyingBalance?.fAsset === fAssetCoin.type);
+               if (fAssetUnderlyingBalance?.accountInfo?.depositAuth || fAssetUnderlyingBalance?.accountInfo?.requireDestTag) {
+                   fAssetCoin.redeemDisabled = true;
                }
 
                fAssetCoins.push(fAssetCoin);
@@ -129,7 +152,7 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
             nativeBalanceFetchInterval.stop();
             userProgressFetchInterval.stop();
         }
-    }, [nativeBalance.data, nativeBalance.isPending, connectedCoins]);
+    }, [nativeBalance.data, nativeBalance.isPending, underlyingBalances.data, underlyingBalances.isPending, connectedCoins]);
 
     useEffect(() => {
         if (mainToken) {
@@ -407,24 +430,12 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                                 </div>
                             </div>
                             <div className="flex items-center max-[360px]:mt-2">
-                                {!fAssetCoin.enabled
-                                    ? <Tooltip label={t('balance_card.connect_tooltip')} withArrow>
-                                        <Button
-                                            variant="gradient"
-                                            size="xs"
-                                            className="mr-3"
-                                            radius="xl"
-                                            fw={400}
-                                            disabled={!fAssetCoin.enabled || disabledFassets.includes(fAssetCoin.type)}
-                                            onClick={() => {
-                                                activeFAssetCoin.current = fAssetCoin;
-                                                setIsMintModalActive(true);
-                                            }}
-                                        >
-                                            {t('balance_card.mint_button')}
-                                        </Button>
-                                    </Tooltip>
-                                    : <Button
+                                <Tooltip
+                                    label={t('balance_card.connect_tooltip')}
+                                    withArrow
+                                    disabled={fAssetCoin.enabled}
+                                >
+                                    <Button
                                         variant="gradient"
                                         size="xs"
                                         className="mr-3"
@@ -438,9 +449,31 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                                     >
                                         {t('balance_card.mint_button')}
                                     </Button>
-                                }
-                                {!fAssetCoin.enabled
-                                    ? <Tooltip label={t('balance_card.connect_tooltip')} withArrow>
+                                </Tooltip>
+                                {fAssetCoin?.redeemDisabled
+                                    ? <Tooltip
+                                        label={t('balance_card.redeem_disabled_tooltip')}
+                                        withArrow
+                                    >
+                                        <Button
+                                            variant="gradient"
+                                            size="xs"
+                                            radius="xl"
+                                            fw={400}
+                                            disabled={true}
+                                            onClick={() => {
+                                                activeFAssetCoin.current = fAssetCoin;
+                                                setIsRedeemModalActive(true);
+                                            }}
+                                        >
+                                            {t('balance_card.redeem_button')}
+                                        </Button>
+                                    </Tooltip>
+                                    : <Tooltip
+                                        label={t('balance_card.connect_tooltip')}
+                                        withArrow
+                                        disabled={fAssetCoin.enabled}
+                                    >
                                         <Button
                                             variant="gradient"
                                             size="xs"
@@ -455,19 +488,6 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                                             {t('balance_card.redeem_button')}
                                         </Button>
                                     </Tooltip>
-                                    : <Button
-                                        variant="gradient"
-                                        size="xs"
-                                        radius="xl"
-                                        fw={400}
-                                        disabled={!fAssetCoin.enabled}
-                                        onClick={() => {
-                                            activeFAssetCoin.current = fAssetCoin;
-                                            setIsRedeemModalActive(true);
-                                        }}
-                                    >
-                                        {t('balance_card.redeem_button')}
-                                    </Button>
                                 }
                             </div>
                         </div>

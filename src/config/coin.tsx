@@ -86,7 +86,7 @@ export const FTEST_XRP: ICoin = {
     enabled: !isMainnet && enabledUnderlyingFassets.includes(CoinEnum.FTestXRP.toLowerCase()),
     isFAssetCoin: true,
     faucetUrl: 'https://test.bithomp.com/faucet',
-    supportedWallets: [WALLET.WALLET_CONNECT, WALLET.LEDGER],
+    supportedWallets: [WALLET.WALLET_CONNECT, WALLET.LEDGER, WALLET.XAMAN],
     decimals: 2,
     bipPath: BIP44_PATH.TESTNET.XRP
 }
@@ -186,7 +186,7 @@ export const FXRP: ICoin = {
     network: NETWORK_XRPL,
     enabled: isMainnet && enabledUnderlyingFassets.includes(CoinEnum.FXRP.toLowerCase()),
     isFAssetCoin: true,
-    supportedWallets: [WALLET.WALLET_CONNECT, WALLET.LEDGER],
+    supportedWallets: [WALLET.WALLET_CONNECT, WALLET.LEDGER, WALLET.XAMAN],
     decimals: 2,
     bipPath: BIP44_PATH.MAINNET.XRP
 }

@@ -76,7 +76,7 @@ export default function FassetsOverviewCard({ ecoSystemInfo, timeData } : IFasse
                             fw={400}
                             c="var(--flr-gray)"
                         >
-                            ({t('fassets_overview_card.lots_label', { lots: formatNumberWithSuffix(xrpFasset?.mintedLots ?? 0, 0) })})
+                            ({t('fassets_overview_card.lots_label', { lots: formatNumberWithSuffix(xrpFasset?.mintedLots ?? 0, 1) })})
                         </Text>
                     </div>
                     <div className="flex items-center">

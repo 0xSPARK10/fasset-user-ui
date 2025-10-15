@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { SessionTypes } from "@walletconnect/types";
@@ -30,7 +30,7 @@ export interface IWalletConnectConnector {
 export default function WalletConnectConnector(): IWalletConnectConnector {
     const [session, setSession] = useState<SessionTypes.Struct>();
     const [universalProvider, setUniversalProvider] = useState<UniversalProvider>();
-    const [isInitializing, setIsInitializing] = useState<boolean>(true);
+    const isInitializing = useRef(false);
     const [web3Modal, setWeb3Modal] = useState<WalletConnectModal>();
     const [hasCheckedPersistedSession, setHasCheckedPersistedSession] = useState<boolean>(false);
 
@@ -125,7 +125,7 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
 
     const createClient = async () => {
         try {
-            setIsInitializing(true);
+            isInitializing.current = true;
 
             if (!process.env.WALLETCONNECT_PROJECT_ID) return;
 
@@ -159,7 +159,7 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
         } catch (error) {
             throw error;
         } finally {
-            setIsInitializing(false);
+            isInitializing.current = false;
         }
     };
 
@@ -289,6 +289,7 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
     }
 
     const init = async() => {
+        if (isInitializing.current) return;
         await createClient();
     }
 
@@ -347,7 +348,7 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
     return {
         connect: connect,
         disconnect: disconnect,
-        isInitializing: isInitializing,
+        isInitializing: isInitializing.current,
         hasCheckedPersistedSession: hasCheckedPersistedSession,
         session: session,
         fetchUtxoAddresses: fetchUtxoAddresses,

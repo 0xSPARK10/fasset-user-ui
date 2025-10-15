@@ -143,6 +143,7 @@
         "fassets_title": "FAssets",
         "flare_title": "Flare",
         "flr_address_label": "FLR Address",
+        "redeem_disabled_tooltip": "Redeem is disabled due to the XRP account setting.",
         "mint_button": "Mint",
         "my_position_label": "My position",
         "not_connected_label": "Not connected",
@@ -221,6 +222,12 @@
         "subtitle": "Lets connect first...",
         "title": "Mint your FAssets"
     },
+    "connect_flr_modal": {
+        "confirm_button": "OK",
+        "description_label": "Before connecting with your Xaman wallet, you need to first log in to the Flare Network using your primary Flare wallet.",
+        "subtitle": "Flare Network Connection Required",
+        "title": "Connect Wallet"
+    },
     "connect_wallet_button": {
         "connected_label": "Connected",
         "title": "Connect Wallet",
@@ -229,7 +236,7 @@
     "connect_wallet_modal": {
         "term_of_service_label": "By connecting a wallet, you agree to the <0>Terms of Service</0>",
         "title": "Connect Wallet",
-        "wallet_description_label": "These three services will allow you to connect to networks. \u2028Note: If you connect to additional networks using the same service, you must disconnect before connecting to multiple networks.",
+        "wallet_description_label": "These four services will allow you to connect to networks. \u2028Note: If you connect to additional networks using the same service, you must disconnect before connecting to multiple networks.",
         "wallet_title": "Which wallet should I use?"
     },
     "copy_icon": {
@@ -859,5 +866,8 @@
         "next_button": "Next",
         "title": "Withdrawal from Pool",
         "want_to_withdraw_title": "I want to withdraw"
+    },
+    "xaman_open_wallet_card": {
+        "description_label": "Please open your Xaman Wallet, check under Events -> Requests and confirm the transaction."
     }
 }

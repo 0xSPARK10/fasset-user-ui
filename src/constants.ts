@@ -3,7 +3,8 @@ export const MAX_CR_VALUE = 1000;
 export const WALLET = {
     WALLET_CONNECT: 'WalletConnect',
     META_MASK: 'MetaMask',
-    LEDGER: 'Ledger'
+    LEDGER: 'Ledger',
+    XAMAN: 'Xaman'
 }
 
 export const BIP44_PATH = {

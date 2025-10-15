@@ -18,7 +18,6 @@ const ConnectWalletModalContext = createContext<ConnectWalletModalContextType | 
 
 export const Web3ModalProvider = ({ children }: React.PropsWithChildren<{ children: JSX.Element }>) => {
     const [openConnectWalletModalCallback, setOpenConnectWalletModalCallback] = useState<() => void>();
-    const [isMintModalActive, setIsMintModalActive] = useState<boolean>(false)
     const [isConnectWalletModalActive, setIsConnectWalletModalActive] = useState<boolean>(false);
     const { localConnectedCoins, } = useConnectedCoin();
     const { disconnect, connectedWallets, mainToken } = useWeb3();
@@ -44,7 +43,7 @@ export const Web3ModalProvider = ({ children }: React.PropsWithChildren<{ childr
         }
     }
 
-    const  openConnectWalletModal = (callback?: (wallet: string) => void) => {
+    const openConnectWalletModal = (callback?: (wallet: string) => void) => {
         if (callback) setOpenConnectWalletModalCallback(() => callback);
         setIsConnectWalletModalActive(true);
     }

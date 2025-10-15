@@ -133,7 +133,7 @@ export default function LatestTransactionsCard({ className, refreshKey }: ILates
 
         const isHash = /^0x[a-fA-F0-9]{64}$/.test(progress.txhash) || /^[A-F0-9]{64}$/.test(progress.txhash);
         const isTryAgainDisabled = connectedCoins.find(coin => coin.type.toLowerCase() === progress.fasset.toLowerCase()) === undefined;
-        const showTryAgainButton = progress.missingUnderlying &&
+        const showTryAgainButton = !isHash && progress.missingUnderlying &&
             progress?.underlyingTransactionData?.paymentReference &&
             (!mintingTransaction[progress.underlyingTransactionData.paymentReference] ||
                 mintingTransaction[progress.underlyingTransactionData.paymentReference] === false

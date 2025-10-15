@@ -72,7 +72,7 @@ export default function Layout({ children, ...props }: ILayout) {
         const routeChangeStart = () => {
             fassetState.refetch();
             if (!isConnected && window.history.state.as !== '/mint') {
-                setRedirectBackUrl(window.history.state.as.replace(router.basePath, ''));
+                setRedirectBackUrl(window.history.state?.as?.replace(router.basePath, '') ?? '');
             }
         }
 

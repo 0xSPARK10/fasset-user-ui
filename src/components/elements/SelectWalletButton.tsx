@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Box, Group, Stack, Text, UnstyledButton } from "@mantine/core";
+import React, { useState } from "react";
+import { Box, Button, Divider, Group, Stack, Text, Title, UnstyledButton } from "@mantine/core";
+import { modals } from "@mantine/modals";
 import { useElementSize } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/router";
@@ -21,6 +22,8 @@ interface ISelectWalletButton {
     selectNetwork?: boolean;
 }
 
+const CONNECT_FLR_MODAL = 'connect_flr_modal';
+
 export default function SelectWalletButton({ wallet, disabled = false, selectNetwork = false }: ISelectWalletButton) {
     const [isSelectNetworkModalActive, setIsSelectNetworkModalActive] = useState<boolean>(false);
     const [isAlreadyConnectedModalActive, setIsAlreadyConnectedModalActive] = useState<boolean>(false);
@@ -29,7 +32,8 @@ export default function SelectWalletButton({ wallet, disabled = false, selectNet
         connectedWallets,
         disconnect,
         connectedCoins,
-        walletConnectConnector
+        walletConnectConnector,
+        mainToken
     } = useWeb3();
     const { t } = useTranslation();
     const { closeConnectWalletModal, openConnectWalletModalCallback, openConnectWalletModal } = useConnectWalletModal();
@@ -46,6 +50,54 @@ export default function SelectWalletButton({ wallet, disabled = false, selectNet
         .filter(coin => coin?.supportedWallets?.includes(wallet.id) && coin.enabled)
 
     const isConnectedToAllNetworks = availableOptions.filter(coin => connectedCoins.map(coin => coin.type).includes(coin.type)).length === availableOptions.length;
+
+    const openConnectFlrModal = () => {
+        modals.open({
+            modalId: CONNECT_FLR_MODAL,
+            zIndex: 3000,
+            size: 500,
+            title: t('connect_flr_modal.title'),
+            children: (
+                <div className="px-0 sm:px-7">
+                    <Title
+                        order={3}
+                        fw={300}
+                        className="mb-3"
+                    >
+                        {t('connect_flr_modal.subtitle')}
+                    </Title>
+                    <Text fw={300}>{t('connect_flr_modal.description_label')}</Text>
+                    <Divider
+                        className="my-8"
+                        styles={{
+                            root: {
+                                marginLeft: '-2.7rem',
+                                marginRight: '-2.7rem'
+                            }
+                        }}
+                    />
+                    <Button
+                        onClick={() => {
+                            modals.closeAll();
+                            openConnectWalletModal();
+                        }}
+                        variant="filled"
+                        color="black"
+                        radius="xl"
+                        size="sm"
+                        fullWidth
+                        className="hover:text-white font-normal mb-5"
+                    >
+                        {t('connect_flr_modal.confirm_button')}
+                    </Button>
+                </div>
+            ),
+            onClose: () => {
+                modals.closeAll();
+                openConnectWalletModal();
+            }
+        });
+    }
     
     const onClick = async() => {
         try {
@@ -60,12 +112,23 @@ export default function SelectWalletButton({ wallet, disabled = false, selectNet
                     setIsSelectNetworkModalActive(true);
                     return;
                 }
+                if (wallet.id === WALLET.XAMAN) {
+                    const isConnectedToFlr = connectedCoins.find(coin => coin.type === mainToken?.type) !== undefined;
+                    if (!isConnectedToFlr) {
+                        closeConnectWalletModal();
+                        openConnectFlrModal();
+                        return;
+                    }
+                }
 
                 await connect(wallet.id, []);
                 queryClient.clear();
                 await queryClient.invalidateQueries();
                 if (openConnectWalletModalCallback) {
                     openConnectWalletModalCallback(wallet.id);
+                }
+                if (wallet.id === WALLET.XAMAN) {
+                    closeConnectWalletModal();
                 }
             } else {
                 await disconnect(wallet.id, false);
@@ -101,6 +164,11 @@ export default function SelectWalletButton({ wallet, disabled = false, selectNet
             await connect(wallet.id, networks);
             if (openConnectWalletModalCallback) {
                 openConnectWalletModalCallback(wallet.id);
+            }
+
+            const connectedOnlyToFlrNetwork = networks.length === 1 && mainToken?.network?.namespace === networks[0].namespace && mainToken?.network?.chainId === networks[0].chainId
+            if (connectedOnlyToFlrNetwork) {
+                openConnectWalletModal();
             }
         } catch (error: any) {
             notifications.show({

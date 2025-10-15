@@ -14,7 +14,8 @@ function getProvider(address: string) {
         connectedCoins,
         ledgerConnector,
         walletConnectConnector,
-        metaMaskConnector
+        metaMaskConnector,
+        xamanConnector
     } = useWeb3();
 
     const connectedCoin = connectedCoins.find(coin => coin.address === address);
@@ -25,6 +26,8 @@ function getProvider(address: string) {
         return metaMaskConnector;
     } else if (connectedCoin.connectedWallet === WALLET.LEDGER) {
         return ledgerConnector;
+    } else if (connectedCoin.connectedWallet === WALLET.XAMAN) {
+        return xamanConnector;
     }
 
     return walletConnectConnector;
