@@ -17,6 +17,7 @@ import { ICoin, ISelectedAgent } from "@/types";
 import { formatNumber } from "@/utils";
 import { BTC_NAMESPACE } from "@/config/networks";
 import { WALLET } from "@/constants";
+import { useWeb3 } from "@/hooks/useWeb3";
 
 interface IMintWaitingModal {
     opened: boolean;
@@ -40,7 +41,6 @@ export default function MintWaitingModal({ opened, onClose, txHash, transferredA
         3: 'https://dev.flare.network/fassets/overview',
         4: 'https://dev.flare.network/fassets/overview'
     };
-
 
     useEffect(() => {
         if (!opened || !txHash) return;

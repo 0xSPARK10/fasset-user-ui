@@ -5,7 +5,6 @@ import {
     Button,
     Text,
     Divider,
-    Paper,
     lighten
 } from "@mantine/core";
 import { modals } from "@mantine/modals";
@@ -35,6 +34,7 @@ import { BTC_NAMESPACE, XRP_NAMESPACE } from "@/config/networks";
 import { fromLots, toNumber } from "@/utils";
 import { useNativeBalance, useUnderlyingBalance } from "@/api/balance";
 import { useWeb3 } from "@/hooks/useWeb3";
+import { isMobile } from 'react-device-detect';
 
 const FINISHED_MODAL = 'finished_modal';
 
@@ -89,8 +89,8 @@ export default function ConfirmStepper({
     }, [isMounted]);
 
     useEffect(() => {
-        if (!txHash || fAssetCoin.connectedWallet === WALLET.LEDGER) return;
-        mintRequest();
+        if (!txHash || fAssetCoin.connectedWallet === WALLET.LEDGER || (fAssetCoin.connectedWallet === WALLET.XAMAN && isMobile)) return;
+       mintRequest();
     }, [txHash]);
 
     const mintRequest = async () => {
@@ -165,6 +165,13 @@ export default function ConfirmStepper({
                 ? signTransactionResponse?.tx_json?.hash
                 : signTransactionResponse.txid;
 
+            const walletId = {
+                [WALLET.META_MASK]: 1,
+                [WALLET.WALLET_CONNECT]: 2,
+                [WALLET.LEDGER]: 3,
+                [WALLET.XAMAN]: 4
+            };
+
             await requestMinting.mutateAsync({
                 collateralReservationId: response?.collateralReservationId!,
                 txHash: txId,
@@ -174,7 +181,9 @@ export default function ConfirmStepper({
                 userAddress: mainToken?.address!,
                 fAsset: fAssetCoin.type,
                 nativeHash: txHash!,
-                vaultAddress: formValues.agentAddress
+                vaultAddress: formValues.agentAddress,
+                nativeWalletId: (mainToken?.connectedWallet && mainToken.connectedWallet in walletId) ? walletId[mainToken.connectedWallet] : 0,
+                underlyingWalletId: (fAssetCoin?.connectedWallet && fAssetCoin.connectedWallet in walletId) ? walletId[fAssetCoin.connectedWallet] : 0
             });
             setCurrentStep(STEP_WALLET_COMPLETED);
             setIsMintWaitingModalActive(true);
@@ -210,7 +219,7 @@ export default function ConfirmStepper({
                 maxMintingFeeBIPS: formValues.feeBIPS,
                 executorAddress: executorResponse?.data?.executorAddress!,
                 userAddress: mainToken?.address!,
-                totalNatFee: Number(formValues.collateralReservationFee) + Number(executorResponse?.data?.executorFee)
+                totalNatFee: Number(formValues.collateralReservationFee) + Number(executorResponse?.data?.executorFee),
             });
             setTxHash(response.hash);
             setCurrentStep(STEP_WALLET_DEPOSIT);
@@ -388,11 +397,8 @@ export default function ConfirmStepper({
                 <>
                     <Divider
                         className="my-8"
-                        styles={{
-                            root: {
-                                marginLeft: '-2.7rem',
-                                marginRight: '-2.7rem'
-                            }
+                        classNames={{
+                            root: 'mx-[-1rem] sm:mx-[-2.7rem]'
                         }}
                     />
                     <LedgerConfirmTransactionCard
@@ -409,18 +415,19 @@ export default function ConfirmStepper({
                 <>
                     <Divider
                         className="my-8"
-                        styles={{
-                            root: {
-                                marginLeft: '-2.7rem',
-                                marginRight: '-2.7rem'
-                            }
+                        classNames={{
+                            root: 'mx-[-1rem] sm:mx-[-2.7rem]'
                         }}
                     />
                     <WalletConnectOpenWalletCard />
                 </>
             }
             {currentStep === STEP_WALLET_DEPOSIT && fAssetCoin?.connectedWallet === WALLET.XAMAN &&
-                <XamanOpenWalletCard />
+                <XamanOpenWalletCard
+                    onClick={mintRequest}
+                    confirmButton={isMobile}
+                    isLoading={isLoading}
+                />
             }
             <MintWaitingModal
                 opened={isMintWaitingModalActive}

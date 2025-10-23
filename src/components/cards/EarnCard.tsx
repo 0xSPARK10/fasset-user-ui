@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { IEarn } from "@/types";
 import { FXRP, USDT0 } from "@/config/coin";
 import Link from "next/link";
+import MoreMarketsIcon from "@/components/icons/MoreMarketsIcon";
 
 interface IEarnCard {
     earn: IEarn;
@@ -21,18 +22,21 @@ export default function EarnCard({ earn }: IEarnCard) {
     const { t } = useTranslation();
 
     const getProviderIcon = (provider: string) => {
-        if (provider === 'blazeswap') {
-            return <BlazeSwapAltIcon className="rounded-lg" />;
-        } else if (provider === 'enosys') {
-            return <EnosysAltIcon className="rounded-lg" />;
-        } else if (provider === 'sparkdex') {
-            return <SparkDexIcon className="rounded-lg" />;
-        } else if (provider === 'firelight') {
-            return <FirelightIcon className="rounded-lg" />;
-        } else if (provider === 'kinetic') {
-            return <KineticIcon className="rounded-lg" />;
-        } else if (provider === 'stratex') {
-            return <StratexIcon className="rounded-lg" />;
+        switch (provider.toLowerCase()) {
+            case 'blazeswap':
+                return <BlazeSwapAltIcon className="rounded-lg" />;
+            case 'enosys':
+                return <EnosysAltIcon className="rounded-lg" />;
+            case 'sparkdex':
+                return <SparkDexIcon className="rounded-lg" />;
+            case 'firelight':
+                return <FirelightIcon className="rounded-lg" />;
+            case 'kinetic':
+                return <KineticIcon className="rounded-lg" />;
+            case 'stratex':
+                return <StratexIcon className="rounded-lg" />;
+            case 'moremarkets':
+                return <MoreMarketsIcon className="rounded-lg" />
         }
     }
 

@@ -21,6 +21,7 @@ import { modals } from "@mantine/modals";
 import { useNativeBalance, useUnderlyingBalance } from "@/api/balance";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
 import XamanOpenWalletCard from "@/components/cards/XamanOpenWalletCard";
+import { useRequestMinting } from "@/api/minting";
 
 interface IRetryMintModal {
     opened: boolean;
@@ -53,6 +54,7 @@ export default function RetryMintModal({ opened, onClose, underlyingTransaction 
     const underlyingStatus = useUnderlyingStatus(underlyingTransaction.fAsset, underlyingTransaction.paymentReference, opened);
     const signTransaction = useSignTransaction(fAssetCoin?.address!);
     const userProgress = useUserProgress(mainToken?.address ?? '', false);
+    const requestMinting = useRequestMinting();
 
     const mintRequest = async () => {
         if (isMintRequestActive.current) return;
@@ -85,6 +87,27 @@ export default function RetryMintModal({ opened, onClose, underlyingTransaction 
             const txId = fAssetCoin?.network?.namespace === XRP_NAMESPACE
                 ? signTransactionResponse?.tx_json?.hash
                 : signTransactionResponse.txid;
+
+            const walletId = {
+                [WALLET.META_MASK]: 1,
+                [WALLET.WALLET_CONNECT]: 2,
+                [WALLET.LEDGER]: 3,
+                [WALLET.XAMAN]: 4
+            };
+
+            await requestMinting.mutateAsync({
+                collateralReservationId: '',
+                txHash: txId,
+                paymentAddress: '',
+                userUnderlyingAddress: fAssetCoin?.address!,
+                amount: underlyingTransaction.amount,
+                userAddress: mainToken?.address!,
+                fAsset: fAssetCoin?.type!,
+                nativeHash: '',
+                vaultAddress: underlyingTransaction.destinationAddress,
+                nativeWalletId: (mainToken?.connectedWallet && mainToken.connectedWallet in walletId) ? walletId[mainToken.connectedWallet] : 0,
+                underlyingWalletId: (fAssetCoin?.connectedWallet && fAssetCoin.connectedWallet in walletId) ? walletId[fAssetCoin.connectedWallet] : 0
+            });
 
             setIsMintWaitingModalActive(true);
             setSignedTransactionTxHash(txId);

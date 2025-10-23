@@ -139,7 +139,7 @@ export default function LatestTransactionsCard({ className, refreshKey }: ILates
                 mintingTransaction[progress.underlyingTransactionData.paymentReference] === false
             );
 
-        return <div className="flex items-center">
+        return <div className="flex text-wrap items-center">
             {!isHash
                 ? <span>{
                     progress.defaulted ? t('latest_transactions_card.defaulted_label') : progress.txhash}
@@ -176,7 +176,7 @@ export default function LatestTransactionsCard({ className, refreshKey }: ILates
                             };
                             setIsRetryMintModalActive(true);
                         }}
-                        className="ml-auto px-2"
+                        className="sm:ml-auto px-2"
                     >
                         {t('latest_transactions_card.try_again_button')}
                     </Button>

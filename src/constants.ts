@@ -86,4 +86,3 @@ export const ABI_ERRORS: Record<string, string> = {
     "0x369cb277": "InvalidTicketId",
     "0x5c85050a": "OnlyGovernanceOrExecutor"
 };
-

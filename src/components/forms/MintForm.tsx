@@ -90,6 +90,8 @@ const MintForm = forwardRef<FormRef, IMintForm>(
         false
     );
 
+        const { xamanConnector } = useWeb3();
+
     const mintFeePercentage = mintingFee !== undefined && transfer !== undefined && transfer !== 0
         ? (mintingFee / transfer) * 100
         : 0;

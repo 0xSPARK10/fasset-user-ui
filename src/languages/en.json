@@ -28,6 +28,7 @@
         "past_liquidations_description_label": "Number of times the agent was liquidated.",
         "past_liquidations_label": "Partial liquidations",
         "percentage_minted_label": "% minted",
+        "pool_address_label": "Pool address",
         "pool_collateral_description_label": "The tokens in the agent’s collateral pool that can be used as collateral.",
         "pool_collateral_label": "Pool Collateral",
         "remaining_label": "Remaining",
@@ -143,7 +144,6 @@
         "fassets_title": "FAssets",
         "flare_title": "Flare",
         "flr_address_label": "FLR Address",
-        "redeem_disabled_tooltip": "Redeem is disabled due to the XRP account setting.",
         "mint_button": "Mint",
         "my_position_label": "My position",
         "not_connected_label": "Not connected",
@@ -152,6 +152,7 @@
         "pending_transactions_label_other": "{{count}} pending transactions",
         "providing_collateral_button": "Providing collateral",
         "redeem_button": "Redeem",
+        "redeem_disabled_tooltip": "Redeem is disabled due to the XRP account setting.",
         "sgb_address_label": "SGB Address",
         "sgb_title": "Songbird",
         "stablecoins_eth_title": "Stablecoins & ETH",
@@ -288,6 +289,7 @@
             "you_will_deposit_label": "You will deposit"
         },
         "next_button": "Next",
+        "pool_address_label": "{{pool}} pool address",
         "title": "Deposit to Pool",
         "want_to_deposit_title": "I want to deposit"
     },
@@ -868,6 +870,8 @@
         "want_to_withdraw_title": "I want to withdraw"
     },
     "xaman_open_wallet_card": {
-        "description_label": "Please open your Xaman Wallet, check under Events -> Requests and confirm the transaction."
+        "confirm_button": "Continue",
+        "description_label": "Please open your Xaman Wallet, check under Events -> Requests and confirm the transaction.",
+        "mobile_description_label": "Please click 'Continue' to proceed with your XRP deposit. If you did not receive a notification, please open your Xaman Wallet, go to Events -> Requests, and confirm the transaction."
     }
 }

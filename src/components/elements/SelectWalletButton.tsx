@@ -69,11 +69,8 @@ export default function SelectWalletButton({ wallet, disabled = false, selectNet
                     <Text fw={300}>{t('connect_flr_modal.description_label')}</Text>
                     <Divider
                         className="my-8"
-                        styles={{
-                            root: {
-                                marginLeft: '-2.7rem',
-                                marginRight: '-2.7rem'
-                            }
+                        classNames={{
+                            root: 'mx-[-1rem] sm:mx-[-2.7rem]'
                         }}
                     />
                     <Button

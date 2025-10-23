@@ -152,9 +152,9 @@ const DepositToPoolForm = forwardRef<FormRef, IDepositToPoolForm>(({ collateralP
                                 parent={Text}
                             />
                             <Text className="flex items-center">
-                                {truncateString(collateralPool.vault, 5, 5)}
+                                {truncateString(collateralPool.pool, 5, 5)}
                                 <CopyIcon
-                                    text={collateralPool.vault}
+                                    text={collateralPool.pool}
                                     color={lighten('var(--flr-black)', 0.8)}
                                 />
                             </Text>
@@ -185,9 +185,9 @@ const DepositToPoolForm = forwardRef<FormRef, IDepositToPoolForm>(({ collateralP
                     parent={Text}
                 />
                 <Text className="flex items-center ml-2">
-                    {truncateString(collateralPool.vault, 5, 5)}
+                    {truncateString(collateralPool.pool, 5, 5)}
                     <CopyIcon
-                        text={collateralPool.vault}
+                        text={collateralPool.pool}
                         color={lighten('var(--flr-black)', 0.8)}
                     />
                 </Text>

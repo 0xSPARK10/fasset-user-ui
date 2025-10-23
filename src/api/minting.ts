@@ -62,7 +62,9 @@ export function useRequestMinting() {
                 amount,
                 fAsset,
                 nativeHash,
-                vaultAddress
+                vaultAddress,
+                nativeWalletId,
+                underlyingWalletId
             }: {
                 collateralReservationId: string,
                 txHash: string,
@@ -72,7 +74,9 @@ export function useRequestMinting() {
                 amount: string,
                 fAsset: string,
                 nativeHash: string,
-                vaultAddress: string
+                vaultAddress: string,
+                nativeWalletId: number,
+                underlyingWalletId: number
             }
         ) => {
             const response = await apiClient.post('mint', {
@@ -84,7 +88,9 @@ export function useRequestMinting() {
                 userAddress: userAddress,
                 amount: amount,
                 nativeHash: nativeHash,
-                vaultAddress: vaultAddress
+                vaultAddress: vaultAddress,
+                nativeWalletId: nativeWalletId,
+                underlyingWalletId: underlyingWalletId,
             });
             return response.data;
         }

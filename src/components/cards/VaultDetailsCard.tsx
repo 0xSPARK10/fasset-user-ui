@@ -24,11 +24,6 @@ export default function VaultDetailsCard({ pool }: IVaultDetailsCard) {
         ? toNumber(pool.vaultOnlyCollateralUSD) + toNumber(pool.poolOnlyCollateralUSD)
         : 0;
 
-    let poolUrl = pool ? pool.infoUrl : '';
-    if (!/^https?:\/\//i.test(poolUrl)) {
-        poolUrl = 'https://' + poolUrl;
-    }
-
     return (
         <div>
             <div className="flex items-center my-8">
@@ -52,23 +47,47 @@ export default function VaultDetailsCard({ pool }: IVaultDetailsCard) {
                     >
                         {pool?.agentName}
                     </Title>
-                    <Text
-                        className="text-16 mt-3 uppercase"
-                        fw={400}
-                        c="var(--flr-gray)"
-                    >
-                        {t('agent_details.vault_address_label')}
-                    </Text>
-                    <div className="flex items-center">
-                        <Text
-                            className="text-16 mt-1"
-                            fw={400}
-                        >
-                            {truncateString(pool?.vault ?? '', 4, 4)}
-                        </Text>
-                        <CopyIcon
-                            text={pool?.vault ?? ''}
-                        />
+                    <div className="flex flex-wrap mt-3">
+                        <div className="mr-5">
+                            <Text
+                                className="text-16 uppercase"
+                                fw={400}
+                                c="var(--flr-gray)"
+                            >
+                                {t('agent_details.vault_address_label')}
+                            </Text>
+                            <div className="flex items-center">
+                                <Text
+                                    className="text-16 mt-1"
+                                    fw={400}
+                                >
+                                    {truncateString(pool?.vault ?? '', 4, 4)}
+                                </Text>
+                                <CopyIcon
+                                    text={pool?.vault ?? ''}
+                                />
+                            </div>
+                        </div>
+                        <div className="mt-2 min-[412px]:mt-0">
+                            <Text
+                                className="text-16 uppercase"
+                                fw={400}
+                                c="var(--flr-gray)"
+                            >
+                                {t('agent_details.pool_address_label')}
+                            </Text>
+                            <div className="flex items-center">
+                                <Text
+                                    className="text-16 mt-1"
+                                    fw={400}
+                                >
+                                    {truncateString(pool?.pool ?? '', 4, 4)}
+                                </Text>
+                                <CopyIcon
+                                    text={pool?.pool ?? ''}
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

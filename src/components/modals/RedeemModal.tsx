@@ -25,7 +25,7 @@ import { isError } from "ethers";
 import RedeemForm, { FormRef } from "@/components/forms/RedeemForm";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
 import WalletConnectOpenWalletCard from "@/components/cards/WalletConnectOpenWalletCard";
-import { useInterval } from "@mantine/hooks";
+import { useInterval, useMediaQuery } from "@mantine/hooks";
 import FAssetModal from "@/components/modals/FAssetModal";
 import RedeemFinishedModal from "@/components/modals/RedeemFinishedModal";
 import { useNativeBalance, useUnderlyingBalance } from "@/api/balance";
@@ -77,6 +77,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin, flareCoin }: 
     const [isNextButtonDisabled, setIsNextButtonDisabled] = useState<boolean>(false);
     const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
 
+    const mediaQueryMatches = useMediaQuery('(max-width: 640px)');
     const { connectedCoins } = useWeb3();
     const connectedCoin = connectedCoins.find(coin => coin.type == fAssetCoin.type);
     const cookies = new Cookies();
@@ -220,12 +221,15 @@ export default function RedeemModal({ opened, onClose, fAssetCoin, flareCoin }: 
     const openWaitingModal = useCallback((redeemedLots: number, totalLots: number, isPartial: boolean = false) => {
         setIsWaitingModalActive(true);
 
+        console.log(mediaQueryMatches);
+
         modals.open({
             modalId: WAITING_MODAL,
             title: t('redeem_modal.title', { coinName: fAssetCoin?.type }),
             closeOnClickOutside: false,
             closeOnEscape: false,
             centered: true,
+            fullScreen: mediaQueryMatches,
             size: 550,
             children: (
                 <div className="px-0 sm:px-7">
@@ -307,7 +311,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin, flareCoin }: 
                 }
             }
         });
-    }, [fAssetCoin, isWaitingModalActive]);
+    }, [fAssetCoin, isWaitingModalActive, mediaQueryMatches]);
 
     const openUnresponsiveAgentModal = useCallback(() => {
         closeModal.current = true;
@@ -317,6 +321,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin, flareCoin }: 
         modals.open({
             modalId: UNRESPONSIVE_AGENT_MODAL,
             size: 500,
+            fullScreen: mediaQueryMatches,
             title: t('redeem_modal.title', { coinName: fAssetCoin?.type }),
             closeOnClickOutside: false,
             closeOnEscape: false,
@@ -352,7 +357,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin, flareCoin }: 
         });
 
         redemptionDefaultStatusFetchInterval.start();
-    }, [redemptionDefaultStatus, t, redemptionStatusFetchInterval, redemptionDefaultStatusFetchInterval]);
+    }, [redemptionDefaultStatus, t, redemptionStatusFetchInterval, redemptionDefaultStatusFetchInterval, mediaQueryMatches]);
 
     useEffect(() => {
         if (!txHash) return;

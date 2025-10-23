@@ -4,6 +4,20 @@ import type { ResolvedFlow } from "xumm-oauth2-pkce";
 import { WALLET } from "@/constants";
 import { useConnectedCoin } from "@/store/coin";
 import { FTEST_XRP, FXRP } from "@/config/coin";
+import { PayloadSubscription } from "xumm-sdk/dist/src/types";
+
+type Deferred<T> = {
+    promise: Promise<T>;
+    resolve: (value: T | PromiseLike<T>) => void;
+    reject: (reason?: any) => void;
+};
+
+function createDeferred<T>(): Deferred<T> {
+    let resolve!: Deferred<T>['resolve'];
+    let reject!: Deferred<T>['reject'];
+    const promise = new Promise<T>((res, rej) => { resolve = res; reject = rej; });
+    return { promise, resolve, reject };
+}
 
 export interface IXamanConnector {
     connect: () => Promise<boolean>;
@@ -17,109 +31,204 @@ export interface IXamanConnector {
 export default function XamanConnector(): IXamanConnector {
     const isInitialized = useRef(false);
     const [client, setClient] = useState<Xumm>();
+    const clientRef = useRef<Xumm>();
+    const xummUuid = useRef<string>();
+    const currentTime = useRef<number>();
+    const subscription = useRef<PayloadSubscription | undefined>(undefined);
+    const pendingSubscriptions = useRef<Map<string, Deferred<{ data: any }>>>(new Map());
+    const attachedListeners = useRef(false);
+    const removeListenersRef = useRef<() => void>(() => {});
     const { addConnectedCoin, removeConnectedCoin, localConnectedCoins } = useConnectedCoin();
 
     const connect = async () => {
         try {
-            if (!client) {
-                throw new ReferenceError('Xaman client is not initialized.');
-            }
+            const xumm = clientRef.current;
+            if (!xumm) throw new ReferenceError('Xaman client is not initialized.');
 
             localConnectedCoins
-                .filter(coin => coin.connectedWallet === WALLET.XAMAN)
-                .forEach(coin => removeConnectedCoin(coin.address!));
+                .filter((coin) => coin.connectedWallet === WALLET.XAMAN)
+                .forEach((coin) => removeConnectedCoin(coin.address!));
 
-            const response: ResolvedFlow | Error | undefined = await client.authorize();
-            if (!response || response instanceof Error) {
-                return false;
-            }
-            return true;
-        } catch (error: any) {
+            const response: ResolvedFlow | Error | undefined = await xumm.authorize();
+            return !!(response && !(response instanceof Error));
+        } catch {
             return false;
         }
-    }
+    };
 
     const disconnect = async () => {
-        await client?.logout();
-        useConnectedCoin.getState().localConnectedCoins
-            .filter(coin => coin.connectedWallet === WALLET.XAMAN)
-            .forEach(coin => removeConnectedCoin(coin.address!));
-    }
+        try {
+            await clientRef.current?.logout();
+        } finally {
+            useConnectedCoin
+                .getState()
+                .localConnectedCoins.filter((coin) => coin.connectedWallet === WALLET.XAMAN)
+                .forEach((coin) => removeConnectedCoin(coin.address!));
+            
+            if (attachedListeners.current) {
+                removeListenersRef.current();
+                attachedListeners.current = false;
+            }
+        }
+    };
 
     const createClient = async () => {
-        try {
-            if (!process.env.XAMAN_API_KEY) return;
+        if (!process.env.XAMAN_API_KEY) return;
 
-            const xumm = new Xumm(process.env.XAMAN_API_KEY as string);
+        const xumm = new Xumm(process.env.XAMAN_API_KEY as string);
+        xumm.on('ready', async () => {
+            const isConnected = useConnectedCoin
+                .getState()
+                .localConnectedCoins.some((coin) => coin.connectedWallet === WALLET.XAMAN);
 
-            xumm.on('ready', async () => {
-                const isConnected = useConnectedCoin.getState().localConnectedCoins.find(coin => coin.connectedWallet === WALLET.XAMAN) !== undefined;
-                if (isConnected && !xumm.state.signedIn) {
-                    disconnect();
+            if (isConnected && !xumm.state.signedIn) {
+                disconnect();
+            }
+        });
+
+        xumm.on('logout', () => {
+            disconnect();
+        });
+
+        xumm.on('success', () => {
+            xumm.user.account.then((account) => {
+                const isConnected = useConnectedCoin
+                    .getState()
+                    .localConnectedCoins.some((coin) => coin.connectedWallet === WALLET.XAMAN);
+
+                if (!isConnected) {
+                    history.replaceState(null, "", window.location.pathname + window.location.hash);
+                    addConnectedCoin({
+                        type: FXRP.enabled ? FXRP.type : FTEST_XRP.type,
+                        address: account!,
+                        connectedWallet: WALLET.XAMAN,
+                    });
                 }
             });
-            xumm.on('logout', () => {
-                disconnect();
-            });
-            xumm.on('success', () => {
-                xumm.user.account.then(account => {
-                    const isConnected = useConnectedCoin.getState().localConnectedCoins.find(coin => coin.connectedWallet === WALLET.XAMAN) !== undefined;
-                    if (!isConnected) {
-                        history.replaceState(null, "", window.location.pathname + window.location.hash);
+        });
 
-                        addConnectedCoin({
-                            type: FXRP.enabled ? FXRP.type : FTEST_XRP.type,
-                            address: account!,
-                            connectedWallet: WALLET.XAMAN
-                        });
-                    }
-                })
+        setClient(xumm);
+        clientRef.current = xumm;
+        isInitialized.current = true;
+    };
 
-            });
-
-            setClient(xumm);
-            isInitialized.current = true;
-        } catch (error: any) {
-            throw error;
-        }
-    }
-
-    const init = async() => {
+    const init = async () => {
         if (isInitialized.current) return;
-        createClient();
-    }
+        await createClient();
+
+        if (!attachedListeners.current) {
+
+            const onFocus = async () => {
+                const uuid = xummUuid.current;
+                if (uuid) {
+                    await resubscribeOnFocus(uuid);
+                }
+            }
+
+            const onVisibility = () => {
+                if (document.visibilityState === 'visible') onFocus();
+            }
+            
+            window.addEventListener("visibilitychange", onVisibility);
+            removeListenersRef.current = () => {
+                window.removeEventListener("visibilitychange", onVisibility);
+            }
+            attachedListeners.current = true;
+        }
+    };
+
+    const resubscribeOnFocus = async (uuid: string) => {
+        let deferred = pendingSubscriptions.current.get(uuid);
+        if (!deferred) {
+            deferred = createDeferred<{ data: any }>();
+            pendingSubscriptions.current.set(uuid, deferred);
+        }
+
+        const xumm = clientRef.current;
+        if (!xumm) return deferred.promise;
+
+        const payload = await xumm.payload?.get(uuid);
+        if (payload?.response?.resolved_at) {
+            deferred.resolve({
+                data: {
+                    ...payload.response,
+                    signed: payload.meta.signed
+                }
+            });
+            pendingSubscriptions.current.delete(uuid);
+        }
+
+        const now = Date.now();
+        if (!currentTime.current || now - currentTime.current > 250) {
+            subscription.current?.resolve();
+            currentTime.current = now;
+            subscription.current = await xumm.payload?.subscribe(uuid, (event) => {
+                if ('signed' in event.payload.meta && event.payload.response.resolved_at) {
+                    event.resolve();
+                    deferred.resolve({
+                        data: {
+                            ...event.payload.response,
+                            signed: event.payload.meta.signed
+                        }
+                    });
+                    pendingSubscriptions.current.delete(uuid);
+                }
+            });
+        }
+
+        return deferred.promise;
+    };
 
     const getSigner = async (userAddress: string) => {
         return undefined;
-    }
+    };
 
     const request = async({ chainId, method, params }: { chainId: string, method: string, params: any }) => {
-         return client?.payload?.createAndSubscribe({
-            txjson: params
-        }, eventMessage => {
-            if ('signed' in eventMessage.data) {
-                return eventMessage;
-            }
-        })
-             // @ts-ignore
-            .then(({ created, resolved }) => {
-                window.open(created.next.always, '_blank');
-                return resolved;
-        })
-            .then(payload => {
-                if (!payload.data.signed) {
-                    const error = new Error('User rejected the request');
-                    (error as any).code = 4005;
-                    throw error;
-                }
+        const xumm = clientRef.current;
+        if (!xumm || !xumm.payload) return;
 
-                return {
-                    tx_json: {
-                        hash: payload.data.txid
+        const { created } = await xumm.payload.createAndSubscribe(
+            { txjson: params },
+            (eventMessage) => {
+                if ('signed' in eventMessage.data) {
+                    const subscription = pendingSubscriptions.current.get(created.uuid);
+                    if (subscription) {
+                        subscription.resolve({ data: eventMessage.data });
+                        pendingSubscriptions.current.delete(created.uuid);
                     }
+
+                    return eventMessage;
                 }
-            });
-    }
+            }
+        );
+
+        xummUuid.current = created.uuid;
+        currentTime.current = Date.now();
+        if (xumm.runtime.xapp) {
+            xumm.xapp?.openSignRequest(created);
+        } else {
+            window.open(created.next.always, '_blank', 'noopener,noreferrer');
+        }
+
+        let deferred = pendingSubscriptions.current.get(created.uuid);
+        if (!deferred) {
+            deferred = createDeferred<{ data: any }>();
+            pendingSubscriptions.current.set(created.uuid, deferred);
+        }
+
+        const payload = await deferred.promise;
+        xummUuid.current = undefined;
+
+        if (!payload.data.signed) {
+            const error = new Error('User rejected the request');
+            (error as any).code = 4005;
+            throw error;
+        }
+
+        return {
+            tx_json: { hash: payload.data.txid },
+        };
+    };
 
     return {
         connect,
@@ -127,6 +236,6 @@ export default function XamanConnector(): IXamanConnector {
         init,
         client,
         getSigner,
-        request
-    }
+        request,
+    };
 }

@@ -1,4 +1,4 @@
-import { Button, Divider, lighten, rem, Stepper, Text, Title } from "@mantine/core";
+import { Avatar, Button, Divider, lighten, rem, Stepper, Text, Title } from "@mantine/core";
 import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IconCheck, IconCircleCheck, IconExclamationCircle, IconFilePlus } from "@tabler/icons-react";
@@ -12,7 +12,7 @@ import { IPool } from "@/types";
 import { useNativeBalance } from "@/api/balance";
 import { useWeb3 } from "@/hooks/useWeb3"
 import { useEnterCollateralPool } from "@/hooks/useContracts";
-import { parseUnits, toNumber } from "@/utils";
+import { parseUnits, toNumber, truncateString } from "@/utils";
 import { isError } from "ethers";
 import { CollateralPoolAbi } from "@/abi";
 import { ErrorDecoder } from "ethers-decode-error";
@@ -20,6 +20,8 @@ import { showErrorNotification } from "@/hooks/useNotifications";
 import { WALLET } from "@/constants";
 import { POOL_KEY, useUserPool } from "@/api/pool";
 import { COINS } from "@/config/coin";
+import LogoIcon from "@/components/icons/LogoIcon";
+import CopyIcon from "@/components/icons/CopyIcon";
 
 interface IDepositToPoolModal {
     opened: boolean;
@@ -160,11 +162,8 @@ export default function DepositToPoolModal({ opened, onClose, collateralPool }: 
                     </div>
                     <Divider
                         className="my-8"
-                        styles={{
-                            root: {
-                                marginLeft: '-2.7rem',
-                                marginRight: '-2.7rem'
-                            }
+                        classNames={{
+                            root: 'mx-[-1rem] sm:mx-[-2.7rem]'
                         }}
                     />
                     <Button
@@ -254,10 +253,50 @@ export default function DepositToPoolModal({ opened, onClose, collateralPool }: 
                         <Text
                             c="var(--flr-black)"
                             fw={400}
-                            className="text-16 my-5"
+                            className="text-16 mt-5"
                         >
                             {t('deposit_to_pool_modal.confirm_step_description')}
                         </Text>
+                        <div className="flex items-center mt-3 mb-5">
+                            {collateralPool?.url !== undefined && collateralPool?.url?.length > 0 && collateralPool?.url != '-'
+                                ? <Avatar
+                                    radius={100}
+                                    src={collateralPool?.url}
+                                    w={40}
+                                    h={40}
+                                    classNames={{
+                                        image: 'object-contain'
+                                    }}
+                                    className="mr-3"
+                                />
+                                : <LogoIcon
+                                    width="40"
+                                    height="40"
+                                    className="mr-3"
+                                />
+                            }
+                            <div>
+                                <Text
+                                    className="text-18"
+                                    fw={300}
+                                    c="var(--flr-black)"
+                                >
+                                    {t('deposit_to_pool_modal.pool_address_label', { pool: collateralPool?.agentName })}
+                                </Text>
+                                <div className="flex items-center mt-1">
+                                    <Text
+                                        className="text-14"
+                                        fw={400}
+                                        c="var(--flr-dark-gray)"
+                                    >
+                                        {truncateString(collateralPool?.pool ?? '', 4, 4)}
+                                    </Text>
+                                    <CopyIcon
+                                        text={collateralPool?.pool ?? ''}
+                                    />
+                                </div>
+                            </div>
+                        </div>
                         <Stepper
                             active={currentWalletStep}
                             iconSize={30}
