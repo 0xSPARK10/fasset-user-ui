@@ -7,7 +7,7 @@ import UniversalProvider, { ConnectParams } from "@walletconnect/universal-provi
 import { ethers, JsonRpcSigner } from "ethers";
 import { getAccountsFromNamespaces } from "@walletconnect/utils";
 import { useConnectedCoin } from "@/store/coin";
-import { XRP_NAMESPACE } from "@/config/networks";
+import { ETH_NAMESPACE, XRP_NAMESPACE } from "@/config/networks";
 import { COINS } from "@/config/coin";
 import { INetwork } from "@/types";
 import { WALLET } from "@/constants";
@@ -82,7 +82,9 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
                             if (!exists) {
                                 addConnectedCoin({
                                     type: coin.type,
-                                    address: address,
+                                    address: coin?.network?.namespace === ETH_NAMESPACE
+                                        ? ethers.getAddress(address)
+                                        : address,
                                     connectedWallet: WALLET.WALLET_CONNECT
                                 });
                             }
@@ -183,22 +185,6 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
         client.on('session_expire', ({ topic }: { topic: string }) => {
             disconnect();
         });
-        client.on('session_event', ({ params }: { params: any }) => {
-            const { event } = params;
-            const { account, receiveAddresses, changeAddresses } = parseDerivationPath(event.data);
-            if (account) {
-                const coin = useConnectedCoin.getState().localConnectedCoins.find(coin => coin.address === account);
-                if (coin) {
-                    updateConnectedCoin(account, {
-                        ...coin,
-                        accountAddresses: {
-                            receiveAddresses: receiveAddresses,
-                            changeAddresses: changeAddresses,
-                        }
-                    });
-                }
-            }
-        })
     };
 
     const parseDerivationPath = (items: { address: string, path: string }[]) => {

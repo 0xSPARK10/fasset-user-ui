@@ -45,7 +45,7 @@ export default function CollateralPoolsCard({ ecoSystemInfo, timeData }: ICollat
 
     return (
         <div className="flex flex-col h-full max-[768px]:border-t-0 border-x-0 md:border-x border border-[var(--flr-border-color)]">
-            <div className="flex max-[403px]:flex-col max-[403px]:items-start max-[403px]:mb-2 min-[403px]:items-center justify-between px-[15px] lg:px-6 py-2 min-h-14">
+            <div className="flex items-center justify-between px-[15px] lg:px-6 py-2 min-h-14">
                 <Title
                     className="text-16 uppercase"
                     fw={400}
@@ -61,7 +61,7 @@ export default function CollateralPoolsCard({ ecoSystemInfo, timeData }: ICollat
                     size="sm"
                     h={isMobile ? 34 : 41}
                     fw={400}
-                    className="max-[403px]:mt-3 shrink-0"
+                    className="shrink-0"
                 >
                     {t('collateral_pools_card.view_pools_button')}
                 </Button>

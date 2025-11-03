@@ -317,11 +317,8 @@ export default function WithdrawalFromPoolModal({ opened, onClose, collateralPoo
                     <>
                         <Divider
                             className="my-8"
-                            styles={{
-                                root: {
-                                    marginLeft: '-2.7rem',
-                                    marginRight: '-2.7rem'
-                                }
+                            classNames={{
+                                root: 'mx-[-1rem] sm:mx-[-2.7rem]'
                             }}
                         />
                         <LedgerConfirmTransactionCard
@@ -336,11 +333,8 @@ export default function WithdrawalFromPoolModal({ opened, onClose, collateralPoo
                     <>
                         <Divider
                             className="my-8"
-                            styles={{
-                                root: {
-                                    marginLeft: '-2.7rem',
-                                    marginRight: '-2.7rem'
-                                }
+                            classNames={{
+                                root: 'mx-[-1rem] sm:mx-[-2.7rem]'
                             }}
                         />
                         <WalletConnectOpenWalletCard />

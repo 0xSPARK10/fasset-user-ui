@@ -349,9 +349,19 @@
     },
     "fassets_overview_card": {
         "available_to_mint_label": "Available to mint",
+        "available_to_mint_modal": {
+            "confirm_button": "Got it",
+            "how_description_label": "This capacity is dynamically calculated based on two factors: the value of the collateral the Agents have locked into the system, and how much of that capacity is currently reserved (e.g., tied up in open requests). Essentially, the more collateral Agents provide, the higher their minting limit becomes.",
+            "how_title": "How it works?",
+            "title": "Available to Mint",
+            "what_description_label": "This is the maximum amount of FXRP you can mint at any given time.",
+            "what_title": "What it is?"
+        },
+        "cap_removed_label": "(cap removed)",
         "circulating_supply_label": "Circulating supply",
         "lots_label": "{{lots}} lots",
         "mint_button": "Mint {{fAsset}}",
+        "overall_fxrp_cap_label": "Overall {{fAsset}} cap",
         "title": "FAssets overview"
     },
     "faucet_card": {

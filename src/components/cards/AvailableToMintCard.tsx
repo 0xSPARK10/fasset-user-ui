@@ -93,7 +93,6 @@ export default function AvailableToMintCard({ ecoSystemInfo, mintEnabled }: IAva
                     </div>
                 ))}
             </div>
-
         </div>
     );
 }

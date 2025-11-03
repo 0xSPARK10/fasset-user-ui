@@ -221,8 +221,6 @@ export default function RedeemModal({ opened, onClose, fAssetCoin, flareCoin }: 
     const openWaitingModal = useCallback((redeemedLots: number, totalLots: number, isPartial: boolean = false) => {
         setIsWaitingModalActive(true);
 
-        console.log(mediaQueryMatches);
-
         modals.open({
             modalId: WAITING_MODAL,
             title: t('redeem_modal.title', { coinName: fAssetCoin?.type }),

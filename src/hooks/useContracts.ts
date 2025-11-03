@@ -239,8 +239,10 @@ export function useEnterCollateralPool() {
                 const signer = await provider.getSigner(userAddress);
                 const contract = new ethers.Contract(poolAddress, CollateralPoolAbi, signer);
 
+                const feeProvider = new ethers.JsonRpcProvider(mainToken?.network?.rpcUrl!);
                 const feeData = await getFeeData(mainToken!);
-                let gasLimit = await contract.enter.estimateGas({
+                //@ts-ignore
+                let gasLimit = await contract.connect(feeProvider).enter.estimateGas({
                     from: userAddress,
                     value: ethers.toBigInt(value)
                 });
@@ -296,8 +298,10 @@ export function useExitCollateralPool() {
                const signer = await provider.getSigner(userAddress);
                const contract = new ethers.Contract(poolAddress, CollateralPoolAbi, signer);
 
+               const feeProvider = new ethers.JsonRpcProvider(mainToken?.network?.rpcUrl!);
                const feeData = await getFeeData(mainToken!);
-               let gasLimit = await contract.exit.estimateGas(tokenShare, {
+               //@ts-ignore
+               let gasLimit = await contract.connect(feeProvider).exit.estimateGas(tokenShare, {
                    from: userAddress
                });
                gasLimit = (gasLimit * BigInt(150)) / BigInt(100);

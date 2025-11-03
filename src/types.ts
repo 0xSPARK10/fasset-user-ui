@@ -332,6 +332,8 @@ export interface IEcoSystemInfoSupplyByFasset {
     mintedLots: number;
     mintedPercentage: string;
     supply: string;
+    mintingCap: string;
+    mintingCapUSD: string;
 }
 
 export interface IEcosystemInfo {

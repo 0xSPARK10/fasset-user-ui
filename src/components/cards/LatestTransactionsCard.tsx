@@ -139,7 +139,7 @@ export default function LatestTransactionsCard({ className, refreshKey }: ILates
                 mintingTransaction[progress.underlyingTransactionData.paymentReference] === false
             );
 
-        return <div className="flex text-wrap items-center">
+        return <div className="flex max-[768px]:flex-wrap text-wrap items-center">
             {!isHash
                 ? <span>{
                     progress.defaulted ? t('latest_transactions_card.defaulted_label') : progress.txhash}

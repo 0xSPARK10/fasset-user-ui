@@ -6,6 +6,7 @@ import XrpIcon from "@/components/icons/XrpIcon";
 import { formatNumberWithSuffix } from "@/utils";
 import { modals } from "@mantine/modals";
 import React from "react";
+import { useMediaQuery } from "@mantine/hooks";
 
 interface ICoreVaultCard {
     ecoSystemInfo: IEcosystemInfo | undefined;
@@ -14,11 +15,13 @@ interface ICoreVaultCard {
 
 export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCard) {
     const { t } = useTranslation();
+    const mediaQueryMatches = useMediaQuery('(max-width: 640px)');
 
     const openModal = () => {
         modals.open({
             zIndex: 3000,
             size: 800,
+            fullScreen: mediaQueryMatches,
             title: <Text className="text-32" fw={300} c="var(--flr-black)">
                 {t('core_vault_card.modal.title')}
             </Text>,
@@ -78,7 +81,7 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
 
     return (
         <div className="max-[768px]:border-t-0 border-x-0 md:border-x border border-[var(--flr-border-color)] bg-[var(--flr-lightest-gray)] h-full">
-            <div className="bg-[var(--flr-white)] flex items-center px-[15px] lg:px-6 py-4 min-h-14">
+            <div className="bg-[var(--flr-white)] flex items-center px-[15px] lg:px-6 py-4 min-h-14 border-b border-[var(--flr-border-color)]">
                 <Text
                     className="text-16 uppercase"
                     fw={400}
@@ -93,148 +96,151 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
                     onClick={openModal}
                 />
             </div>
-            <div className="px-5 py-3 border-y border-[var(--flr-border-color)]">
-                <Text
-                    className="text-12 uppercase mb-1"
-                    fw={400}
-                    c="var(--flr-dark-gray)"
-                >
-                    {t('core_vault_card.total_label')}
-                </Text>
-                <div className="flex items-center">
-                    <XrpIcon width="40" height="40" />
+            <div className="flex flex-col">
+                <div className="flex flex-col justify-center px-5 py-3 min-[1200px]:py-4 min-[1649px]:py-3 border-b border-[var(--flr-border-color)]">
                     <Text
-                        className="ml-2 text-24"
-                        fw={300}
-                        c="var(--flr-black)"
-                    >
-                        {formatNumberWithSuffix(ecoSystemInfo?.coreVaultSupply ?? 0)}
-                    </Text>
-                </div>
-                <div className="flex items-center mt-1">
-                    <Text
-                        className="mr-2 text-16"
+                        className="text-12 uppercase mb-1"
                         fw={400}
                         c="var(--flr-dark-gray)"
                     >
-                        ${formatNumberWithSuffix(ecoSystemInfo?.coreVaultSupplyUSD ?? 0)}
+                        {t('core_vault_card.total_label')}
                     </Text>
-                    <Badge
-                        variant="outline"
-                        color={timeData?.coreVaultData?.isPositiveSupplyDiff ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
-                        radius="xs"
-                        leftSection={timeData?.coreVaultData?.isPositiveSupplyDiff
-                            ? <IconCaretUpFilled size={15} color="var(--flr-green)" />
-                            : <IconCaretDownFilled size={15} color="var(--flr-red)" />
-                        }
-                        className="px-1"
-                    >
+                    <div className="flex items-center">
+                        <XrpIcon width="40" height="40" />
                         <Text
-                            className="text-14"
-                            fw={400}
-                            c={timeData?.coreVaultData?.isPositiveSupplyDiff ? 'var(--flr-green)' : 'var(--flr-red)'}
+                            className="ml-2 text-24"
+                            fw={300}
+                            c="var(--flr-black)"
                         >
-                            {timeData?.coreVaultData?.supplyDiff}%
+                            {formatNumberWithSuffix(ecoSystemInfo?.coreVaultSupply ?? 0)}
                         </Text>
-                    </Badge>
+                    </div>
+                    <div className="flex items-center mt-1">
+                        <Text
+                            className="mr-2 text-16"
+                            fw={400}
+                            c="var(--flr-dark-gray)"
+                        >
+                            ${formatNumberWithSuffix(ecoSystemInfo?.coreVaultSupplyUSD ?? 0)}
+                        </Text>
+                        <Badge
+                            variant="outline"
+                            color={timeData?.coreVaultData?.isPositiveSupplyDiff ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
+                            radius="xs"
+                            leftSection={timeData?.coreVaultData?.isPositiveSupplyDiff
+                                ? <IconCaretUpFilled size={15} color="var(--flr-green)" />
+                                : <IconCaretDownFilled size={15} color="var(--flr-red)" />
+                            }
+                            className="px-1"
+                        >
+                            <Text
+                                className="text-14"
+                                fw={400}
+                                c={timeData?.coreVaultData?.isPositiveSupplyDiff ? 'var(--flr-green)' : 'var(--flr-red)'}
+                            >
+                                {timeData?.coreVaultData?.supplyDiff}%
+                            </Text>
+                        </Badge>
+                    </div>
                 </div>
+                <SimpleGrid
+                    cols={2}
+                    className=""
+                >
+                    <div className="px-5 py-3 border-r border-[var(--flr-border-color)]">
+                        <Text
+                            className="text-12 uppercase"
+                            fw={400}
+                            c="var(--flr-gray)"
+                        >
+                            {t('core_vault_card.inflow_label')}
+                        </Text>
+                        <div className="flex items-center">
+                            <XrpIcon width="22" height="22" className="shrink-0" />
+                            <Text
+                                className="ml-2 text-24"
+                                fw={300}
+                                c="var(--flr-black)"
+                            >
+                                {formatNumberWithSuffix(ecoSystemInfo?.coreVaultInflows ?? 0)}
+                            </Text>
+                        </div>
+                        <div className="flex items-center mt-1 flex-wrap">
+                            <Text
+                                className="mr-2 text-16"
+                                fw={400}
+                                c="var(--flr-dark-gray)"
+                            >
+                                ${formatNumberWithSuffix(ecoSystemInfo?.coreVaultInflowsUSD ?? 0)}
+                            </Text>
+                            <Badge
+                                variant="outline"
+                                color={timeData?.coreVaultData?.isPositiveInflowDiff ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
+                                radius="xs"
+                                leftSection={timeData?.coreVaultData?.isPositiveInflowDiff
+                                    ? <IconCaretUpFilled size={15} color="var(--flr-green)" />
+                                    : <IconCaretDownFilled size={15} color="var(--flr-red)" />
+                                }
+                                className="px-1 shrink-0"
+                            >
+                                <Text
+                                    className="text-14"
+                                    fw={400}
+                                    c={timeData?.coreVaultData?.isPositiveInflowDiff ? 'var(--flr-green)' : 'var(--flr-red)'}
+                                >
+                                    {timeData?.coreVaultData?.inflowDiff}%
+                                </Text>
+                            </Badge>
+                        </div>
+                    </div>
+                    <div className="px-5 py-3">
+                        <Text
+                            className="text-12 uppercase"
+                            fw={400}
+                            c="var(--flr-gray)"
+                        >
+                            {t('core_vault_card.outflow_label')}
+                        </Text>
+                        <div className="flex items-center">
+                            <XrpIcon width="22" height="22" className="shrink-0" />
+                            <Text
+                                className="ml-2 text-24"
+                                fw={300}
+                                c="var(--flr-black)"
+                            >
+                                {formatNumberWithSuffix(ecoSystemInfo?.coreVaultOutflows ?? 0)}
+                            </Text>
+                        </div>
+                        <div className="flex items-center mt-1 flex-wrap">
+                            <Text
+                                className="mr-2 text-16"
+                                fw={400}
+                                c="var(--flr-dark-gray)"
+                            >
+                                ${formatNumberWithSuffix(ecoSystemInfo?.coreVaultOutflowsUSD ?? 0)}
+                            </Text>
+                            <Badge
+                                variant="outline"
+                                color={timeData?.coreVaultData?.isPositiveOutflowDiff ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
+                                radius="xs"
+                                leftSection={timeData?.coreVaultData?.isPositiveOutflowDiff
+                                    ? <IconCaretUpFilled size={15} color="var(--flr-green)" />
+                                    : <IconCaretDownFilled size={15} color="var(--flr-red)" />
+                                }
+                                className="px-1 shrink-0"
+                            >
+                                <Text
+                                    className="text-14"
+                                    fw={400}
+                                    c={timeData?.coreVaultData?.isPositiveOutflowDiff ? 'var(--flr-green)' : 'var(--flr-red)'}
+                                >
+                                    {timeData?.coreVaultData?.outflowDiff}%
+                                </Text>
+                            </Badge>
+                        </div>
+                    </div>
+                </SimpleGrid>
             </div>
-            <SimpleGrid
-                cols={2}
-            >
-                <div className="px-5 py-[1.45rem] border-r border-[var(--flr-border-color)]">
-                    <Text
-                        className="text-12 uppercase"
-                        fw={400}
-                        c="var(--flr-gray)"
-                    >
-                        {t('core_vault_card.inflow_label')}
-                    </Text>
-                    <div className="flex items-center">
-                        <XrpIcon width="22" height="22" className="shrink-0" />
-                        <Text
-                            className="ml-2 text-24"
-                            fw={300}
-                            c="var(--flr-black)"
-                        >
-                            {formatNumberWithSuffix(ecoSystemInfo?.coreVaultInflows ?? 0)}
-                        </Text>
-                    </div>
-                    <div className="flex items-center mt-1 flex-wrap">
-                        <Text
-                            className="mr-2 text-16"
-                            fw={400}
-                            c="var(--flr-dark-gray)"
-                        >
-                            ${formatNumberWithSuffix(ecoSystemInfo?.coreVaultInflowsUSD ?? 0)}
-                        </Text>
-                        <Badge
-                            variant="outline"
-                            color={timeData?.coreVaultData?.isPositiveInflowDiff ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
-                            radius="xs"
-                            leftSection={timeData?.coreVaultData?.isPositiveInflowDiff
-                                ? <IconCaretUpFilled size={15} color="var(--flr-green)" />
-                                : <IconCaretDownFilled size={15} color="var(--flr-red)" />
-                            }
-                            className="px-1 shrink-0"
-                        >
-                            <Text
-                                className="text-14"
-                                fw={400}
-                                c={timeData?.coreVaultData?.isPositiveInflowDiff ? 'var(--flr-green)' : 'var(--flr-red)'}
-                            >
-                                {timeData?.coreVaultData?.inflowDiff}%
-                            </Text>
-                        </Badge>
-                    </div>
-                </div>
-                <div className="px-5 py-[1.45rem]">
-                    <Text
-                        className="text-12 uppercase"
-                        fw={400}
-                        c="var(--flr-gray)"
-                    >
-                        {t('core_vault_card.outflow_label')}
-                    </Text>
-                    <div className="flex items-center">
-                        <XrpIcon width="22" height="22" className="shrink-0" />
-                        <Text
-                            className="ml-2 text-24"
-                            fw={300}
-                            c="var(--flr-black)"
-                        >
-                            {formatNumberWithSuffix(ecoSystemInfo?.coreVaultOutflows ?? 0)}
-                        </Text>
-                    </div>
-                    <div className="flex items-center mt-1 flex-wrap">
-                        <Text
-                            className="mr-2 text-16"
-                            fw={400}
-                            c="var(--flr-dark-gray)"
-                        >
-                            ${formatNumberWithSuffix(ecoSystemInfo?.coreVaultOutflowsUSD ?? 0)}
-                        </Text>
-                        <Badge
-                            variant="outline"
-                            color={timeData?.coreVaultData?.isPositiveOutflowDiff ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
-                            radius="xs"
-                            leftSection={timeData?.coreVaultData?.isPositiveOutflowDiff
-                                ? <IconCaretUpFilled size={15} color="var(--flr-green)" />
-                                : <IconCaretDownFilled size={15} color="var(--flr-red)" />
-                            }
-                            className="px-1 shrink-0"
-                        >
-                            <Text
-                                className="text-14"
-                                fw={400}
-                                c={timeData?.coreVaultData?.isPositiveOutflowDiff ? 'var(--flr-green)' : 'var(--flr-red)'}
-                            >
-                                {timeData?.coreVaultData?.outflowDiff}%
-                            </Text>
-                        </Badge>
-                    </div>
-                </div>
-            </SimpleGrid>
         </div>
     );
 }
