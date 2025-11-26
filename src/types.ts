@@ -107,6 +107,7 @@ export interface ICrEvent {
     paymentAddress?: string;
     paymentAmount?: string;
     paymentReference?: string;
+    lastUnderlyingBlock: string;
 }
 
 export interface IMintStatus {
@@ -288,6 +289,7 @@ export interface IUserProgress {
         destinationAddress: string;
         paymentReference: string;
         agentName: string;
+        lastUnderlyingBlock: string;
     };
 }
 

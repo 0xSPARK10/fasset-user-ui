@@ -29,22 +29,15 @@ interface ICoreVaultChartData {
     outflow: number;
 }
 
-interface ITvlGraph {
-    date: string;
-    xLabel: string;
-    value: number;
-}
 
 const TAB_MINTS_REDEEMS = 'mints_redeems';
 const TAB_CORE_VAULT = 'core_vault';
-const TAB_CORE_VAULT_TVL = 'core_vault_tvl';
 
 export default function MintRedeemChartCard({ timeData, filter, ecoSystemInfo }: IMintRedeemChartCard) {
     const [activeTab, setActiveTab] = useState<string | null>(TAB_MINTS_REDEEMS);
     const { t } = useTranslation();
     const mintRedeemChartData: IMintRedeemChartData[] = [];
     const coreVaultChartData: ICoreVaultChartData[] = [];
-    const coreVaultTvlChartData: ITvlGraph[] = [];
 
     const formatLabel = () => {
         if (!filter) return '';
@@ -81,13 +74,6 @@ export default function MintRedeemChartCard({ timeData, filter, ecoSystemInfo }:
             xLabel: moment.unix(inflow.timestamp).format(formatLabel()),
             inflow: toNumber(inflow.value),
             outflow: toNumber(outflow?.value ?? '0')
-        });
-    });
-    timeData?.coreVaultData?.tvlGraph.forEach(tvl => {
-        coreVaultTvlChartData.push({
-            date: moment.unix(tvl.timestamp).format(),
-            xLabel: moment.unix(tvl.timestamp).format(formatLabel()),
-            value: toNumber(tvl.value)
         });
     });
 
@@ -127,11 +113,6 @@ export default function MintRedeemChartCard({ timeData, filter, ecoSystemInfo }:
                                 {t('mint_redeem_chart_card.mints_and_redeems_label')}
                             </Tabs.Tab>
                             <Tabs.Tab
-                                value={TAB_CORE_VAULT_TVL}
-                            >
-                                {t('mint_redeem_chart_card.core_vault_tvl_label')}
-                            </Tabs.Tab>
-                            <Tabs.Tab
                                 value={TAB_CORE_VAULT}
                             >
                                 {t('mint_redeem_chart_card.core_vault_label')}
@@ -141,35 +122,24 @@ export default function MintRedeemChartCard({ timeData, filter, ecoSystemInfo }:
                     <div className="flex items-center">
                         <div className="flex items-center mr-10">
                             <div className="w-5 h-5 rounded-md bg-[var(--flr-pink)] mr-2" />
-                            {activeTab === TAB_CORE_VAULT_TVL
-                                ? <Text
-                                    className="text-16 uppercase"
-                                    fw={400}
-                                    c="var(--flr-dark-gray)"
-                                >
-                                    {t('mint_redeem_chart_card.balance_label')}
-                                </Text>
-                                : <Text
-                                    className="text-16 uppercase"
-                                    fw={400}
-                                    c="var(--flr-dark-gray)"
-                                >
-                                    {t(activeTab === TAB_MINTS_REDEEMS ? 'mint_redeem_chart_card.mints_label' : 'mint_redeem_chart_card.inflow_label')}
-                                </Text>
-                            }
+                            <Text
+                                className="text-16 uppercase"
+                                fw={400}
+                                c="var(--flr-dark-gray)"
+                            >
+                                {t(activeTab === TAB_MINTS_REDEEMS ? 'mint_redeem_chart_card.mints_label' : 'mint_redeem_chart_card.inflow_label')}
+                            </Text>
                         </div>
-                        {activeTab !== TAB_CORE_VAULT_TVL &&
-                            <div className="flex items-center">
-                                <div className="w-5 h-5 rounded-md bg-[var(--flr-black)] mr-2" />
-                                <Text
-                                    className="text-16 uppercase"
-                                    fw={400}
-                                    c="var(--flr-dark-gray)"
-                                >
-                                    {t(activeTab === TAB_MINTS_REDEEMS ? 'mint_redeem_chart_card.redeems_label' : 'mint_redeem_chart_card.outflow_label')}
-                                </Text>
-                            </div>
-                        }
+                        <div className="flex items-center">
+                            <div className="w-5 h-5 rounded-md bg-[var(--flr-black)] mr-2" />
+                            <Text
+                                className="text-16 uppercase"
+                                fw={400}
+                                c="var(--flr-dark-gray)"
+                            >
+                                {t(activeTab === TAB_MINTS_REDEEMS ? 'mint_redeem_chart_card.redeems_label' : 'mint_redeem_chart_card.outflow_label')}
+                            </Text>
+                        </div>
                     </div>
                 </div>
                 {activeTab === TAB_MINTS_REDEEMS &&
@@ -216,28 +186,6 @@ export default function MintRedeemChartCard({ timeData, filter, ecoSystemInfo }:
                                 label: t('mint_redeem_chart_card.outflow_label'),
                                 color: 'var(--flr-black)',
                                 strokeDasharray: '10 10'
-                            },
-                        ]}
-                        curveType="bump"
-                        tickLine="none"
-                        gridAxis="none"
-                        valueFormatter={(value) => `$${formatNumberWithSuffix(value, 2)}`}
-                        withDots={false}
-                        classNames={{
-                            root: 'pl-[2px]'
-                        }}
-                    />
-                }
-                {activeTab === TAB_CORE_VAULT_TVL &&
-                    <LineChart
-                        h={300}
-                        data={coreVaultTvlChartData}
-                        dataKey="xLabel"
-                        series={[
-                            {
-                                name: 'value',
-                                label: t('mint_redeem_chart_card.balance_label'),
-                                color: 'var(--flr-pink)',
                             },
                         ]}
                         curveType="bump"

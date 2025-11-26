@@ -33,6 +33,7 @@ interface IRetryMintModal {
         destinationAddress: string;
         paymentReference: string;
         agentName: string;
+        lastUnderlyingBlock: string;
     };
 }
 
@@ -74,16 +75,17 @@ export default function RetryMintModal({ opened, onClose, underlyingTransaction 
                 paymentReference: string;
                 utxos?: IUtxo[];
                 estimatedFee?: number;
+                lastUnderlyingBlock: string;
             } = {
                 network: fAssetCoin?.network!,
                 destination: underlyingTransaction.destinationAddress,
                 amount: underlyingTransaction.amount,
                 paymentReference: underlyingTransaction.paymentReference,
-                userAddress: fAssetCoin?.address!
+                userAddress: fAssetCoin?.address!,
+                lastUnderlyingBlock: underlyingTransaction.lastUnderlyingBlock
             };
-
+            
             signTransactionResponse = await signTransaction.mutateAsync(signTransactionParams);
-
             const txId = fAssetCoin?.network?.namespace === XRP_NAMESPACE
                 ? signTransactionResponse?.tx_json?.hash
                 : signTransactionResponse.txid;

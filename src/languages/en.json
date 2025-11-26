@@ -198,6 +198,7 @@
     },
     "collateral_pools_card": {
         "asset_type_label": "Asset type and agent",
+        "collateral_pool_tooltip_label": "If you provide $FLR to an Agent's collateral pool, both FTSO rewards and FlareDrops are claimed automatically, with your share added to your CPT.\nNo additional action is required.",
         "rewards_label": "Rewards",
         "showing_label": "Showing {{from}} of {{total}}",
         "title": "Collateral pools",

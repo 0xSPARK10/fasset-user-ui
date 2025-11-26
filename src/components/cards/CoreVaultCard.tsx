@@ -80,7 +80,7 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
     }
 
     return (
-        <div className="max-[768px]:border-t-0 border-x-0 md:border-x border border-[var(--flr-border-color)] bg-[var(--flr-lightest-gray)] h-full">
+        <div className="flex flex-col max-[768px]:border-t-0 border-x-0 md:border-x border border-[var(--flr-border-color)] bg-[var(--flr-lightest-gray)] h-full">
             <div className="bg-[var(--flr-white)] flex items-center px-[15px] lg:px-6 py-4 min-h-14 border-b border-[var(--flr-border-color)]">
                 <Text
                     className="text-16 uppercase"
@@ -96,7 +96,7 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
                     onClick={openModal}
                 />
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col h-full">
                 <div className="flex flex-col justify-center px-5 py-3 min-[1200px]:py-4 min-[1649px]:py-3 border-b border-[var(--flr-border-color)]">
                     <Text
                         className="text-12 uppercase mb-1"
@@ -145,9 +145,15 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
                 </div>
                 <SimpleGrid
                     cols={2}
-                    className=""
+                    styles={{
+                        root: {
+                            '--sg-spacing-x': 0,
+                            '--sg-spacing-y': 0
+                        }
+                    }}
+                    className="items-center h-full"
                 >
-                    <div className="px-5 py-3 border-r border-[var(--flr-border-color)]">
+                    <div className="px-5 py-3 border-r border-[var(--flr-border-color)] h-full">
                         <Text
                             className="text-12 uppercase"
                             fw={400}
@@ -165,7 +171,7 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
                                 {formatNumberWithSuffix(ecoSystemInfo?.coreVaultInflows ?? 0)}
                             </Text>
                         </div>
-                        <div className="flex items-center mt-1 flex-wrap">
+                        <div className="flex items-center mt-1">
                             <Text
                                 className="mr-2 text-16"
                                 fw={400}
@@ -193,7 +199,7 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
                             </Badge>
                         </div>
                     </div>
-                    <div className="px-5 py-3">
+                    <div className="px-5 py-3 h-full">
                         <Text
                             className="text-12 uppercase"
                             fw={400}
@@ -211,7 +217,7 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
                                 {formatNumberWithSuffix(ecoSystemInfo?.coreVaultOutflows ?? 0)}
                             </Text>
                         </div>
-                        <div className="flex items-center mt-1 flex-wrap">
+                        <div className="flex items-center mt-1">
                             <Text
                                 className="mr-2 text-16"
                                 fw={400}

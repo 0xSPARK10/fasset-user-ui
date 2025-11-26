@@ -4,11 +4,11 @@ import {
     Text,
     Table,
     Badge,
-    Avatar
+    Avatar, rem, Divider, Popover
 } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "@mantine/hooks";
-import { IconCaretUpFilled, IconCaretDownFilled } from "@tabler/icons-react";
+import { IconCaretUpFilled, IconCaretDownFilled, IconInfoHexagon } from "@tabler/icons-react";
 import Link from "next/link";
 import LogoIcon from "@/components/icons/LogoIcon";
 import { usePools } from "@/api/pool";
@@ -16,6 +16,8 @@ import { useWeb3 } from "@/hooks/useWeb3";
 import { IEcosystemInfo, ITimeData } from "@/types";
 import { formatNumberWithSuffix } from "@/utils";
 import { COINS } from "@/config/coin";
+import React from "react";
+import { modals } from "@mantine/modals";
 
 interface ICollateralPoolsCard {
     ecoSystemInfo: IEcosystemInfo | undefined;
@@ -27,6 +29,7 @@ export default function CollateralPoolsCard({ ecoSystemInfo, timeData }: ICollat
     const isMobile = useMediaQuery('(max-width: 640px)');
     const { mainToken } = useWeb3();
     const pools = usePools(COINS.filter(coin => coin.isFAssetCoin && coin.enabled).map(coin => coin.type));
+    const mediaQueryMatches = useMediaQuery('(max-width: 640px)');
 
     const fAssetTokens = ecoSystemInfo?.poolRewards?.map(supply => {
         return {
@@ -46,13 +49,32 @@ export default function CollateralPoolsCard({ ecoSystemInfo, timeData }: ICollat
     return (
         <div className="flex flex-col h-full max-[768px]:border-t-0 border-x-0 md:border-x border border-[var(--flr-border-color)]">
             <div className="flex items-center justify-between px-[15px] lg:px-6 py-2 min-h-14">
-                <Title
-                    className="text-16 uppercase"
-                    fw={400}
-                    c="var(--flr-dark-gray)"
-                >
-                    {t('collateral_pools_card.title')}
-                </Title>
+                <div className="flex items-center">
+                    <Title
+                        className="text-16 uppercase"
+                        fw={400}
+                        c="var(--flr-dark-gray)"
+                    >
+                        {t('collateral_pools_card.title')}
+                    </Title>
+                    <Popover
+                        withArrow
+                        width="auto"
+                    >
+                        <Popover.Target>
+                            <IconInfoHexagon
+                                style={{width: rem(16), height: rem(16)}}
+                                color="var(--mantine-color-gray-6)"
+                                className="ml-2 flex-shrink-0 cursor-pointer hover:stroke-gray-600"
+                            />
+                        </Popover.Target>
+                        <Popover.Dropdown>
+                            <Text className="text-16 whitespace-pre-line">
+                                {t('collateral_pools_card.collateral_pool_tooltip_label')}
+                            </Text>
+                        </Popover.Dropdown>
+                    </Popover>
+                </div>
                 <Button
                     variant="gradient"
                     component={Link}

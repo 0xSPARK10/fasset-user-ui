@@ -165,7 +165,8 @@ export function useSignTransaction(address: string) {
                 amount,
                 paymentReference,
                 utxos,
-                estimatedFee
+                estimatedFee,
+                lastUnderlyingBlock
             }: {
                 network: INetwork,
                 userAddress: string,
@@ -174,6 +175,7 @@ export function useSignTransaction(address: string) {
                 paymentReference: string,
                 utxos?: IUtxo[];
                 estimatedFee?: number;
+                lastUnderlyingBlock: string;
             }
         ) => {
             if (!provider) return;
@@ -190,6 +192,7 @@ export function useSignTransaction(address: string) {
                         Amount: amount,
                         Destination: destination,
                         Memos: [{Memo: {MemoData: paymentReference?.substring(2)}}],
+                        LastLedgerSequence: Number(lastUnderlyingBlock),
                     }
                     : {
                         account: userAddress,

@@ -35,7 +35,6 @@ export default function MyPoolsPositionCard({ pools, isLoading }: IMyPoolsPositi
     const { t } = useTranslation();
     const { mainToken } = useWeb3();
     const isMobile = useMediaQuery('(max-width: 767px)');
-    const isSingleFassetEnabled = COINS.filter(coin => coin.isFAssetCoin && coin.enabled).length === 1;
 
     const position: IPosition | undefined = pools
         ?.reduce((accumulator, pool) => {

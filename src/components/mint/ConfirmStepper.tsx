@@ -129,12 +129,14 @@ export default function ConfirmStepper({
                     paymentReference: string;
                     utxos?: IUtxo[];
                     estimatedFee?: number;
+                    lastUnderlyingBlock: string;
                 } = {
                     network: fAssetCoin.network,
                     destination: response?.paymentAddress!,
                     amount: response?.paymentAmount?.toString()!,
                     paymentReference: response?.paymentReference!,
-                    userAddress: fAssetCoin.address!
+                    userAddress: fAssetCoin.address!,
+                    lastUnderlyingBlock: response?.lastUnderlyingBlock!
                 };
 
                 let utxso = utxosForTransaction.data?.selectedUtxos ? utxosForTransaction.data?.selectedUtxos : [];

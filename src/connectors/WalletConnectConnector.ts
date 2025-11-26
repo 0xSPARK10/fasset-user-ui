@@ -11,6 +11,7 @@ import { ETH_NAMESPACE, XRP_NAMESPACE } from "@/config/networks";
 import { COINS } from "@/config/coin";
 import { INetwork } from "@/types";
 import { WALLET } from "@/constants";
+import { Client } from "xrpl";
 
 export interface IWalletConnectConnector {
     connect: (networks: INetwork[]) => Promise<boolean>;
@@ -281,6 +282,23 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
 
     const request = async({ chainId, method, params }: { chainId: string, method: string, params: any }) => {
         const [namespace, id] = chainId.split(':');
+        if (namespace === XRP_NAMESPACE) {
+            const connectedCoin = localConnectedCoins.find(localCoin => localCoin.address === params.Account);
+            const coin = COINS.find(coin => coin.type === connectedCoin?.type!);
+            const server = coin?.network?.mainnet
+            ? 'wss://s1.ripple.com'
+            : 'wss://s.altnet.rippletest.net:51233';
+            const client = new Client(server);
+            await client.connect();
+            const accountInfo = await client.request({
+                command: 'account_info',
+                account: params.Account
+            });
+            const fee = await client.request({ command: 'fee' });
+            const baseFee = "12";
+            params.Fee = Number(fee.result.drops.base_fee) > Number(baseFee) ? fee.result.drops.base_fee : baseFee;
+            params.Sequence = accountInfo.result.account_data.Sequence;
+        }
         return universalProvider?.client?.request({
             chainId: chainId,
             topic: universalProvider?.session?.topic ?? '',
@@ -288,7 +306,8 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
                 method: method,
                 params: namespace === XRP_NAMESPACE
                     ? {
-                        tx_json: params
+                        tx_json: params,
+                        autofill: false,
                     }
                     : params
             },

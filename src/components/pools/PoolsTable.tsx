@@ -22,7 +22,7 @@ import {
     IconDotsVertical,
     IconGift,
     IconDots,
-    IconChevronRight
+    IconChevronRight, IconInfoHexagon
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import Link from 'next/link'
@@ -906,12 +906,41 @@ export default function PoolsTable({ pools, className, style, type, showAll }: I
             </Drawer>
             <div className="flex items-baseline md:items-center justify-between mb-3 px-[15px] md:px-0">
                 <div className="flex flex-col md:flex-row md:items-center">
-                    <Title
-                        fw={300}
-                        className="text-28 md:text-32 shrink-0 mr-8"
-                    >
-                        {type === TYPE_ACTIVE_POOLS ? t('agents.active_pools_title') : t('agents.remaining_pools_title')}
-                    </Title>
+                    {type === TYPE_ACTIVE_POOLS &&
+                        <div className="flex items-center">
+                            <Title
+                                fw={300}
+                                className="text-28 md:text-32 shrink-0"
+                            >
+                                {t('agents.active_pools_title')}
+                            </Title>
+                            <Popover
+                                withArrow
+                                width="auto"
+                            >
+                                <Popover.Target>
+                                    <IconInfoHexagon
+                                        style={{width: rem(20), height: rem(20)}}
+                                        color="var(--mantine-color-gray-6)"
+                                        className="ml-3 flex-shrink-0 cursor-pointer hover:stroke-gray-600"
+                                    />
+                                </Popover.Target>
+                                <Popover.Dropdown>
+                                    <Text className="text-16 whitespace-pre-line">
+                                        {t('collateral_pools_card.collateral_pool_tooltip_label')}
+                                    </Text>
+                                </Popover.Dropdown>
+                            </Popover>
+                        </div>
+                    }
+                    {type !== TYPE_ACTIVE_POOLS &&
+                        <Title
+                            fw={300}
+                            className="text-28 md:text-32 shrink-0 mr-8"
+                        >
+                            {t('agents.remaining_pools_title')}
+                        </Title>
+                    }
                     {type === TYPE_OTHER_POOLS &&
                         <div className="flex items-center mt-1 md:mt-0">
                             <Chip.Group
