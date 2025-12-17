@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Xumm } from "xumm";
+import { omit } from "lodash-es";
 import type { ResolvedFlow } from "xumm-oauth2-pkce";
 import { WALLET } from "@/constants";
 import { useConnectedCoin } from "@/store/coin";
@@ -188,7 +189,10 @@ export default function XamanConnector(): IXamanConnector {
         if (!xumm || !xumm.payload) return;
 
         const { created } = await xumm.payload.createAndSubscribe(
-            { txjson: params },
+            {
+                txjson: omit(params, ['expirationMinutes']) as any,
+                options: { expire: params.expirationMinutes }
+            },
             (eventMessage) => {
                 if ('signed' in eventMessage.data) {
                     const subscription = pendingSubscriptions.current.get(created.uuid);

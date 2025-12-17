@@ -38,6 +38,7 @@ interface IUnderlyingTransaction {
     paymentReference: string;
     agentName: string;
     lastUnderlyingBlock: string;
+    expirationMinutes: string;
 }
 
 const USER_PROGRESS_FETCH_INTERVAL = 60000;

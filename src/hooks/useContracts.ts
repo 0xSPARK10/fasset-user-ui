@@ -166,7 +166,8 @@ export function useSignTransaction(address: string) {
                 paymentReference,
                 utxos,
                 estimatedFee,
-                lastUnderlyingBlock
+                lastUnderlyingBlock,
+                expirationMinutes
             }: {
                 network: INetwork,
                 userAddress: string,
@@ -176,6 +177,7 @@ export function useSignTransaction(address: string) {
                 utxos?: IUtxo[];
                 estimatedFee?: number;
                 lastUnderlyingBlock: string;
+                expirationMinutes?: string
             }
         ) => {
             if (!provider) return;
@@ -206,6 +208,10 @@ export function useSignTransaction(address: string) {
                 }
                 if (estimatedFee) {
                     params.estimatedFee = estimatedFee;
+                }
+
+                if (expirationMinutes) {
+                    params.expirationMinutes = expirationMinutes;
                 }
 
                 return provider.request({

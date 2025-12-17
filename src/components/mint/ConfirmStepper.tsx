@@ -18,7 +18,6 @@ import {
 import { useTranslation } from "react-i18next";
 import { isError } from "ethers";
 import { ErrorDecoder } from "ethers-decode-error";
-import CryptoJS from "crypto-js";
 import MintWaitingModal from "@/components/modals/MintWaitingModal";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
 import WalletConnectOpenWalletCard from "@/components/cards/WalletConnectOpenWalletCard";
@@ -27,11 +26,11 @@ import { IFAssetCoin, ISelectedAgent, INetwork, IUtxo } from "@/types";
 import { WALLET } from "@/constants";
 import { useAssetManagerAddress, useExecutor } from "@/api/user";
 import { AssetManagerAbi } from "@/abi";
-import { useReserveCollateral, useSignPsbt, useSignTransaction } from "@/hooks/useContracts";
+import { useReserveCollateral, useSignTransaction } from "@/hooks/useContracts";
 import { showErrorNotification } from "@/hooks/useNotifications";
-import { useCrEvent, usePrepareUtxos, useRequestMinting, useUtxosForTransaction } from "@/api/minting";
-import { BTC_NAMESPACE, XRP_NAMESPACE } from "@/config/networks";
-import { fromLots, toNumber } from "@/utils";
+import { useCrEvent, useRequestMinting, useUtxosForTransaction } from "@/api/minting";
+import { XRP_NAMESPACE } from "@/config/networks";
+import { fromLots } from "@/utils";
 import { useNativeBalance, useUnderlyingBalance } from "@/api/balance";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { isMobile } from 'react-device-detect';
@@ -78,10 +77,7 @@ export default function ConfirmStepper({
     const isMounted = useMounted();
     const crEvent = useCrEvent(fAssetCoin.type, txHash!, false);
     const signTransaction = useSignTransaction(fAssetCoin.address!);
-    const signPsbt = useSignPsbt(fAssetCoin.address!);
     const requestMinting = useRequestMinting();
-    const prepareUtxos = usePrepareUtxos();
-    const utxosForTransaction = useUtxosForTransaction();
 
     useEffect(() => {
         if (!isMounted || reserveCollateral.isPending || (mainToken?.connectedWallet === WALLET.LEDGER && currentStep === STEP_WALLET_RESERVATION)) return;
@@ -102,66 +98,30 @@ export default function ConfirmStepper({
             setIsLoading(true);
             setIsLedgerButtonDisabled(true);
 
-            let signTransactionResponse: any;
-            if (fAssetCoin.network.namespace === BTC_NAMESPACE && fAssetCoin.connectedWallet !== WALLET.LEDGER) {
-                const utxosResponse = await prepareUtxos.mutateAsync({
-                    fAsset: fAssetCoin.type,
-                    amount: toNumber(response?.paymentAmount!),
-                    fee: formValues.estimatedFee,
-                    recipient: selectedAgent.underlyingAddress,
-                    changeAddresses: formValues.minterUnderlyingAddresses,
-                    memo: response?.paymentReference?.substring(2)!,
-                    utxos: formValues.utxos
-                });
+            const signTransactionParams: {
+                network: INetwork;
+                userAddress: string;
+                destination: string;
+                amount: string;
+                paymentReference: string;
+                utxos?: IUtxo[];
+                estimatedFee?: number;
+                lastUnderlyingBlock: string;
+                expirationMinutes?: string;
+            } = {
+                network: fAssetCoin.network,
+                destination: response?.paymentAddress!,
+                amount: response?.paymentAmount?.toString()!,
+                paymentReference: response?.paymentReference!,
+                userAddress: fAssetCoin.address!,
+                lastUnderlyingBlock: response?.lastUnderlyingBlock!,
+            };
 
-                signTransactionResponse = await signPsbt.mutateAsync({
-                    network: fAssetCoin.network,
-                    userAddress: fAssetCoin.address!,
-                    psbt: utxosResponse?.psbt!,
-                    utxos: utxosResponse?.selectedUtxos!
-                });
-            } else {
-                const signTransactionParams: {
-                    network: INetwork;
-                    userAddress: string;
-                    destination: string;
-                    amount: string;
-                    paymentReference: string;
-                    utxos?: IUtxo[];
-                    estimatedFee?: number;
-                    lastUnderlyingBlock: string;
-                } = {
-                    network: fAssetCoin.network,
-                    destination: response?.paymentAddress!,
-                    amount: response?.paymentAmount?.toString()!,
-                    paymentReference: response?.paymentReference!,
-                    userAddress: fAssetCoin.address!,
-                    lastUnderlyingBlock: response?.lastUnderlyingBlock!
-                };
-
-                let utxso = utxosForTransaction.data?.selectedUtxos ? utxosForTransaction.data?.selectedUtxos : [];
-                let estimatedFee = utxosForTransaction.data?.estimatedFee ? utxosForTransaction.data?.estimatedFee : 0;
-
-                if (utxso.length === 0 && fAssetCoin.network.namespace === BTC_NAMESPACE && fAssetCoin.connectedWallet === WALLET.LEDGER) {
-                    const utxosForTransactionResponse = await utxosForTransaction.mutateAsync({
-                        fAsset: fAssetCoin?.type!,
-                        xpub: CryptoJS.AES.decrypt(fAssetCoin?.xpub!, process.env.XPUB_SECRET!).toString(CryptoJS.enc.Utf8),
-                        amount: toNumber(response?.paymentAmount!)
-                    });
-
-                    utxso = utxosForTransactionResponse.selectedUtxos;
-                    estimatedFee = utxosForTransactionResponse.estimatedFee;
-                }
-
-                if (utxso.length > 0) {
-                    signTransactionParams.utxos = utxso;
-                }
-                if (estimatedFee !== 0) {
-                    signTransactionParams.estimatedFee = estimatedFee;
-                }
-
-                signTransactionResponse = await signTransaction.mutateAsync(signTransactionParams);
+            if (fAssetCoin.connectedWallet === WALLET.XAMAN) {
+                signTransactionParams.expirationMinutes = response?.expirationMinutes!;
             }
+
+            const signTransactionResponse = await signTransaction.mutateAsync(signTransactionParams);
 
             const txId = fAssetCoin.network.namespace === XRP_NAMESPACE
                 ? signTransactionResponse?.tx_json?.hash
