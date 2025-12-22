@@ -93,7 +93,7 @@ export default function ProofOfReservesCard({ timeData, filter, ecoSystemInfo }:
                                 {formatNumberWithSuffix(ecoSystemInfo?.proofOfReserve?.total ?? 0)}
                             </Text>
                             <Text
-                                fw={300}
+                                fw={400}
                                 c="var(--flr-dark-gray)"
                                 className="text-16 ml-3"
                             >
@@ -123,7 +123,7 @@ export default function ProofOfReservesCard({ timeData, filter, ecoSystemInfo }:
                                 {formatNumberWithSuffix(ecoSystemInfo?.proofOfReserve?.reserve ?? 0)}
                             </Text>
                             <Text
-                                fw={300}
+                                fw={400}
                                 c="var(--flr-dark-gray)"
                                 className="text-16 ml-3"
                             >

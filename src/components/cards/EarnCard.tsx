@@ -1,4 +1,5 @@
 import { Text, Title, SimpleGrid, Badge, Button } from "@mantine/core";
+import Link from "next/link";
 import BlazeSwapAltIcon from "@/components/icons/BlazeSwapAltIcon";
 import EnosysAltIcon from "@/components/icons/EnosysAltIcon";
 import SparkDexIcon from "@/components/icons/SparkDexIcon";
@@ -8,11 +9,12 @@ import StratexIcon from "@/components/icons/StratexIcon";
 import FXrpIcon from "@/components/icons/FXrpIcon";
 import Usdt0Icon from "@/components/icons/Usdt0Icon";
 import StXrpIcon from "@/components/icons/StXrpIcon";
+import MoreMarketsIcon from "@/components/icons/MoreMarketsIcon";
+import UpshiftIcon from "@/components/icons/UpshiftIcon";
 import { useTranslation } from "react-i18next";
 import { IEarn } from "@/types";
 import { FXRP, USDT0 } from "@/config/coin";
-import Link from "next/link";
-import MoreMarketsIcon from "@/components/icons/MoreMarketsIcon";
+
 
 interface IEarnCard {
     earn: IEarn;
@@ -37,6 +39,8 @@ export default function EarnCard({ earn }: IEarnCard) {
                 return <StratexIcon className="rounded-lg" />;
             case 'moremarkets':
                 return <MoreMarketsIcon className="rounded-lg" />
+            case 'upshift':
+                return <UpshiftIcon className="rounded-lg" />
         }
     }
 
@@ -147,7 +151,6 @@ export default function EarnCard({ earn }: IEarnCard) {
                                                 key={pair}
                                                 className={`
                                                     flex items-center 
-                                                    ${properties.coin_type === 'pairs' && index === 0 ? 'border-r' : ''} border-[var(--flr-border-color)] 
                                                     pb-4 px-4
                                                     ${properties.coin_type === 'pairs' ? 'grow' : ''}
                                                 `}
