@@ -148,7 +148,7 @@ export default function LatestTransactionsCard({ className, refreshKey, type }: 
             progress = progress as ITransaction;
             const href = `https://flare.space/dapp/fassets-explorer/tx/${progress.action.toLowerCase() === ACTION_TYPE_MINT ? '0' : '1'}/${progress.txhash}?network=${mainToken?.nativeName?.toLowerCase()?.includes('sgb') ? 'sgb' : 'flr'}`;
             const isTryAgainDisabled = connectedCoins.find(coin => coin.type.toLowerCase() === progress.fasset.toLowerCase()) === undefined;
-            const showTryAgainButton = !isHash && progress.missingUnderlying &&
+            const showTryAgainButton = isHash && progress.missingUnderlying &&
                 progress?.underlyingTransactionData?.paymentReference &&
                 (!mintingTransaction[progress.underlyingTransactionData.paymentReference] ||
                     mintingTransaction[progress.underlyingTransactionData.paymentReference] === false
@@ -169,7 +169,11 @@ export default function LatestTransactionsCard({ className, refreshKey, type }: 
                     </Link>
                 }
                 {isHash &&
-                    <CopyIcon text={progress.txhash} color="var(--mantine-color-gray-5)" />
+                    <CopyIcon
+                        text={progress.txhash}
+                        color="var(--mantine-color-gray-5)"
+                        className="mr-2"
+                    />
                 }
                 {showTryAgainButton &&
                     <Tooltip
