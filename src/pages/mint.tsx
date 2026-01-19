@@ -5,7 +5,8 @@ import {
     Grid,
     Text,
     Anchor,
-    rem, Button
+    rem,
+    Button
 } from "@mantine/core";
 import { IconArrowUpRight } from "@tabler/icons-react";
 import { useScrollIntoView } from "@mantine/hooks";
@@ -123,7 +124,10 @@ export default function Mint() {
                     {t('dashboard.refresh_button')}
                 </Button>
             </div>
-            <LatestTransactionsCard refreshKey={latestTransactionCardKey} />
+            <LatestTransactionsCard
+                refreshKey={latestTransactionCardKey}
+                type="mint"
+            />
         </Container>
     );
 }

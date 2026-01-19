@@ -81,8 +81,8 @@ export default function ProofOfReservesCard({ timeData, filter, ecoSystemInfo }:
                         </Title>
                         <div className="flex items-center mt-2">
                             <FXrpIcon
-                                width="40"
-                                height="40"
+                                width="24"
+                                height="24"
                                 className="flex-shrink-0 mr-2"
                             />
                             <Text

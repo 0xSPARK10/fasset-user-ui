@@ -28,7 +28,7 @@ import { useAssetManagerAddress, useExecutor } from "@/api/user";
 import { AssetManagerAbi } from "@/abi";
 import { useReserveCollateral, useSignTransaction } from "@/hooks/useContracts";
 import { showErrorNotification } from "@/hooks/useNotifications";
-import { useCrEvent, useRequestMinting, useUtxosForTransaction } from "@/api/minting";
+import { useCrEvent, useRequestMinting } from "@/api/minting";
 import { XRP_NAMESPACE } from "@/config/networks";
 import { fromLots } from "@/utils";
 import { useNativeBalance, useUnderlyingBalance } from "@/api/balance";
@@ -122,7 +122,6 @@ export default function ConfirmStepper({
             }
 
             const signTransactionResponse = await signTransaction.mutateAsync(signTransactionParams);
-
             const txId = fAssetCoin.network.namespace === XRP_NAMESPACE
                 ? signTransactionResponse?.tx_json?.hash
                 : signTransactionResponse.txid;

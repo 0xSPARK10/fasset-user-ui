@@ -274,7 +274,7 @@ export default function UnderlyingBalanceCard({ className, fAssetCoin }: IUnderl
                             >
                                 {underlyingBalance.data?.accountInfo?.depositAuth
                                     ? t('underlying_balance_card.limited_deposit_auth_settings_label')
-                                    : t(t('underlying_balance_card.limited_destination_tags_settings_label'))
+                                    : t('underlying_balance_card.limited_destination_tags_settings_label')
                                 }
                             </Text>
                         </div>

@@ -7,9 +7,9 @@ import UniversalProvider, { ConnectParams } from "@walletconnect/universal-provi
 import { ethers, JsonRpcSigner } from "ethers";
 import { getAccountsFromNamespaces } from "@walletconnect/utils";
 import { useConnectedCoin } from "@/store/coin";
-import { ETH_NAMESPACE, XRP_NAMESPACE } from "@/config/networks";
+import { ETH_NAMESPACE, HYPERLIQUID_EVM, HYPERLIQUID_EVM_TESTNET, XRP_NAMESPACE } from "@/config/networks";
 import { COINS } from "@/config/coin";
-import { INetwork } from "@/types";
+import { CoinEnum, ICoin, INetwork } from "@/types";
 import { WALLET } from "@/constants";
 import { Client } from "xrpl";
 
@@ -39,6 +39,8 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
     const queryClient = useQueryClient();
     const router = useRouter();
     const connectedWallet = session ? session.peer.metadata.name : undefined;
+    const mainToken = COINS.find(coin => !coin.isFAssetCoin && !coin.isStableCoin && coin.enabled && coin.isMainToken);
+    const isBridgeEnabled = [CoinEnum.C2FLR, CoinEnum.FLR].includes(mainToken?.type!);
 
     const connect = async(networks: INetwork[]) => {
         try {
@@ -51,7 +53,13 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
                 .forEach(coin => removeConnectedCoin(coin.address!));
 
             const connectionParams: ConnectParams = { optionalNamespaces: {} };
-            networks.forEach(network => {
+            const localNetworks = [...networks];
+
+            if (isBridgeEnabled) {
+                localNetworks.push(mainToken?.network?.mainnet ? HYPERLIQUID_EVM : HYPERLIQUID_EVM_TESTNET);
+            }
+
+            localNetworks.forEach(network => {
                 let existingNamespaces = connectionParams.optionalNamespaces![network.namespace] || {};
                 if ('chains' in existingNamespaces && !existingNamespaces.chains.includes(getFullNamespace(network))) {
                     existingNamespaces.chains.push(getFullNamespace(network));
@@ -94,6 +102,7 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
                 });
                 setSession(providerSession);
                 web3Modal?.closeModal();
+                await router.push((router.query?.redirect ?? '/mint') as string);
                 return true;
             }
 
@@ -141,10 +150,11 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
                     icons: ['https://avatars.githubusercontent.com/u/37784886']
                 },
             });
+
             let chains: string[] = [];
-            COINS.forEach(c => {
-                if (c.enabled) {
-                    chains = [...chains, getFullNamespace(c.network)]
+            COINS.forEach(coin => {
+                if (coin.enabled) {
+                    chains = [...chains, getFullNamespace(coin.network)]
                 }
             });
 
@@ -299,6 +309,7 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
             params.Fee = Number(fee.result.drops.base_fee) > Number(baseFee) ? fee.result.drops.base_fee : baseFee;
             params.Sequence = accountInfo.result.account_data.Sequence;
         }
+
         return universalProvider?.client?.request({
             chainId: chainId,
             topic: universalProvider?.session?.topic ?? '',
@@ -314,7 +325,14 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
         });
     }
 
-    const getSigner = async() => {
+    const getSigner = async (token?: ICoin) => {
+        const chainId = (token || mainToken)?.network?.chainId;
+        const namespace = (token || mainToken)?.network?.namespace;
+
+        if (namespace && chainId !== universalProvider?.namespaces?.[namespace].defaultChain) {
+            universalProvider?.setDefaultChain(`${namespace}:${chainId}`);
+        }
+
         return new ethers.BrowserProvider(universalProvider!).getSigner();
     }
 

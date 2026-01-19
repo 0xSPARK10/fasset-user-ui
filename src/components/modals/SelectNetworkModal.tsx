@@ -94,7 +94,7 @@ export default function SelectNetworkModal({ opened, onClose, wallet }: ISelectN
 
         if (currentStep === STEP_CONNECT_LEDGER) {
             setCurrentNetworkToConnect(undefined);
-            await disconnect(WALLET.LEDGER, router.pathname === '/mint');
+            await disconnect(WALLET.LEDGER, ['/mint', '/bridge'].includes(router.pathname));
         }
 
         setCurrentStep(STEP_CHOOSE_NETWORK);
@@ -127,6 +127,7 @@ export default function SelectNetworkModal({ opened, onClose, wallet }: ISelectN
                 queryClient.clear();
                 await queryClient.invalidateQueries();
                 onClose([], true);
+                await router.push((router.query?.redirect ?? '/mint') as string);
             }
         }
     }

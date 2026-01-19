@@ -45,21 +45,6 @@ export default function ChainSwitcher({ className }: IChainSwitcher) {
             }
         });
 
-    const getUrl = (coin: ICoin) => {
-        switch (coin.type) {
-            case CoinEnum.C2FLR:
-                return process.env.C2FLR_URL;
-            case CoinEnum.CFLR:
-                return process.env.CFLR_URL;
-            case CoinEnum.FLR:
-                return process.env.FLR_URL;
-            case CoinEnum.SGB:
-                return process.env.SGB_URL;
-            default:
-                return '';
-        }
-    }
-
     return (
         <Menu
             radius={16}
@@ -100,19 +85,21 @@ export default function ChainSwitcher({ className }: IChainSwitcher) {
                     </Button>
                 </div>
             </Menu.Target>
-            <Menu.Dropdown>
-                {coins.map(coin => (
-                    <Menu.Item
-                        component="a"
-                        href={coin.url}
-                        leftSection={coin?.icon({ width: '30', height: '30' })}
-                        fw={400}
-                        key={coin.type}
-                    >
-                        <span className="hidden sm:block">{coin?.network?.shortName}</span>
-                    </Menu.Item>
-                ))}
-            </Menu.Dropdown>
+            {coins.length > 0 &&
+                <Menu.Dropdown>
+                    {coins.map(coin => (
+                        <Menu.Item
+                            component="a"
+                            href={coin.url}
+                            leftSection={coin?.icon({ width: '30', height: '30' })}
+                            fw={400}
+                            key={coin.type}
+                        >
+                            <span className="hidden sm:block">{coin?.network?.shortName}</span>
+                        </Menu.Item>
+                    ))}
+                </Menu.Dropdown>
+            }
         </Menu>
     )
 }

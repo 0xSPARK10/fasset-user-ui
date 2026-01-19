@@ -62,7 +62,11 @@ const nextConfig = {
         SGB_URL: process.env.SGB_URL,
         CFLR_URL: process.env.CFLR_URL,
         C2FLR_URL: process.env.C2FLR_URL,
-        XAMAN_API_KEY: process.env.XAMAN_API_KEY
+        XAMAN_API_KEY: process.env.XAMAN_API_KEY,
+        BRIDGE_FXRP_ADDRESS: process.env.BRIDGE_FXRP_ADDRESS,
+        BRIDGE_FXRP_OFT_ADAPTER_ADDRESS: process.env.BRIDGE_FXRP_OFT_ADAPTER_ADDRESS,
+        BRIDGE_HYPE_FXRP_OFT_ADAPTER_ADDRESS: process.env.BRIDGE_HYPE_FXRP_OFT_ADAPTER_ADDRESS,
+        HYPERLIQUID_COMPOSER_ADDRESS: process.env.HYPERLIQUID_COMPOSER_ADDRESS
     },
     output: "standalone"
 };

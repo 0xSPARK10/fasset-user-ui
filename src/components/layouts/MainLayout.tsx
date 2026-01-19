@@ -37,7 +37,7 @@ export default function Layout({ children, ...props }: ILayout) {
     const [redirectBackUrl, setRedirectBackUrl] = useState<string>();
 
     const { t } = useTranslation();
-    const { walletConnectConnector, isConnected, connectedCoins, mainToken } = useWeb3();
+    const { walletConnectConnector, isConnected, connectedCoins, mainToken, isBridgeEnabled } = useWeb3();
     const { isMintModalActive, isRedeemModalActive } = useModalState();
 
     const isTestnet = process.env.NETWORK === 'testnet';
@@ -71,7 +71,7 @@ export default function Layout({ children, ...props }: ILayout) {
 
         const routeChangeStart = () => {
             fassetState.refetch();
-            if (!isConnected && window.history.state.as !== '/mint') {
+            if (!isConnected && (window.history.state?.as !== '/mint' || window.history.state?.as !== '/bridge')) {
                 setRedirectBackUrl(window.history.state?.as?.replace(router.basePath, '') ?? '');
             }
         }
@@ -163,8 +163,8 @@ export default function Layout({ children, ...props }: ILayout) {
                                     >
                                         {mainToken?.network?.mainnet
                                             ? (mainToken?.type === CoinEnum.SGB
-                                                    ? t('layout.header.songbird_label')
-                                                    : t('layout.header.flare_label')
+                                                ? t('layout.header.songbird_label')
+                                                : t('layout.header.flare_label')
                                             )
                                             : t('layout.header.beta_label')
                                         }
@@ -191,6 +191,14 @@ export default function Layout({ children, ...props }: ILayout) {
                             >
                                 {t('layout.header.agents_label')}
                             </Link>
+                            {isBridgeEnabled &&
+                                <Link
+                                    href="/bridge"
+                                    className={`text-14 font-light mr-8 ${router.pathname.includes('bridge') ? 'underline underline-offset-4' : ''}`}
+                                >
+                                    {t('layout.header.bridge_label')}
+                                </Link>
+                            }
                         </div>
                         <div className="flex items-center">
                             <ChainSwitcher className="mr-2 sm:mr-5" />
@@ -284,6 +292,15 @@ export default function Layout({ children, ...props }: ILayout) {
                         >
                             {t('layout.header.agents_label')}
                         </Link>
+                        {isBridgeEnabled  &&
+                            <Link
+                                href="/bridge"
+                                className={`font-light text-32 mb-8 ${router.pathname.includes('bridge') ? 'underline underline-offset-8' : ''}`}
+                                onClick={() => setIsMenuOpened(false)}
+                            >
+                                {t('layout.header.bridge_label')}
+                            </Link>
+                        }
                     </div>
                 </Drawer>
             </AppShell>

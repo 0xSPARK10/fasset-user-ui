@@ -36,7 +36,7 @@ export default function SelectWalletButton({ wallet, disabled = false, selectNet
         mainToken
     } = useWeb3();
     const { t } = useTranslation();
-    const { closeConnectWalletModal, openConnectWalletModalCallback, openConnectWalletModal } = useConnectWalletModal();
+    const { closeConnectWalletModal, openConnectWalletModal } = useConnectWalletModal();
     const router = useRouter();
     const queryClient = useQueryClient();
     const buttonSize = useElementSize();
@@ -105,7 +105,7 @@ export default function SelectWalletButton({ wallet, disabled = false, selectNet
                     return;
                 }
                 if (selectNetwork) {
-                    closeConnectWalletModal(undefined, false);
+                    closeConnectWalletModal(false);
                     setIsSelectNetworkModalActive(true);
                     return;
                 }
@@ -121,12 +121,7 @@ export default function SelectWalletButton({ wallet, disabled = false, selectNet
                 await connect(wallet.id, []);
                 queryClient.clear();
                 await queryClient.invalidateQueries();
-                if (openConnectWalletModalCallback) {
-                    openConnectWalletModalCallback(wallet.id);
-                }
-                if (wallet.id === WALLET.XAMAN) {
-                    closeConnectWalletModal();
-                }
+                closeConnectWalletModal();
             } else {
                 await disconnect(wallet.id, false);
             }
@@ -145,7 +140,6 @@ export default function SelectWalletButton({ wallet, disabled = false, selectNet
         setIsSelectNetworkModalActive(false);
         if (networks.length === 0) {
             if (isConnected && wallet.id === WALLET.LEDGER && router.pathname === '/connect') {
-                await router.push('/mint');
                 return;
             }
 
@@ -159,11 +153,7 @@ export default function SelectWalletButton({ wallet, disabled = false, selectNet
 
         try {
             await connect(wallet.id, networks);
-            if (openConnectWalletModalCallback) {
-                openConnectWalletModalCallback(wallet.id);
-            }
-
-            const connectedOnlyToFlrNetwork = networks.length === 1 && mainToken?.network?.namespace === networks[0].namespace && mainToken?.network?.chainId === networks[0].chainId
+            const connectedOnlyToFlrNetwork = networks.length === 1 && mainToken?.network?.namespace === networks[0].namespace && mainToken?.network?.chainId === networks[0].chainId;
             if (connectedOnlyToFlrNetwork) {
                 openConnectWalletModal();
             }

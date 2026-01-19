@@ -15,19 +15,20 @@ import { useSubmitTx } from "@/api/minting";
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { useConnectedCoin } from "@/store/coin";
 import { BTC_NAMESPACE, NETWORK_BTC, NETWORK_DOGE, XRP_NAMESPACE } from "@/config/networks";
-import { INetwork } from "@/types";
+import { ICoin, INetwork } from "@/types";
 import { toNumber } from "@/utils";
 import { Network } from "bitcoinjs-lib/src/networks";
 
 export interface ILedgerConnector {
     connect: (network: INetwork) => Promise<boolean>;
     disconnect: () => Promise<void>;
-    getSigner: (address: string) => Promise<VoidSigner>;
+    getSigner: (token?: ICoin) => Promise<VoidSigner>;
     request: ({ chainId, method, params }: { chainId: string, method: string, params: any }) => Promise<any>;
 }
 
 export default function LedgerConnector(): ILedgerConnector {
     const { addConnectedCoin, localConnectedCoins, removeConnectedCoin } = useConnectedCoin();
+    const mainToken = COINS.find(coin => !coin.isFAssetCoin && !coin.isStableCoin && coin.enabled && coin.isMainToken);
     const submitTx = useSubmitTx();
 
     const isAppOpened = async (transport: Transport, appName: string) => {
@@ -43,6 +44,7 @@ export default function LedgerConnector(): ILedgerConnector {
     const execute = async<T> (callback: (transport: Transport) => Promise<T>, appName: string) => {
         const transport = await TransportWebHID.create();
         const isOpened = await isAppOpened(transport, appName);
+
         if (!isOpened) {
             transport?.close();
             throw new Error(i18next.t(`ledger.errors.${appName.toLowerCase().replace(' ', '_')}_app_not_running_error`), { cause: 'ledger' });
@@ -141,10 +143,16 @@ export default function LedgerConnector(): ILedgerConnector {
             .forEach(coin => removeConnectedCoin(coin.address!));
     }
 
-    const getSigner = async(address: string) => {
-        const coinType = localConnectedCoins.find(coin => coin.address === address)!.type;
-        const coin = COINS.find(coin => coin.type === coinType);
-        const provider = new JsonRpcProvider(coin?.network.rpcUrl!);
+    const getSigner = async(token?: ICoin) => {
+        if (!token) {
+            token = mainToken;
+            const connectedCoin = localConnectedCoins.find(coin => coin.type === token?.type);
+            if (connectedCoin && token) {
+                token.address = connectedCoin.address;
+            }
+        }
+        const address = token?.address;
+        const provider = new JsonRpcProvider(token?.network.rpcUrl!);
         const signer = new VoidSigner(address!, provider);
 
         signer.signTransaction = async(transaction: TransactionRequest) => {
@@ -156,8 +164,8 @@ export default function LedgerConnector(): ILedgerConnector {
 
             const signature: any = await execute(async (transport: Transport) => {
                 const eth = new AppEth(transport);
-                return eth!.signTransaction(coin?.bipPath!, serializedTx, resolution);
-            }, coin?.network.ledgerApp!);
+                return eth!.signTransaction(token?.bipPath!, serializedTx, resolution);
+            }, token?.network.ledgerApp!);
 
             signature.r = "0x" + signature.r;
             signature.s = "0x" + signature.s;

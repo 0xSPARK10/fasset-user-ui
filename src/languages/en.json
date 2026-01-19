@@ -160,6 +160,61 @@
         "view_button": "View",
         "view_on_explorer_button": "View on Explorer"
     },
+    "bridge": {
+        "hyperliquid_trading_platform_label": "Want to go to Hyperliquid trading platform? Follow this<a>link<icon></icon></a>",
+        "latest_transactions_subtitle": "Displaying all transactions in last 7 days.",
+        "latest_transactions_title": "Latest transactions",
+        "title": "Hyperliquid Bridge"
+    },
+    "bridge_balance_card": {
+        "bridge_to_hype_button": "Bridge to HYPE",
+        "flr_address_label": "FLR Address",
+        "sgb_address_label": "SGB Address",
+        "view_on_explorer_button": "View on Explorer"
+    },
+    "bridge_modal": {
+        "approve_step_description": "Confirm the transaction to approve OFT adapter to spend your FXRP and to approve the Composer.",
+        "approve_step_label": "1. Approve OFT Adapter",
+        "bridge_flare_step_description": "Confirm the send transaction to transfer your {{fAsset}} from the Hyperliquid to Flare Network.",
+        "bridge_flare_step_label": "Bridge {{fAsset}}",
+        "bridge_hyperliquid_step_description": "Confirm the send transaction to transfer your {{fAsset}} from the Flare Network to Hyperliquid.",
+        "bridge_hyperliquid_step_label": "2. Bridge {{fAsset}}",
+        "confirm_step_description": "Please open your wallet app and confirm dialogue to complete the process.",
+        "confirm_step_title": "Confirm in your wallet app",
+        "error_insufficient_balance_label": "Insufficient {{tokenName}} for LayerZero cross-chain fee",
+        "finished_modal": {
+            "confirm_button": "OK",
+            "description_flare_label": "Bridge completed. Your {{fAsset}} is now available on Flare Network.",
+            "description_hyperliquid_label": "Bridge completed. Your {{fAsset}} is now available on {{bridgeType}}.",
+            "title": "Finished"
+        },
+        "flare_title": "Bridge {{fAsset}} to Flare Network",
+        "form": {
+            "amount_label": "Amount",
+            "amount_step_title": "I want to bridge",
+            "available_label": "{{amount}} available",
+            "cross_chain_fee_label": "LayerZero cross-chain fee",
+            "fees_label": "Fees",
+            "hyper_core_label": "Hyperliquid",
+            "hyper_evm_label": "HyperEVM",
+            "max_button": "Max",
+            "to_label": "to"
+        },
+        "hyperliquid_title": "Bridge {{fAsset}} to Hyperliquid",
+        "next_button": "Next",
+        "waiting_modal": {
+            "description_label": "This action may take up to 2 minutes.",
+            "title": "Waiting"
+        }
+    },
+    "bridge_underlying_balance_card": {
+        "bridge_to_flare_button": "Bridge to Flare",
+        "hype_label": "HYPE",
+        "hyper_core_label": "Hyperliquid - Trading platform",
+        "hyper_evm_label": "HyperEVM",
+        "know_more_label": "Want to know more about Hyperliquid? Follow this <a>link<icon></icon></a>",
+        "title": "Hyperliquid"
+    },
     "claim_rewards_from_pool_modal": {
         "confirm_step_description": "Please open your wallet app and confirm the dialogue to complete the process.",
         "confirm_step_title": "Confirm in wallet app",
@@ -220,6 +275,7 @@
             "testnet_label": "Testnet",
             "title": "Before you start"
         },
+        "bridge_title": "Bridge your FAssets",
         "connect_button": "Connect Wallet",
         "subtitle": "Lets connect first...",
         "title": "Mint your FAssets"
@@ -415,6 +471,9 @@
         "defaulted_label": "Defaulted",
         "empty_label": "No transactions available",
         "finished_label": "Finished",
+        "flare_label": "Flare",
+        "hyper_core_label": "Hyperliquid",
+        "hyper_evm_label": "HyperEVM",
         "in_progress_label": "In progress",
         "mint_label": "Mint",
         "partial_redeem_label": "Partial Redeem",
@@ -422,6 +481,7 @@
         "requested_label": "Requested",
         "table": {
             "amount_label": "Amount",
+            "bridge_label": "Bridge",
             "date_label": "Date/Time",
             "status_label": "Status",
             "ticket_id_label": "Ticket ID",
@@ -442,6 +502,7 @@
         "header": {
             "agents_label": "Pools",
             "beta_label": "beta",
+            "bridge_label": "Bridge",
             "flare_label": "Flare",
             "home_label": "Home",
             "mint_label": "Mint",
@@ -669,8 +730,11 @@
             "adjust_amount_label": "Adjust amount of lots.",
             "balance_label": "Your balance is {{balance}} {{token}} ({{lots}} lots).",
             "deposit_label": "Deposit",
+            "destination_address_label": "Destination address (XRPL)",
+            "edit_button": "Edit",
             "executor_fee_label": "Executor fee",
             "fees_label": "Fees",
+            "invalid_xrp_address_label": "Invalid XRPL address",
             "lots_allowed_limit_label": "The FAsset system allows you to redeem a maximum of {{lots}} lots at a time.",
             "lots_label": "Lot(s)",
             "lots_limit_label": "Max {{lots}} to redeem.",

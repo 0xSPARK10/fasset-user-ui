@@ -403,7 +403,6 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                                     fw={400}
                                 />
                             </div>
-
                         </div>
                     }
                     {fAssetCoins.map((fAssetCoin) => (
@@ -469,25 +468,18 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                                             {t('balance_card.redeem_button')}
                                         </Button>
                                     </Tooltip>
-                                    : <Tooltip
-                                        label={t('balance_card.connect_tooltip')}
-                                        withArrow
-                                        disabled={fAssetCoin.enabled}
+                                    : <Button
+                                        variant="gradient"
+                                        size="xs"
+                                        radius="xl"
+                                        fw={400}
+                                        onClick={() => {
+                                            activeFAssetCoin.current = fAssetCoin;
+                                            setIsRedeemModalActive(true);
+                                        }}
                                     >
-                                        <Button
-                                            variant="gradient"
-                                            size="xs"
-                                            radius="xl"
-                                            fw={400}
-                                            disabled={!fAssetCoin.enabled}
-                                            onClick={() => {
-                                                activeFAssetCoin.current = fAssetCoin;
-                                                setIsRedeemModalActive(true);
-                                            }}
-                                        >
-                                            {t('balance_card.redeem_button')}
-                                        </Button>
-                                    </Tooltip>
+                                        {t('balance_card.redeem_button')}
+                                    </Button>
                                 }
                             </div>
                         </div>
@@ -557,23 +549,20 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                     }}
                 />
             }
-            {activeFAssetCoin.current && localMainToken &&
-                <RedeemModal
-                    opened={isRedeemModalActive}
-                    fAssetCoin={activeFAssetCoin.current}
-                    flareCoin={localMainToken}
-                    onClose={(fetchProgress: boolean) => {
-                        setIsRedeemModalActive(false);
-                        if (activeFAssetCoin.current) {
-                            activeFAssetCoin.current = undefined;
-                        }
+            <RedeemModal
+                opened={isRedeemModalActive}
+                fAssetCoin={activeFAssetCoin.current}
+                onClose={(fetchProgress: boolean) => {
+                    setIsRedeemModalActive(false);
+                    if (activeFAssetCoin.current) {
+                        activeFAssetCoin.current = undefined;
+                    }
 
-                        if (fetchProgress) {
-                            userProgress.refetch();
-                        }
-                    }}
-                />
-            }
+                    if (fetchProgress) {
+                        userProgress.refetch();
+                    }
+                }}
+            />
         </Paper>
     );
 }

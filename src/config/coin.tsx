@@ -16,6 +16,8 @@ import UsdxIcon from "@/components/icons/UsdxIcon";
 import C2FlrIcon from "@/components/icons/C2FlrIcon";
 import Usdt0Icon from "@/components/icons/Usdt0Icon";
 import {
+    HYPERLIQUID_EVM,
+    HYPERLIQUID_EVM_TESTNET,
     NETWORK_BTC,
     NETWORK_BTC_TESTNET,
     NETWORK_DOGE,
@@ -28,6 +30,8 @@ import {
     NETWORK_XRPL_TESTNET
 } from "@/config/networks";
 import { BIP44_PATH, WALLET } from "@/constants";
+import HypeIcon from "@/components/icons/HypeIcon";
+import FXrpHypeEVMIcon from "@/components/icons/FXrpHypeEVMIcon";
 
 const enabledUnderlyingFassets = process.env.ENABLED_UNDERLYING_FASSETS && process.env.ENABLED_UNDERLYING_FASSETS.length > 0
     ? process.env.ENABLED_UNDERLYING_FASSETS.split(',').map(fasset => fasset.toLowerCase())
@@ -261,6 +265,65 @@ export const USDT0: ICoin = {
     decimals: 2
 }
 
+export const HYPE: ICoin = {
+    type: CoinEnum.HYPE,
+    nativeName: 'HYPE',
+    icon: (props) => <HypeIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    lotSize: 1,
+    minWalletBalance: 0,
+    network: HYPERLIQUID_EVM,
+    enabled: isMainnet,
+    isFAssetCoin: false,
+    supportedWallets: [],
+    decimals: 2,
+    bipPath: BIP44_PATH.MAINNET.ETH
+}
+
+export const TEST_HYPE: ICoin = {
+    type: CoinEnum.HYPE,
+    nativeName: 'HYPE',
+    icon: (props) => <HypeIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    lotSize: 1,
+    minWalletBalance: 0,
+    network: HYPERLIQUID_EVM_TESTNET,
+    enabled: !isMainnet,
+    isFAssetCoin: false,
+    supportedWallets: [],
+    decimals: 2,
+    bipPath: BIP44_PATH.TESTNET.ETH
+}
+
+export const FTEST_XRP_HYPE: ICoin = {
+    type: CoinEnum.FTestXRP,
+    nativeName: 'FTestXRP',
+    icon: (props) => <FXrpHypeEVMIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    nativeIcon: (props) => <HypeIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    lotSize: testnetChain === 'C2FLR' ? 10 : 20,
+    minWalletBalance: 0,
+    network: HYPERLIQUID_EVM_TESTNET,
+    enabled: !isMainnet && enabledUnderlyingFassets.includes(CoinEnum.FTestXRP.toLowerCase()),
+    isFAssetCoin: false,
+    supportedWallets: [],
+    decimals: 2,
+    bipPath: BIP44_PATH.TESTNET.ETH
+}
+
+export const FXRP_HYPE: ICoin = {
+    type: CoinEnum.FXRP,
+    nativeName: 'FXRP',
+    icon: (props) => <FXrpHypeEVMIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    nativeIcon: (props) => <HypeIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    lotSize: 10,
+    minWalletBalance: 0,
+    network: HYPERLIQUID_EVM,
+    enabled: isMainnet && enabledUnderlyingFassets.includes(CoinEnum.FXRP.toLowerCase()),
+    isFAssetCoin: false,
+    supportedWallets: [],
+    decimals: 2,
+    bipPath: BIP44_PATH.MAINNET.ETH
+}
+
+
 export const COINS = [
     CFLR,
     C2FLR,
@@ -277,6 +340,11 @@ export const COINS = [
     FDOGE,
     USDX,
     USDT0
-]
+];
+
+export const BRIDGE_COINS = [
+    FTEST_XRP_HYPE,
+    FXRP_HYPE
+];
 
 

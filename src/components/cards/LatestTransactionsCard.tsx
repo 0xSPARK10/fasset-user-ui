@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { IconInfoHexagon } from "@tabler/icons-react";
+import { IconArrowNarrowRight, IconInfoHexagon } from "@tabler/icons-react";
 import Link from "next/link";
 import { Text, Badge, Table, rem, Popover, lighten, Button, Tooltip } from "@mantine/core";
 import { useInterval, useMediaQuery } from "@mantine/hooks";
@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import moment from "moment";
 import FAssetTable, { IFAssetColumn } from "@/components/elements/FAssetTable";
 import { useUserProgress } from "@/api/user";
-import { IUserProgress } from "@/types";
+import { IUserProgress, IOFTHistory } from "@/types";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { COINS } from "@/config/coin";
 import CopyIcon from "@/components/icons/CopyIcon";
@@ -15,10 +15,16 @@ import { toNumber, truncateString } from "@/utils";
 import { groupBy, map, orderBy } from "lodash-es";
 import RetryMintModal from "@/components/modals/RetryMintModal";
 import classes from "@/styles/components/cards/LatestTransactionsCard.module.scss";
+import { useUserHistory } from "@/api/oft";
+import { EndpointId } from "@layerzerolabs/lz-definitions";
+import { HYPERLIQUID_EVM, HYPERLIQUID_EVM_TESTNET } from "@/config/networks";
+import FXrpHypeEVMIcon from "@/components/icons/FXrpHypeEVMIcon";
+import FXrpHypeCoreIcon from "@/components/icons/FXrpHypeCoreIcon";
 
 interface ILatestTransactionsCard {
     className?: string;
     refreshKey?: number;
+    type: 'mint' | 'bridge';
 }
 
 interface ITransaction extends IUserProgress {
@@ -45,24 +51,36 @@ const USER_PROGRESS_FETCH_INTERVAL = 60000;
 
 const ACTION_TYPE_MINT = 'mint';
 const ACTION_TYPE_REDEEM = 'redeem';
+const ACTION_TYPE_SEND = 'send';
+const ACTION_TYPE_RECEIVE = 'receive';
 
-export default function LatestTransactionsCard({ className, refreshKey }: ILatestTransactionsCard) {
-    const [transactions, setTransactions] = useState<ITransaction[]>();
+export default function LatestTransactionsCard({ className, refreshKey, type }: ILatestTransactionsCard) {
+    const [transactions, setTransactions] = useState<ITransaction[] | IOFTHistory[]>();
     const [mintingTransaction, setMintingTransaction] = useState<{[id: string]: boolean}>({});
     const [isRetryMintModalActive, setIsRetryMintModalActive] = useState<boolean>(false);
     const { t } = useTranslation();
     const { mainToken, connectedCoins } = useWeb3();
+    const isMint = type === 'mint';
 
     const underlyingTransaction = useRef<IUnderlyingTransaction>();
     const userProgressFetchInterval = useInterval(() => {
-        userProgress.refetch();
+        if (isMint) {
+            userProgress.refetch();
+        } else {
+            oftUserHistory.refetch();
+        }
     }, USER_PROGRESS_FETCH_INTERVAL);
 
-    const userProgress = useUserProgress(mainToken?.address ?? '', mainToken !== undefined);
+    const userProgress = useUserProgress(mainToken?.address ?? '', mainToken !== undefined && isMint);
+    const oftUserHistory = useUserHistory(mainToken?.address ?? '', mainToken !== undefined && !isMint);
     const isMobile = useMediaQuery('(max-width: 768px)');
 
     useEffect(() => {
-        userProgress.refetch();
+        if (isMint) {
+            userProgress.refetch();
+        } else {
+            oftUserHistory.refetch();
+        }
     }, [refreshKey]);
 
     useEffect(() => {
@@ -94,192 +112,256 @@ export default function LatestTransactionsCard({ className, refreshKey }: ILates
         setTransactions(items);
     }, [userProgress.data]);
 
-    const renderTimestamp = (progress: ITransaction) => {
-        const isTryAgainButtonVisible = progress.missingUnderlying &&
-            progress?.underlyingTransactionData?.paymentReference &&
-            (!mintingTransaction[progress.underlyingTransactionData.paymentReference] ||
-                mintingTransaction[progress.underlyingTransactionData.paymentReference] === false
-            );
+    const renderTimestamp = (progress: ITransaction | IOFTHistory) => {
+        if (isMint) {
+            const item = progress as ITransaction;
+            const isTryAgainButtonVisible = item.missingUnderlying &&
+                item?.underlyingTransactionData?.paymentReference &&
+                (!mintingTransaction[item.underlyingTransactionData.paymentReference] ||
+                    mintingTransaction[item.underlyingTransactionData.paymentReference] === false
+                );
 
-        if (isTryAgainButtonVisible) {
-            return <div className="flex min-h-[30px] items-center">
-                <Text
-                    className="text-14"
-                    fw={400}
-                >
-                    {moment(progress.timestamp).format('DD.MM.YYYY HH:mm')}
-                </Text>
-            </div>
+            if (isTryAgainButtonVisible) {
+                return <div className="flex min-h-[30px] items-center">
+                    <Text
+                        className="text-14"
+                        fw={400}
+                    >
+                        {moment(progress.timestamp).format('DD.MM.YYYY HH:mm')}
+                    </Text>
+                </div>
+            }
         }
-
 
         return <Text
             className="text-14"
             fw={400}
         >
-            {moment(progress.timestamp).format('DD.MM.YYYY HH:mm')}
+            {moment(Number(progress.timestamp)).format('DD.MM.YYYY HH:mm')}
         </Text>;
     }
 
-    const renderTransaction = (progress: ITransaction) => {
-        let href = progress.action.toLowerCase() === ACTION_TYPE_REDEEM
-            ? `${mainToken?.network.explorerTxUrl}/${progress.txhash}`
-            : undefined;
+    const renderTransaction = (progress: ITransaction | IOFTHistory) => {
+        const isHash = /^0x[a-fA-F0-9]{64}$/.test(progress.txhash) || /^[A-F0-9]{64}$/.test(progress.txhash);
 
-        if (href === undefined) {
-            const coin = COINS.find(coin => coin.type.toLowerCase() === progress.fasset.toLowerCase());
-            href = coin
-                ? `${coin?.network?.explorerTxUrl}/${progress.txhash}`
-                : '#';
+        if (isMint) {
+            progress = progress as ITransaction;
+            const href = `https://flare.space/dapp/fassets-explorer/tx/${progress.action.toLowerCase() === ACTION_TYPE_MINT ? '0' : '1'}/${progress.txhash}?network=${mainToken?.nativeName?.toLowerCase()?.includes('sgb') ? 'sgb' : 'flr'}`;
+            const isTryAgainDisabled = connectedCoins.find(coin => coin.type.toLowerCase() === progress.fasset.toLowerCase()) === undefined;
+            const showTryAgainButton = !isHash && progress.missingUnderlying &&
+                progress?.underlyingTransactionData?.paymentReference &&
+                (!mintingTransaction[progress.underlyingTransactionData.paymentReference] ||
+                    mintingTransaction[progress.underlyingTransactionData.paymentReference] === false
+                );
+
+            return <div className={`flex max-[768px]:flex-wrap text-wrap items-center ${className ?? ''}`}>
+                {!isHash
+                    ? <span>{
+                        progress.defaulted ? t('latest_transactions_card.defaulted_label') : progress.txhash}
+                    </span>
+                    : <Link
+                        href={href}
+                        target="_blank"
+                        className="text-14 underline font-normal"
+                    >
+                        <span className="hidden sm:block">{progress.txhash}</span>
+                        <span className="block sm:hidden">{truncateString(progress.txhash, 7, 7)}</span>
+                    </Link>
+                }
+                {isHash &&
+                    <CopyIcon text={progress.txhash} color="var(--mantine-color-gray-5)" />
+                }
+                {showTryAgainButton &&
+                    <Tooltip
+                        label={t('latest_transactions_card.connect_tooltip')}
+                        withArrow
+                        disabled={!isTryAgainDisabled}
+                    >
+                        <Button
+                            variant="gradient"
+                            size="xs"
+                            radius="xl"
+                            fw={400}
+                            disabled={isTryAgainDisabled}
+                            onClick={() => {
+                                underlyingTransaction.current = {
+                                    ...(progress as ITransaction).underlyingTransactionData,
+                                    fAsset: progress.fasset,
+                                    fAssetAmount: progress.amount
+                                };
+                                setIsRetryMintModalActive(true);
+                            }}
+                            className="sm:ml-auto px-2"
+                        >
+                            {t('latest_transactions_card.try_again_button')}
+                        </Button>
+                    </Tooltip>
+                }
+            </div>
         }
 
-        const isHash = /^0x[a-fA-F0-9]{64}$/.test(progress.txhash) || /^[A-F0-9]{64}$/.test(progress.txhash);
-        const isTryAgainDisabled = connectedCoins.find(coin => coin.type.toLowerCase() === progress.fasset.toLowerCase()) === undefined;
-        const showTryAgainButton = !isHash && progress.missingUnderlying &&
-            progress?.underlyingTransactionData?.paymentReference &&
-            (!mintingTransaction[progress.underlyingTransactionData.paymentReference] ||
-                mintingTransaction[progress.underlyingTransactionData.paymentReference] === false
-            );
+        progress = progress as IOFTHistory;
+        const href = progress.eid === EndpointId.HYPERLIQUID_V2_MAINNET
+            ? `https://layerzeroscan.com/tx/${progress.txhash}`
+            : `https://testnet.layerzeroscan.com/tx/${progress.txhash}`;
 
-        return <div className="flex max-[768px]:flex-wrap text-wrap items-center">
-            {!isHash
-                ? <span>{
-                    progress.defaulted ? t('latest_transactions_card.defaulted_label') : progress.txhash}
-                </span>
-                : <Link
-                    href={href}
-                    target="_blank"
-                    className="text-14 underline font-normal"
-                >
-                    <span className="hidden sm:block">{progress.txhash}</span>
-                    <span className="block sm:hidden">{truncateString(progress.txhash, 7, 7)}</span>
-                </Link>
-            }
+        return <div className={`flex max-[768px]:flex-wrap text-wrap items-center ${className ?? ''}`}>
+            <Link
+                href={href}
+                target="_blank"
+                className="text-14 underline font-normal"
+            >
+                <span className="hidden sm:block">{truncateString(progress.txhash, 24, 24)}</span>
+                <span className="block sm:hidden">{truncateString(progress.txhash, 7, 7)}</span>
+            </Link>
             {isHash &&
                 <CopyIcon text={progress.txhash} color="var(--mantine-color-gray-5)" />
             }
-            {showTryAgainButton &&
-                <Tooltip
-                    label={t('latest_transactions_card.connect_tooltip')}
-                    withArrow
-                    disabled={!isTryAgainDisabled}
-                >
-                    <Button
-                        variant="gradient"
-                        size="xs"
-                        radius="xl"
-                        fw={400}
-                        disabled={isTryAgainDisabled}
-                        onClick={() => {
-                            underlyingTransaction.current = {
-                                ...progress.underlyingTransactionData,
-                                fAsset: progress.fasset,
-                                fAssetAmount: progress.amount
-                            };
-                            setIsRetryMintModalActive(true);
-                        }}
-                        className="sm:ml-auto px-2"
-                    >
-                        {t('latest_transactions_card.try_again_button')}
-                    </Button>
-                </Tooltip>
-            }
         </div>
     }
 
-    const renderAction = (progress: ITransaction) => {
-        if (progress.action.toLowerCase() === ACTION_TYPE_MINT) {
-            return <Text
-                className="text-14"
-                fw={400}
-            >
-                {t('latest_transactions_card.mint_label')}
-            </Text>;
+    const renderAction = (progress: ITransaction | IOFTHistory) => {
+        const coin = COINS.find(coin => coin.type.toLowerCase() === progress.fasset.toLowerCase());
+        if (isMint) {
+            progress = progress as ITransaction;
+            if (progress.action.toLowerCase() === ACTION_TYPE_MINT) {
+                return <Text
+                    className="text-14"
+                    fw={400}
+                >
+                    {t('latest_transactions_card.mint_label')}
+                </Text>;
+            }
+
+            return <div>
+                {progress.remainingLots !== null && progress.remainingLots !== undefined &&
+                    <Text className="text-14 mb-2 flex items-center" fw={400}>
+                        <span className="flex-shrink-0">{t('latest_transactions_card.partial_redeem_label')}</span>
+                        <Popover
+                            withArrow
+                            width="auto"
+                        >
+                            <Popover.Target>
+                                <IconInfoHexagon
+                                    style={{ width: rem(16), height: rem(16) }}
+                                    color="var(--flr-border-color)"
+                                    className="ml-1 flex-shrink-0 cursor-pointer hover:stroke-gray-600"
+                                />
+                            </Popover.Target>
+                            <Popover.Dropdown>
+                                <div className="flex items-center justify-between min-w-48 mb-4">
+                                    <Text className="text-12 mr-2" fw={400}>
+                                        {t('latest_transactions_card.requested_label')}
+                                    </Text>
+                                    <div className="flex items-center">
+                                        {coin && coin.icon && coin.icon({width: "18", height: "18"})}
+                                        <Text className="text-12 mx-2" fw={400}>
+                                            {toNumber(progress.amount) + (toNumber(progress.remainingLots) * coin?.lotSize!)}
+                                        </Text>
+                                        <Text
+                                            className="text-12"
+                                            c={lighten('var(--flr-gray)', 0.67)}
+                                            fw={400}
+                                        >
+                                            {progress.fasset}
+                                        </Text>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between min-w-48">
+                                    <Text className="text-12 mr-2" fw={400}>
+                                        {t('latest_transactions_card.completed_label')}
+                                    </Text>
+                                    <div className="flex items-center">
+                                        {coin && coin.icon && coin.icon({width: "18", height: "18"})}
+                                        <Text className="text-12 mx-2" fw={400}>
+                                            {progress.amount}
+                                        </Text>
+                                        <Text
+                                            className="text-12"
+                                            c={lighten('var(--flr-gray)', 0.67)}
+                                            fw={400}
+                                        >
+                                            {progress.fasset}
+                                        </Text>
+                                    </div>
+                                </div>
+                            </Popover.Dropdown>
+                        </Popover>
+                    </Text>
+                }
+                {progress.remainingLots === null &&
+                    <Text className="text-14 md:mb-2" fw={400}>
+                        {t('latest_transactions_card.redeem_label')}
+                    </Text>
+                }
+                {progress?.tickets?.map((ticket, index) => (
+                    <div className="hidden md:flex items-baseline mb-2" key={`${ticket.ticketId}-${index}`}>
+                        <Text
+                            c="var(--flr-gray)"
+                            className="text-10 mr-1 flex-shrink-0"
+                        >
+                            {t('latest_transactions_card.table.ticket_id_label')}
+                        </Text>
+                        <Text
+                            className="text-14"
+                            fw={400}
+                        >
+                            {ticket.ticketId}
+                        </Text>
+                    </div>
+                ))}
+            </div>
         }
 
-        const coin = COINS.find(coin => coin.type.toLowerCase() === progress.fasset.toLowerCase());
-        return <div>
-            {progress.remainingLots !== null && progress.remainingLots !== undefined &&
-                <Text className="text-14 mb-2 flex items-center" fw={400}>
-                    <span className="flex-shrink-0">{t('latest_transactions_card.partial_redeem_label')}</span>
-                    <Popover
-                        withArrow
-                        width="auto"
-                    >
-                        <Popover.Target>
-                            <IconInfoHexagon
-                                style={{ width: rem(16), height: rem(16) }}
-                                color="var(--flr-border-color)"
-                                className="ml-1 flex-shrink-0 cursor-pointer hover:stroke-gray-600"
-                            />
-                        </Popover.Target>
-                        <Popover.Dropdown>
-                            <div className="flex items-center justify-between min-w-48 mb-4">
-                                <Text className="text-12 mr-2" fw={400}>
-                                    {t('latest_transactions_card.requested_label')}
-                                </Text>
-                                <div className="flex items-center">
-                                    {coin && coin.icon && coin.icon({width: "18", height: "18"})}
-                                    <Text className="text-12 mx-2" fw={400}>
-                                        {toNumber(progress.amount) + (toNumber(progress.remainingLots) * coin?.lotSize!)}
-                                    </Text>
-                                    <Text
-                                        className="text-12"
-                                        c={lighten('var(--flr-gray)', 0.67)}
-                                        fw={400}
-                                    >
-                                        {progress.fasset}
-                                    </Text>
-                                </div>
-                            </div>
-                            <div className="flex items-center justify-between min-w-48">
-                                <Text className="text-12 mr-2" fw={400}>
-                                    {t('latest_transactions_card.completed_label')}
-                                </Text>
-                                <div className="flex items-center">
-                                    {coin && coin.icon && coin.icon({width: "18", height: "18"})}
-                                    <Text className="text-12 mx-2" fw={400}>
-                                        {progress.amount}
-                                    </Text>
-                                    <Text
-                                        className="text-12"
-                                        c={lighten('var(--flr-gray)', 0.67)}
-                                        fw={400}
-                                    >
-                                        {progress.fasset}
-                                    </Text>
-                                </div>
-                            </div>
-                        </Popover.Dropdown>
-                    </Popover>
-                </Text>
-            }
-            {progress.remainingLots === null &&
-                <Text className="text-14 md:mb-2" fw={400}>
-                    {t('latest_transactions_card.redeem_label')}
-                </Text>
-            }
-            {progress?.tickets?.map((ticket, index) => (
-                <div className="hidden md:flex items-baseline mb-2" key={`${ticket.ticketId}-${index}`}>
+        progress = progress as IOFTHistory;
+        return (
+            <div className="flex items-baseline">
+                <div className="flex flex-col items-center w-[52px]">
+                    {progress.action.toLowerCase() === ACTION_TYPE_SEND
+                        ? coin?.icon({ width: '26', height: '26' })
+                        : <FXrpHypeEVMIcon width={'26'} height={'26'} />
+                    }
                     <Text
                         c="var(--flr-gray)"
-                        className="text-10 mr-1 flex-shrink-0"
-                    >
-                        {t('latest_transactions_card.table.ticket_id_label')}
-                    </Text>
-                    <Text
-                        className="text-14"
                         fw={400}
+                        className="text-10 mt-1"
                     >
-                        {ticket.ticketId}
+                        {progress.action.toLowerCase() === ACTION_TYPE_SEND
+                            ? t('latest_transactions_card.flare_label')
+                            : t('latest_transactions_card.hyper_evm_label')
+                        }
                     </Text>
                 </div>
-            ))}
-        </div>
+                <IconArrowNarrowRight
+                    size={20}
+                    className="mx-2"
+                />
+                <div className="flex flex-col items-center w-[52px]">
+                    {progress.action.toLowerCase() === ACTION_TYPE_RECEIVE
+                        ?  coin?.icon({ width: '26', height: '26' })
+                        : progress.toHypercore
+                            ? <FXrpHypeCoreIcon width={'26'} height={'26'} />
+                            : <FXrpHypeEVMIcon width={'26'} height={'26'} />
+                    }
+                    <Text
+                        c="var(--flr-gray)"
+                        fw={400}
+                        className="text-10 mt-1"
+                    >
+                        {progress.action.toLowerCase() === ACTION_TYPE_RECEIVE
+                            ? t('latest_transactions_card.flare_label')
+                            : progress.toHypercore
+                                ? t('latest_transactions_card.hyper_core_label')
+                                : t('latest_transactions_card.hyper_evm_label')
+                        }
+                    </Text>
+                </div>
+            </div>
+        );
     }
 
     const renderAmount = (progress: ITransaction) => {
-        if (progress.action.toLowerCase() === ACTION_TYPE_MINT) {
+        if ([ACTION_TYPE_MINT, ACTION_TYPE_SEND, ACTION_TYPE_RECEIVE].includes(progress.action.toLowerCase())) {
             return <div className="flex items-center md:justify-end">
                 <Text className="text-14 mr-1" fw={400}>{progress.amount}</Text>
                 <Text
@@ -350,6 +432,33 @@ export default function LatestTransactionsCard({ className, refreshKey }: ILates
                     </Text>
                 </div>
             </Badge>
+        } else if ([ACTION_TYPE_SEND, ACTION_TYPE_RECEIVE].includes(progress.action.toLowerCase())) {
+            return <Badge
+                color={progress.defaulted
+                    ? 'rgba(230, 30, 87, 0.13)'
+                    : (progress.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)')
+                }
+                variant="outline"
+                radius="xs"
+                size="md"
+                className="font-normal"
+            >
+                <div className="flex items-center">
+                    <span
+                        className="status-dot mr-1 shrink-0"
+                        style={{
+                            backgroundColor: progress.status ? 'var(--flr-green)' : 'var(--flr-warning)'
+                        }}
+                    />
+                    <Text
+                        className="text-10 shrink-0"
+                        fw={400}
+                        c={progress.status ? 'var(--flr-green)' : 'var(--flr-warning)'}
+                    >
+                        {t(`latest_transactions_card.${progress.status ? 'finished_label' : 'in_progress_label'}`)}
+                    </Text>
+                </div>
+            </Badge>
         }
 
         return <div>
@@ -407,7 +516,7 @@ export default function LatestTransactionsCard({ className, refreshKey }: ILates
         },
         {
             id: 'action',
-            label: t('latest_transactions_card.table.type_label'),
+            label: t(`latest_transactions_card.table.${isMint ? 'type' : 'bridge'}_label`),
             thClass: '!text-12',
             render: (progress: ITransaction) => {
                 return renderAction(progress);
@@ -441,8 +550,8 @@ export default function LatestTransactionsCard({ className, refreshKey }: ILates
             >
                 {t('latest_transactions_card.table.date_label')}
             </Text>,
-            thClass: `${classes.fitWidth} align-top`,
-            tdClass: `${classes.fitWidth} align-top`,
+            thClass: `${classes.fitWidth} ${isMint ? 'align-top' : 'align-middle'}`,
+            tdClass: `${classes.fitWidth} ${isMint ? 'align-top' : 'align-middle'}`,
             render: (progress: ITransaction) => {
                 return renderTimestamp(progress);
             },
@@ -459,8 +568,8 @@ export default function LatestTransactionsCard({ className, refreshKey }: ILates
             render: (progress: ITransaction) => {
                 return renderTransaction(progress);
             },
-            thClass: `align-top min-w-[450px] ${classes.fitWidth}`,
-            tdClass: `align-top min-w-[450px] ${classes.fitWidth}`,
+            thClass: `${isMint ? 'align-top' : 'align-middle'} min-w-[450px] ${classes.fitWidth}`,
+            tdClass: `${isMint ? 'align-top' : 'align-middle'} min-w-[450px] ${classes.fitWidth}`,
         },
         {
             id: 'action',
@@ -469,7 +578,7 @@ export default function LatestTransactionsCard({ className, refreshKey }: ILates
                 fw={400}
                 c="var(--flr-gray)"
             >
-                {t('latest_transactions_card.table.type_label')}
+                {t(`latest_transactions_card.table.${isMint ? 'type' : 'bridge'}_label`)}
             </Text>,
             render: (progress: ITransaction) => {
                 return renderAction(progress);
@@ -523,8 +632,8 @@ export default function LatestTransactionsCard({ className, refreshKey }: ILates
         <>
             <FAssetTable
                 key={tableKey}
-                items={transactions ?? []}
-                loading={userProgress.isPending}
+                items={(isMint ? transactions : oftUserHistory.data) ?? []}
+                loading={isMint ? userProgress.isPending : oftUserHistory.isPending}
                 columns={isMobile ? mobileColumns : columns}
                 style={{ maxWidth: '1080px' }}
                 emptyLabel={t('latest_transactions_card.empty_label')}

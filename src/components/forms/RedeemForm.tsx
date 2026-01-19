@@ -2,28 +2,30 @@ import {
     useState,
     forwardRef,
     useImperativeHandle,
-    useEffect, useRef
+    useEffect,
+    useRef
 } from "react";
 import {
     UseFormReturnType,
     useForm
 } from "@mantine/form";
+import { IconClipboard } from "@tabler/icons-react";
 import * as yup from "yup";
 import { yupResolver } from "mantine-form-yup-resolver";
 import { useDebouncedCallback, useElementSize, useMediaQuery } from "@mantine/hooks";
-import { NumberInput, Text, Divider } from "@mantine/core";
+import { NumberInput, Text, Divider, Button, TextInput } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 import { useRedemptionFee} from "@/api/redemption";
 import { useNativeBalance } from "@/api/balance";
 import { useExecutor } from "@/api/user";
 import { toNumber, fromLots, toLots, formatNumber } from "@/utils";
-import { ICoin, IFAssetCoin } from "@/types";
+import { IFAssetCoin } from "@/types";
 import { useWeb3 } from "@/hooks/useWeb3";
+import { isValidClassicAddress } from "xrpl";
 import classes from "@/styles/components/forms/RedeemForm.module.scss";
 
 interface IMintForm {
     fAssetCoin: IFAssetCoin;
-    flareCoin: ICoin;
     setErrorMessage: (message: string) => void;
 }
 
@@ -31,12 +33,13 @@ export type FormRef = {
     form: () => UseFormReturnType<any>;
 }
 
-const RedeemForm = forwardRef<FormRef, IMintForm>(({ fAssetCoin, flareCoin, setErrorMessage }: IMintForm, ref) => {
+const RedeemForm = forwardRef<FormRef, IMintForm>(({ fAssetCoin, setErrorMessage }: IMintForm, ref) => {
     const [lots, setLots] = useState<number>();
     const [maxLots, setMaxLots] = useState<number>();
     const [redeemingFee, setRedeemingFee] = useState<number>();
     const [deposit, setDeposit] = useState<number>();
     const [inputDescription, setInputDescription] = useState<string>();
+    const [editAddress, setEditAddress] = useState<boolean>(!fAssetCoin.enabled);
 
     const maxRedemptionLots = useRef<number>();
     const maxLotsOneRedemption = useRef<number>();
@@ -49,11 +52,18 @@ const RedeemForm = forwardRef<FormRef, IMintForm>(({ fAssetCoin, flareCoin, setE
     const mediaQueryMatches = useMediaQuery('(max-width: 40em)');
     const redemptionFee = useRedemptionFee(fAssetCoin.type);
     const executor = useExecutor(fAssetCoin.type);
-    const nativeBalance = useNativeBalance(flareCoin.address!);
+    const nativeBalance = useNativeBalance(mainToken?.address!);
     const schema = yup.object().shape({
         lots: yup.number()
             .required(t('validation.messages.required', { field: t('redeem_modal.form.lots_label') }))
-            .min(1)
+            .min(1),
+        destinationAddress: yup.string()
+            .trim()
+            .required(t('validation.messages.required', { field: t('redeem_modal.form.destination_address_label') }))
+            .test('is-valid-address', t('redeem_modal.form.invalid_xrp_address_label') as string, (value) => {
+                if (!value) return true;
+                return isValidClassicAddress(value);
+            })
     });
     const form = useForm({
         mode: 'uncontrolled',
@@ -61,7 +71,8 @@ const RedeemForm = forwardRef<FormRef, IMintForm>(({ fAssetCoin, flareCoin, setE
             lots: undefined,
             executorAddress: '',
             executorFee: '',
-            redemptionFee: ''
+            redemptionFee: '',
+            destinationAddress: fAssetCoin?.address ?? ''
         },
         validate: yupResolver(schema)
     });
@@ -213,6 +224,56 @@ const RedeemForm = forwardRef<FormRef, IMintForm>(({ fAssetCoin, flareCoin, setE
                 >
                     {fAssetCoin.type}
                 </Text>
+            </div>
+            <div className="flex items-center mt-5">
+                <div className={`flex flex-col ${editAddress ? 'grow' : ''}`}>
+                    <Text
+                        c="var(--flr-gray)"
+                        fw={400}
+                        className="text-12 uppercase"
+                    >
+                        {t('redeem_modal.form.destination_address_label')}
+                    </Text>
+                    {editAddress
+                        ? <TextInput
+                            {...form.getInputProps('destinationAddress')}
+                            key={form.key('destinationAddress')}
+                            rightSection={
+                                <IconClipboard
+                                    size={18}
+                                    className="cursor-pointer"
+                                    color="var(--flr-black)"
+                                    onClick={async () => {
+                                        try {
+                                            const text = await navigator.clipboard.readText();
+                                            form.setFieldValue("destinationAddress", text);
+                                        } catch (error: any) {}
+                                    }}
+                                />
+                            }
+                            className="mt-1"
+                        />
+                        : <Text
+                            c="var(--flr-black)"
+                            fw={400}
+                            className="text-14 mt-1"
+                        >
+                            {fAssetCoin?.address}
+                        </Text>
+                    }
+                </div>
+                {!editAddress &&
+                    <Button
+                        variant="gradient"
+                        size="xs"
+                        radius="xl"
+                        fw={400}
+                        className="ml-5 md:ml-8"
+                        onClick={() => setEditAddress(true)}
+                    >
+                        {t('redeem_modal.form.edit_button')}
+                    </Button>
+                }
             </div>
             <Divider
                 className="my-8"

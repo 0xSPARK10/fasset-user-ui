@@ -84,8 +84,11 @@ export default function ConnectWalletModal({ opened, onClose }: IConnectWalletMo
                                         <Table.Tbody>
                                             <Table.Tr>
                                                 <Table.Td style={{ borderTop: 'none' }} />
-                                                {coins.map(coin => (
-                                                    <Table.Td key={coin.type} style={{ borderTop: 'none' }}>
+                                                {coins.map((coin, index) => (
+                                                    <Table.Td
+                                                        key={index}
+                                                        style={{ borderTop: 'none' }}
+                                                    >
                                                         {coin.nativeIcon && coin.nativeIcon({ width: "18", height: "18" })}
                                                     </Table.Td>
                                                 ))}

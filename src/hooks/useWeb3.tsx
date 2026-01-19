@@ -5,9 +5,9 @@ import {
     useMemo,
     useContext
 } from "react";
-import { ICoin, INetwork } from "@/types";
+import { CoinEnum, ICoin, INetwork } from "@/types";
 import { useRouter } from "next/router";
-import { COINS } from "@/config/coin";
+import { COINS, FTEST_XRP_HYPE, FXRP_HYPE } from "@/config/coin";
 import { WALLET } from "@/constants";
 import { useQueryClient } from "@tanstack/react-query";
 import { useConnectedCoin } from "@/store/coin";
@@ -23,7 +23,9 @@ interface IWeb3Context {
     connectedCoins: ICoin[];
     connectedWallets: string[];
     isConnected: boolean;
+    isBridgeEnabled: boolean;
     mainToken: ICoin | undefined;
+    bridgeToken: ICoin | undefined;
     ledgerConnector: ILedgerConnector;
     walletConnectConnector: IWalletConnectConnector;
     metaMaskConnector: IMetaMaskConnector;
@@ -57,10 +59,11 @@ export function Web3Provider({ children }: { children: ReactNode | ReactNode[] }
         })
         .filter((coin): coin is ICoin => coin !== undefined);
 
-    const connectedWallets = localConnectedCoins.length > 0
-        ? uniq(connectedCoins.map(coin => coin.connectedWallet!))
-        : [];
-
+    const connectedWallets = useMemo(() =>  {
+        return localConnectedCoins.length > 0
+            ? uniq(connectedCoins.map(coin => coin.connectedWallet!))
+            : []
+    }, [localConnectedCoins, connectedCoins]);
     const isConnected = connectedWallets.length > 0;
 
     const resetApp = async (redirect: boolean = true) => {
@@ -101,6 +104,15 @@ export function Web3Provider({ children }: { children: ReactNode | ReactNode[] }
     const mainToken = isConnected
         ? connectedCoins.find(coin => !coin.isFAssetCoin && !coin.isStableCoin && coin.enabled && coin.isMainToken)
         : COINS.find(coin => !coin.isFAssetCoin && !coin.isStableCoin && coin.enabled && coin.isMainToken);
+    const isBridgeEnabled = [CoinEnum.C2FLR, CoinEnum.FLR].includes(mainToken?.type!);
+    let bridgeToken: ICoin | undefined = undefined;
+
+    if (isBridgeEnabled) {
+        bridgeToken = mainToken?.network?.mainnet ? FXRP_HYPE : FTEST_XRP_HYPE;
+        if (bridgeToken) {
+            bridgeToken.address = mainToken?.address;
+        }
+    }
 
     useEffect(() => {
         if (!walletConnectConnector.universalProvider) {
@@ -117,8 +129,10 @@ export function Web3Provider({ children }: { children: ReactNode | ReactNode[] }
             disconnect,
             connect,
             isConnected,
+            isBridgeEnabled,
             connectedWallets,
             mainToken,
+            bridgeToken,
             ledgerConnector,
             walletConnectConnector,
             metaMaskConnector,
@@ -129,8 +143,10 @@ export function Web3Provider({ children }: { children: ReactNode | ReactNode[] }
             disconnect,
             connect,
             isConnected,
+            isBridgeEnabled,
             connectedWallets,
             mainToken,
+            bridgeToken,
             ledgerConnector,
             walletConnectConnector,
             metaMaskConnector,

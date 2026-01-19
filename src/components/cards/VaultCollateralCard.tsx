@@ -109,7 +109,7 @@ export default function VaultCollateralCard({ pool }: IVaultCollateralCard) {
                         },
                     }}
                 >
-                    <Grid.Col span={6} className="p-4 border-t border-b border-r border-[--flr-border-color]">
+                    <Grid.Col span={6} className="p-4 border-t border-b border-r border-[var(--flr-border-color)]">
                         <Text
                             className="text-12 uppercase"
                             fw={400}

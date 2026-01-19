@@ -40,7 +40,7 @@ export default function App({ Component, pageProps }: CustomAppProps) {
             <QueryClientProvider client={queryClient}>
                 <CookiesProvider>
                     <Web3Provider>
-                        <Web3ModalProvider>
+                        <Web3ModalProvider isProtected={Component.protected}>
                             <ModalsProvider>
                                 <ModalStateProvider>
                                     <MainLayout>

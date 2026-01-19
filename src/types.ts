@@ -38,7 +38,8 @@ export const enum CoinEnum {
     CFLR = 'CFLR',
     SGB = 'SGB',
     C2FLR = 'C2FLR',
-    FLR = 'FLR'
+    FLR = 'FLR',
+    HYPE = 'HYPE',
 }
 
 export interface ICoin {
@@ -509,4 +510,149 @@ export interface IEarn {
         coin_type: string;
         url: string;
     }
+}
+
+
+export interface IMessage {
+    pathway: {
+        srcEid: number;
+        dstEid: number;
+        sender: {
+            address: string;
+            chain: string;
+        };
+        receiver: {
+            address: string;
+            chain: string;
+        };
+        id: string;
+        nonce: number;
+    };
+    source: {
+        status: "SUCCEEDED" | "FAILED" | "PENDING" | string;
+        tx: {
+            txHash: string;
+            blockHash: string;
+            blockNumber: string;
+            blockTimestamp: number;
+            from: string;
+            payload: string;
+            readinessTimestamp: number;
+            options: {
+                lzReceive: {
+                    gas: string;
+                    value: string;
+                };
+                ordered: boolean;
+            };
+        };
+    };
+    destination: {
+        nativeDrop: {
+            status: "N/A" | "SUCCEEDED" | "FAILED" | "PENDING" | string;
+        };
+        lzCompose: {
+            status: "N/A" | "SUCCEEDED" | "FAILED" | "PENDING" | string;
+        };
+        tx: {
+            txHash: string;
+            blockHash: string;
+            blockNumber: number;
+            blockTimestamp: number;
+        };
+        status: "SUCCEEDED" | "FAILED" | "PENDING" | string;
+    };
+    verification: {
+        dvn: {
+            dvns: Record<string, {
+                txHash: string;
+                blockHash: string;
+                blockNumber: number;
+                blockTimestamp: number;
+                proof: {
+                    packetHeader: string;
+                    payloadHash: string;
+                };
+                optional: boolean;
+                status: "SUCCEEDED" | "FAILED" | "PENDING" | string;
+            }>;
+            status: "SUCCEEDED" | "FAILED" | "PENDING" | string;
+        };
+        sealer: {
+            tx: {
+                txHash: string;
+                blockHash: string;
+                blockNumber: number;
+                blockTimestamp: number;
+            };
+            status: "SUCCEEDED" | "FAILED" | "PENDING" | string;
+        };
+    };
+    guid: string;
+    config: {
+        error: boolean;
+        receiveLibrary: string;
+        sendLibrary: string;
+        inboundConfig: {
+            confirmations: number;
+            requiredDVNCount: number;
+            optionalDVNCount: number;
+            optionalDVNThreshold: number;
+            requiredDVNs: string[];
+            requiredDVNNames: string[];
+            optionalDVNs: string[];
+            optionalDVNNames: string[];
+        };
+        outboundConfig: {
+            confirmations: number;
+            requiredDVNCount: number;
+            optionalDVNCount: number;
+            optionalDVNThreshold: number;
+            requiredDVNs: string[];
+            requiredDVNNames: string[];
+            optionalDVNs: string[];
+            optionalDVNNames: string[];
+            executor: string;
+        };
+        ulnSendVersion: string;
+        ulnReceiveVersion: string;
+    };
+    status: {
+        name: string;
+        message: string;
+    };
+    created: string;
+    updated: string;
+}
+
+export interface IHyperCoreInfo {
+    balances: {
+        coin: string;
+        token: number;
+        total: string;
+        hold: string;
+        entryNtl: string;
+    }[];
+}
+
+export interface IOFTHistory {
+    action: string;
+    timestamp: number;
+    eid: number;
+    txhash: string;
+    amountSent: string;
+    amountReceived: string;
+    amount: string;
+    toHypercore: boolean;
+    fasset: string;
+    status: boolean;
+    defaulted: boolean;
+    ticketID: string;
+    vaultToken: string;
+    vaultTokenValueRedeemed: string;
+    poolTokenValueRedeemed: string;
+    underlyingPaid: string;
+    incomplete: boolean;
+    remainingLots: string;
+    redemptionBlocked: boolean;
 }

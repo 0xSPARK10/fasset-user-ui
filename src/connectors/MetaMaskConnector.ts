@@ -2,12 +2,13 @@ import { useEffect } from "react";
 import { WALLET } from "@/constants";
 import { useConnectedCoin } from "@/store/coin";
 import { ethers, JsonRpcSigner } from "ethers";
-import { COINS } from "@/config/coin";
+import { BRIDGE_COINS, COINS, HYPE, TEST_HYPE } from "@/config/coin";
+import { ICoin } from "@/types";
 
 export interface IMetaMaskConnector {
     connect: () => Promise<boolean>;
     disconnect: () => Promise<void>;
-    getSigner: () => Promise<JsonRpcSigner>;
+    getSigner: (token?: ICoin) => Promise<JsonRpcSigner>;
     request: ({ chainId, method, params }: { chainId: string, method: string, params: any }) => Promise<any>;
 }
 
@@ -98,30 +99,40 @@ export default function MetaMaskConnector(): IMetaMaskConnector {
             .forEach(coin => removeConnectedCoin(coin.address!));
     }
 
-    const getSigner = async() => {
+    const getSigner = async(token?: ICoin) => {
+        if (!token) {
+            token = mainToken!;
+        }
+        if (BRIDGE_COINS.includes(token)) {
+            token = token?.network?.mainnet ? HYPE : TEST_HYPE;
+        }
+
         //@ts-ignore
         const ethereum = window.ethereum;
         const chainId = await ethereum.request({ method: 'eth_chainId' });
 
-        if (ethers.toNumber(chainId) !== parseInt(mainToken?.network?.chainId!)) {
-            await ethereum.request({
-                method: "wallet_addEthereumChain",
-                params: [{
-                    chainId: `0x${Number(mainToken?.network?.chainId!).toString(16)}`,
-                    rpcUrls: [mainToken?.network?.rpcUrl],
-                    chainName: mainToken?.network?.name,
-                    nativeCurrency: {
-                        name: mainToken?.nativeName,
-                        symbol: mainToken?.type,
-                        decimals: 18
-                    }
-                }]
-            });
-
+        try {
             await ethereum.request({
                 method: "wallet_switchEthereumChain",
-                params: [{ chainId: `0x${Number(mainToken?.network?.chainId!).toString(16)}` }]
+                params: [{ chainId: `0x${Number(token?.network?.chainId!).toString(16)}` }]
             });
+        } catch (error: any) {
+            // 4902 = Unrecognized chain
+            if (error?.code === 4902) {
+                await ethereum.request({
+                    method: "wallet_addEthereumChain",
+                    params: [{
+                        chainId: `0x${Number(token?.network?.chainId!).toString(16)}`,
+                        rpcUrls: [token?.network?.rpcUrl],
+                        chainName: token?.network?.name,
+                        nativeCurrency: {
+                            name: token?.nativeName,
+                            symbol: token?.type,
+                            decimals: 18
+                        }
+                    }]
+                });
+            }
         }
 
         //@ts-ignore

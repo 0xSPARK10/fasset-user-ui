@@ -16,14 +16,9 @@ export default function ConnectWalletButton() {
     const { isConnected, mainToken } = useWeb3();
     const isSmallMobile = useMediaQuery('(max-width: 420px)');
     const { openConnectWalletModal } = useConnectWalletModal();
-    const router = useRouter();
 
     const onClick = () => {
-        openConnectWalletModal(async (wallet: string) => {
-            if (wallet && router.pathname === '/connect') {
-                await router.push('/mint');
-            }
-        });
+        openConnectWalletModal();
     }
 
     return (

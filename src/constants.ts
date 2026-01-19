@@ -86,3 +86,18 @@ export const ABI_ERRORS: Record<string, string> = {
     "0x369cb277": "InvalidTicketId",
     "0x5c85050a": "OnlyGovernanceOrExecutor"
 };
+
+export const LAYER_ZERO_STATUS = {
+    DELIVERED: 'DELIVERED',
+    INFLIGHT: 'INFLIGHT',
+    PAYLOAD_STORED: 'PAYLOAD_STORED',
+    FAILED: 'FAILED',
+    BLOCKED: 'BLOCKED',
+    CONFIRMING: 'CONFIRMING',
+};
+
+export const BRIDGE_TYPE = {
+    HYPER_EVM: 'hyper_evm',
+    HYPER_CORE: 'hyper_core',
+    FLARE: 'flare'
+} as const;

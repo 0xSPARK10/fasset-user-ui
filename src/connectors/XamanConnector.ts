@@ -6,6 +6,7 @@ import { WALLET } from "@/constants";
 import { useConnectedCoin } from "@/store/coin";
 import { FTEST_XRP, FXRP } from "@/config/coin";
 import { PayloadSubscription } from "xumm-sdk/dist/src/types";
+import { ICoin } from "@/types";
 
 type Deferred<T> = {
     promise: Promise<T>;
@@ -25,7 +26,7 @@ export interface IXamanConnector {
     disconnect: () => Promise<void>;
     init: () => void;
     client: Xumm | undefined;
-    getSigner: (address: string) => Promise<undefined>;
+    getSigner: (token?: ICoin) => Promise<undefined>;
     request: ({ chainId, method, params }: { chainId: string, method: string, params: any }) => Promise<any>;
 }
 
@@ -180,7 +181,7 @@ export default function XamanConnector(): IXamanConnector {
         return deferred.promise;
     };
 
-    const getSigner = async (userAddress: string) => {
+    const getSigner = async () => {
         return undefined;
     };
 

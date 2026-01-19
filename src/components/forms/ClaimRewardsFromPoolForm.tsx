@@ -120,6 +120,7 @@ const ClaimRewardsFromPoolForm = forwardRef<FormRef, IClaimRewardsFromPoolForm>(
                 key={form.key('amount')}
                 min={0}
                 max={maxWithdrawal ?? 0}
+                allowLeadingZeros={false}
                 inputMode="numeric"
                 type="tel"
                 size="sm"

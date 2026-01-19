@@ -1,5 +1,5 @@
 import React, { useCallback } from "react";
-import { Text, Title, rem, Tabs, Popover, Grid } from "@mantine/core";
+import { Text, Title, rem, Tabs, Popover } from "@mantine/core";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { IconGift, IconInfoHexagon } from "@tabler/icons-react";

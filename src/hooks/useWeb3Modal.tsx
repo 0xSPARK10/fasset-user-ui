@@ -6,9 +6,8 @@ import SessionExpiredModal from "@/components/modals/SessionExpiredModal";
 import { useWeb3 } from "@/hooks/useWeb3";
 
 type ConnectWalletModalContextType = {
-    openConnectWalletModal: (callback?: (wallet: string) => void) => void;
-    closeConnectWalletModal: (callback?: () => void, redirect?: boolean) => void;
-    openConnectWalletModalCallback?: (wallet: string) => void;
+    openConnectWalletModal: () => void;
+    closeConnectWalletModal: (redirect?: boolean) => void;
     isConnectWalletModalActive: boolean;
     openSessionExpiredModal: () => void;
     closeSessionExpiredModal: () => void;
@@ -16,35 +15,29 @@ type ConnectWalletModalContextType = {
 
 const ConnectWalletModalContext = createContext<ConnectWalletModalContextType | null>(null);
 
-export const Web3ModalProvider = ({ children }: React.PropsWithChildren<{ children: JSX.Element }>) => {
-    const [openConnectWalletModalCallback, setOpenConnectWalletModalCallback] = useState<() => void>();
+export const Web3ModalProvider = ({ children, isProtected = false }: React.PropsWithChildren<{ children: JSX.Element; isProtected?: boolean }>) => {
     const [isConnectWalletModalActive, setIsConnectWalletModalActive] = useState<boolean>(false);
-    const { localConnectedCoins, } = useConnectedCoin();
+    const { localConnectedCoins } = useConnectedCoin();
     const { disconnect, connectedWallets, mainToken } = useWeb3();
     const [isSessionExpiredModalActive, setIsSessionExpiredModalActive] = useState<boolean>(false);
     const router = useRouter();
 
-    const closeConnectWalletModal = async (callback?: () => void, redirect: boolean = true) => {
+    const closeConnectWalletModal = async (redirect: boolean = true) => {
         setIsConnectWalletModalActive(false);
-        if (callback) {
-            callback();
-            setOpenConnectWalletModalCallback(undefined);
-        }
 
         const isConnectedToCoston = localConnectedCoins.find(connectedCoin => connectedCoin.type === mainToken?.type) !== undefined;
         if (redirect && !isConnectedToCoston) {
             for (const wallet of connectedWallets) {
                 await disconnect(wallet, false);
             }
+        }
 
-            if (router.pathname === '/mint') {
-                await router.push('/');
-            }
+        if (useConnectedCoin.getState().localConnectedCoins.length > 0 && router.pathname === '/connect') {
+            await router.push((router.query?.redirect ?? '/mint') as string);
         }
     }
 
-    const openConnectWalletModal = (callback?: (wallet: string) => void) => {
-        if (callback) setOpenConnectWalletModalCallback(() => callback);
+    const openConnectWalletModal = () => {
         setIsConnectWalletModalActive(true);
     }
 
@@ -65,7 +58,6 @@ export const Web3ModalProvider = ({ children }: React.PropsWithChildren<{ childr
             value={{
                 closeConnectWalletModal: closeConnectWalletModal,
                 openConnectWalletModal: openConnectWalletModal,
-                openConnectWalletModalCallback: openConnectWalletModalCallback,
                 isConnectWalletModalActive: isConnectWalletModalActive,
                 openSessionExpiredModal: openSessionExpiredModal,
                 closeSessionExpiredModal: closeSessionExpiredModal

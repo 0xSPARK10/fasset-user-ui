@@ -8,6 +8,7 @@ import SgbIcon from "@/components/icons/SgbIcon";
 import C2FlrIcon from "@/components/icons/C2FlrIcon";
 import { INamespaceMethods, INetwork } from "@/types";
 import { LEDGER_APP } from "@/constants";
+import FXrpHypeCoreIcon from "@/components/icons/FXrpHypeCoreIcon";
 
 export const ETH_NAMESPACE = 'eip155';
 export const XRP_NAMESPACE = 'xrpl';
@@ -168,4 +169,36 @@ export const NETWORK_FLARE: INetwork = {
     explorerAddressUrl: 'https://flare-explorer.flare.network/address',
     explorerTxUrl: 'https://flare-explorer.flare.network/tx',
     mainnet: true
+}
+
+export const HYPERLIQUID_EVM: INetwork = {
+    chainId: '999',
+    name: 'HyperEVM',
+    shortName: 'Hyperliquid',
+    rpcUrl: 'https://rpc.hyperliquid.xyz/evm',
+    namespace: ETH_NAMESPACE,
+    methods: ETH_NAMESPACE_METODS,
+    addRpcMap: true,
+    icon: (props) => <FXrpHypeCoreIcon width="32" height="32" {...props} />,
+    isMandatory: false,
+    mainnet: true,
+    explorerAddressUrl: 'https://hyperevmscan.io/address',
+    explorerTxUrl: 'https://hyperevmscan.io/tx',
+    ledgerApp: LEDGER_APP.ETH
+}
+
+export const HYPERLIQUID_EVM_TESTNET: INetwork = {
+    chainId: '998',
+    name: 'Hyperliquid EVM Testnet',
+    shortName: 'Hyperliquid',
+    rpcUrl: 'https://rpc.hyperliquid-testnet.xyz/evm',
+    namespace: ETH_NAMESPACE,
+    methods: ETH_NAMESPACE_METODS,
+    addRpcMap: true,
+    icon: (props) => <FXrpHypeCoreIcon width="32" height="32" {...props} />,
+    isMandatory: false,
+    mainnet: false,
+    explorerAddressUrl: 'https://app.hyperliquid-testnet.xyz/explorer/address',
+    explorerTxUrl: 'https://app.hyperliquid-testnet.xyz/explorer/tx',
+    ledgerApp: LEDGER_APP.ETH
 }
