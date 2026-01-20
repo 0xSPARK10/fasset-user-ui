@@ -1,6 +1,6 @@
 {
-  "name": "redeem",
-  "version": "1.2.27",
+  "name": "develop",
+  "version": "1.2.28",
   "private": true,
   "scripts": {
     "dev": "next dev",

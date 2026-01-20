@@ -479,6 +479,7 @@
         "partial_redeem_label": "Partial Redeem",
         "redeem_label": "Redeem",
         "requested_label": "Requested",
+        "reserved_collateral_label": "Collateral was reserved but XRP deposit is missing. <a>View transaction</a>",
         "table": {
             "amount_label": "Amount",
             "bridge_label": "Bridge",

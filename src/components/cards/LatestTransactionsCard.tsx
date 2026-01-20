@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { IconArrowNarrowRight, IconInfoHexagon } from "@tabler/icons-react";
+import { IconArrowNarrowRight, IconArrowUpRight, IconInfoHexagon } from "@tabler/icons-react";
 import Link from "next/link";
-import { Text, Badge, Table, rem, Popover, lighten, Button, Tooltip } from "@mantine/core";
+import { Text, Badge, Table, rem, Popover, lighten, Button, Tooltip, Anchor } from "@mantine/core";
 import { useInterval, useMediaQuery } from "@mantine/hooks";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import moment from "moment";
 import FAssetTable, { IFAssetColumn } from "@/components/elements/FAssetTable";
 import { useUserProgress } from "@/api/user";
@@ -159,16 +159,30 @@ export default function LatestTransactionsCard({ className, refreshKey, type }: 
                     ? <span>{
                         progress.defaulted ? t('latest_transactions_card.defaulted_label') : progress.txhash}
                     </span>
-                    : <Link
-                        href={href}
-                        target="_blank"
-                        className="text-14 underline font-normal"
-                    >
-                        <span className="hidden sm:block">{progress.txhash}</span>
-                        <span className="block sm:hidden">{truncateString(progress.txhash, 7, 7)}</span>
-                    </Link>
+                    : showTryAgainButton
+                        ? <Trans
+                            i18nKey="latest_transactions_card.reserved_collateral_label"
+                            components={{
+                                a: <Anchor
+                                    underline="always"
+                                    href={href}
+                                    target="_blank"
+                                    className="text-14 text-[var(--flr-black)]"
+                                />
+                            }}
+                            parent={Text}
+                            className="text-14"
+                        />
+                        : <Link
+                            href={href}
+                            target="_blank"
+                            className="text-14 underline font-normal"
+                        >
+                            <span className="hidden sm:block">{progress.txhash}</span>
+                            <span className="block sm:hidden">{truncateString(progress.txhash, 7, 7)}</span>
+                        </Link>
                 }
-                {isHash &&
+                {isHash && !showTryAgainButton &&
                     <CopyIcon
                         text={progress.txhash}
                         color="var(--mantine-color-gray-5)"
