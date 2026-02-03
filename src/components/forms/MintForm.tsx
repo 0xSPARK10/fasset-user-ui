@@ -32,7 +32,7 @@ import { IAgent, IFAssetCoin, ISelectedAgent } from "@/types";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useMaxLots, useReturnAddresses } from "@/api/minting";
 import { useUnderlyingBalance, useNativeBalance } from "@/api/balance";
-import { useBestAgent, useAllAgents } from "@/api/user";
+import { useBestAgent, useAllAgents, useFassetPrice } from "@/api/user";
 import { WALLET } from "@/constants";
 import classes from "@/styles/components/forms/MintForm.module.scss";
 
@@ -45,6 +45,7 @@ interface IMintForm {
     fAssetCoin: IFAssetCoin;
     refreshBalance: () => void;
     setHighMintingFee: (fee: number | undefined) => void;
+    onError: (error: string) => void;
 }
 
 export type FormRef = {
@@ -55,14 +56,15 @@ const MINTING_FEE_LIMIT = 2;
 
 const MintForm = forwardRef<FormRef, IMintForm>(
     ({
-         isFormDisabled,
-         setSelectedAgent,
-         selectedAgent,
-         lots,
-         setLots,
-         fAssetCoin,
-         refreshBalance,
-         setHighMintingFee
+        isFormDisabled,
+        setSelectedAgent,
+        selectedAgent,
+        lots,
+        setLots,
+        fAssetCoin,
+        refreshBalance,
+        setHighMintingFee,
+        onError
     }: IMintForm, ref) => {
     const [maxLots, setMaxLots] = useState<number>();
     const [transfer, setTransfer] = useState<number>();
@@ -73,6 +75,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
     const [isAgentPopoverActive, setIsAgentPopoverActive] = useState<boolean>(false);
     const [isManualSelectedAgent, setIsManualSelectedAgent] = useState<boolean>(false);
     const hasRun = useRef(false);
+    const hasXamanInsufficientFunds = useRef(false);
 
     const { walletConnectConnector, connectedCoins, mainToken } = useWeb3();
     const popoverSize = useElementSize();
@@ -89,6 +92,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
         transfer && mintingFee ? toSatoshi(transfer + mintingFee) : 0,
         false
     );
+    const fAssetPrice = useFassetPrice(fAssetCoin.type, false);
 
     const mintFeePercentage = mintingFee !== undefined && transfer !== undefined && transfer !== 0
         ? (mintingFee / transfer) * 100
@@ -136,6 +140,10 @@ const MintForm = forwardRef<FormRef, IMintForm>(
         lotSize: fAssetCoin.lotSize
     })}\n ${areLotsLimited ? t('mint_modal.form.maximum_number_of_lots_label') + "\n" : ''} ${t('mint_modal.form.amounted_based_label', { nativeName: fAssetCoin.nativeName })}`;
     const labelWidth = Math.max(transferLabelSize.width, mintingFeeLabelSize.width, reservationLabelSize.width);
+
+    const reservationFee = lots && bestAgent?.data?.collateralReservationFee
+        ? BigInt(bestAgent?.data?.collateralReservationFee) + parseUnits(mainToken?.minWalletBalance!, 18)
+        : undefined;
 
     const refetchBestAgent = useCallback(async (setAgent: boolean = true) => {
         try {
@@ -186,11 +194,64 @@ const MintForm = forwardRef<FormRef, IMintForm>(
                 showErrorNotification(error?.response?.data?.message);
             }
         } finally {
-            if (isFormDisabled) {
+            if (isFormDisabled && !hasXamanInsufficientFunds.current) {
                 isFormDisabled(false);
             }
         }
     }, [bestAgent, form]);
+
+    const debounceSetLots = useDebouncedCallback(async (value) => {
+        setLots(value);
+        setTransfer(fromLots(value, fAssetCoin.lotSize) as number);
+        if (value && selectedAgent !== undefined) {
+            const fee = fromLots(value, fAssetCoin.lotSize) as number * ((Number(selectedAgent.feeBIPS) ?? 0) / 10000);
+            setMintingFee(fee);
+        }
+    }, 500);
+
+    const setAgent = (event: React.MouseEvent<HTMLDivElement>, agent: IAgent) => {
+        if (event.target instanceof SVGElement) {
+            return;
+        }
+
+        setIsManualSelectedAgent(true);
+
+        setSelectedAgent({
+            name: agent.agentName,
+            address: agent.vault,
+            feeBIPS: agent.feeBIPS,
+            underlyingAddress: agent.underlyingAddress,
+            infoUrl: agent.url,
+        });
+        setIsAgentPopoverActive(false);
+
+        let balance = toNumber(underlyingBalance?.data?.balance!);
+        const fee = transfer! * ((Number(agent.feeBIPS) ?? 0) / 10000);
+        setMintingFee(fee);
+        // substract fee from balance and recalculate max lots to mint
+        balance -= fee;
+        // wallet needs to have minimal 10 coins
+        balance -= fAssetCoin.minWalletBalance;
+
+        if (balance < 0) {
+            balance = 0;
+        }
+
+        const balanceLots = toLots(balance, fAssetCoin.lotSize) as number;
+        setMaxLots(Math.min(balanceLots, Number(agent.freeLots)));
+
+        const values = form.getValues();
+        form.setValues((prev) => ({
+            ...prev,
+            agentAddress: agent.vault,
+            feeBIPS: agent.feeBIPS,
+            lots: values.lots > Number(agent.freeLots) ? Number(agent.freeLots) : lots
+        }));
+
+        if (values.lots) {
+            refetchBestAgent(false);
+        }
+    }
 
     useEffect(() => {
         return () => {
@@ -220,12 +281,43 @@ const MintForm = forwardRef<FormRef, IMintForm>(
         fetch();
     }, [mintingFee, selectedAgent]);
 
+    const checkXamanBalance = async () => {
+        const response = await fAssetPrice.refetch();
+        hasXamanInsufficientFunds.current = false;
+        onError('');
+
+        if (response.data?.price && lots) {
+            const balance = toNumber(underlyingBalance.data?.balance!);
+            let totalUsd = response.data.price * ((fromLots(lots, fAssetCoin.lotSize) as number) + (mintingFee ?? 0));
+            let xamanFee = 0;
+
+            if (totalUsd > 50000 && totalUsd <= 100000) {
+                xamanFee = (totalUsd * 0.001); // 0.1%
+            } else if (totalUsd > 100000) {
+                xamanFee = (totalUsd * 0.0007); // 0.07%
+            }
+
+            totalUsd += xamanFee;
+            const totalXrp = totalUsd / response.data.price;
+
+            if (isFormDisabled && (totalXrp > (balance - fAssetCoin.minWalletBalance))) {
+                isFormDisabled(true);
+                hasXamanInsufficientFunds.current = true;
+                onError(t('mint_modal.form.error_insufficient_balance_label', { tokenName: 'XRP' }))
+            }
+        }
+    }
+
     useEffect(() => {
         if (!mintingFee) return;
         if (isMintingFeeHigh) {
             setHighMintingFee(mintingFee);
         } else {
             setHighMintingFee(undefined);
+        }
+
+        if (fAssetCoin?.connectedWallet === WALLET.XAMAN) {
+            checkXamanBalance();
         }
     }, [mintingFee, isMintingFeeHigh]);
 
@@ -243,7 +335,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
         const fetch = async () => {
             try {
                 setIsDisabled(false);
-                if (isFormDisabled) {
+                if (isFormDisabled && !hasXamanInsufficientFunds.current) {
                     isFormDisabled(false);
                 }
 
@@ -334,62 +426,6 @@ const MintForm = forwardRef<FormRef, IMintForm>(
     form.watch('lots', ({ value }) => {
         debounceSetLots(value);
     });
-
-    const debounceSetLots = useDebouncedCallback(async (value) => {
-        setLots(value);
-        setTransfer(fromLots(value, fAssetCoin.lotSize) as number);
-        if (value && selectedAgent !== undefined) {
-            setMintingFee(fromLots(value, fAssetCoin.lotSize) as number * ((Number(selectedAgent.feeBIPS) ?? 0) / 10000));
-        }
-    }, 500);
-
-    const setAgent = (event: React.MouseEvent<HTMLDivElement>, agent: IAgent) => {
-        if (event.target instanceof SVGElement) {
-            return;
-        }
-
-        setIsManualSelectedAgent(true);
-
-        setSelectedAgent({
-            name: agent.agentName,
-            address: agent.vault,
-            feeBIPS: agent.feeBIPS,
-            underlyingAddress: agent.underlyingAddress,
-            infoUrl: agent.url,
-        });
-        setIsAgentPopoverActive(false);
-
-        let balance = toNumber(underlyingBalance?.data?.balance!);
-        const fee = transfer! * ((Number(agent.feeBIPS) ?? 0) / 10000);
-        setMintingFee(fee);
-        // substract fee from balance and recalculate max lots to mint
-        balance -= fee;
-        // wallet needs to have minimal 10 coins
-        balance -= fAssetCoin.minWalletBalance;
-
-        if (balance < 0) {
-            balance = 0;
-        }
-
-        const balanceLots = toLots(balance, fAssetCoin.lotSize) as number;
-        setMaxLots(Math.min(balanceLots, Number(agent.freeLots)));
-
-        const values = form.getValues();
-        form.setValues((prev) => ({
-            ...prev,
-            agentAddress: agent.vault,
-            feeBIPS: agent.feeBIPS,
-            lots: values.lots > Number(agent.freeLots) ? Number(agent.freeLots) : lots
-        }));
-
-        if (values.lots) {
-            refetchBestAgent(false);
-        }
-    }
-
-    const reservationFee = lots && bestAgent?.data?.collateralReservationFee
-        ? BigInt(bestAgent?.data?.collateralReservationFee) + parseUnits(mainToken?.minWalletBalance!, 18)
-        : undefined;
 
     return (
         <div ref={popoverSize.ref}>

@@ -55,8 +55,13 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(({ token, type, onError }: I
             fee: undefined,
             type: type
         },
-        validate: yupResolver(schema)
-    });
+        validate: yupResolver(schema),
+        onValuesChange: (values: any) => {
+            if (values?.amount?.length === 0) {
+                form.setFieldValue('amount', undefined);
+            }
+        }
+    });2
 
     form.watch('amount', ({ value }) => {
         debounceSetAmount(value);
@@ -158,7 +163,7 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(({ token, type, onError }: I
                 inputMode="numeric"
                 size="sm"
                 step={1}
-                max={token?.balance ? Number(token?.balance) : 0}
+                max={toNumber(token?.balance ?? '0')}
                 clampBehavior="strict"
                 allowLeadingZeros={false}
                 rightSection={
@@ -168,7 +173,7 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(({ token, type, onError }: I
                         color="var(--flr-gray)"
                         fw={400}
                         className="pr-2 mt-1"
-                        onClick={ () => form.setFieldValue('amount', token?.balance as any)}
+                        onClick={ () => form.setFieldValue('amount', toNumber(token?.balance ?? '0'))}
                     >
                         {t('bridge_modal.form.max_button')}
                     </Button>
@@ -176,7 +181,7 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(({ token, type, onError }: I
                 inputContainer={children => (
                     <div className="flex items-center flex-wrap sm:flex-nowrap">
                         {children}
-                        <div className="sm:ml-5 mt-2 sm:mt-0 flex items-center">
+                        <div className="sm:ml-5 mt-2 sm:mt-0 flex items-center mb-1 sm:mb-0">
                             {token?.icon && token.icon({ width: "24", height: "24" })}
                             <Text
                                 c="var(--flr-gray)"

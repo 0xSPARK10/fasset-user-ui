@@ -133,7 +133,7 @@
         "why_label": "Why ?"
     },
     "balance_card": {
-        "connect_tooltip": "To enable minting and redemption, connect to the underlying network.",
+        "connect_tooltip": "To enable minting, connect to the underlying network.",
         "copied_label": "Copied",
         "disabled_fassets_card": {
             "description_label": "Now minting is paused but you can still redeem and withdraw collateral from {{fAssets}}.",
@@ -210,7 +210,7 @@
     "bridge_underlying_balance_card": {
         "bridge_to_flare_button": "Bridge to Flare",
         "hype_label": "HYPE",
-        "hyper_core_label": "Hyperliquid - Trading platform",
+        "hyper_core_label": "Hyperliquid - Spot",
         "hyper_evm_label": "HyperEVM",
         "know_more_label": "Want to know more about Hyperliquid? Follow this <a>link<icon></icon></a>",
         "title": "Hyperliquid"

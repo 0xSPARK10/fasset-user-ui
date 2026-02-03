@@ -145,39 +145,6 @@ export default function MintModal({ opened, onClose, fAssetCoin }: IMintModal) {
                             withIcon={false}
                         >
                             <div>
-                                {fAssetCoin.type.toLowerCase().includes('btc') && !fAssetCoin.network.mainnet &&
-                                    <div className="flex items-center mb-5 border border-[#CA7345] p-3 bg-[#FCEBE2] whitespace-pre-line">
-                                        <IconExclamationCircle
-                                            style={{ width: rem(25), height: rem(25) }}
-                                            color="var(--flr-orange)"
-                                            className="mr-3 flex-shrink-0"
-                                        />
-                                        <Trans
-                                            i18nKey="mint_modal.btc_network_fee_label"
-                                            components={{
-                                                a: <Anchor
-                                                    underline="always"
-                                                    href="https://mempool.space/testnet/graphs/mining/block-fee-rates"
-                                                    target="_blank"
-                                                    className="inline-flex ml-1 text-amber-600"
-                                                    fw={700}
-                                                    c="var(--flr-orange)"
-                                                />,
-                                                icon: <IconArrowUpRight
-                                                    style={{ width: rem(20), height: rem(20) }}
-                                                    color="var(--flr-orange)"
-                                                />
-                                            }}
-                                            values={{
-                                                extraBtc: estimatedFee?.data?.extraBTC
-                                            }}
-                                            parent={Text}
-                                            c="var(--flr-orange)"
-                                            className="text-16"
-                                            fw={400}
-                                        />
-                                    </div>
-                                }
                                 {errorMessage &&
                                     <div className="flex items-center mb-5 border border-red-700 p-3 bg-red-100">
                                         <IconExclamationCircle
@@ -232,6 +199,7 @@ export default function MintModal({ opened, onClose, fAssetCoin }: IMintModal) {
                                             }
                                             setHighMintingFee(mintingFee);
                                         }}
+                                        onError={(error) => { setErrorMessage(error); }}
                                     />
                                 }
                             </div>

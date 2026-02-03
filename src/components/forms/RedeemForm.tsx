@@ -74,7 +74,12 @@ const RedeemForm = forwardRef<FormRef, IMintForm>(({ fAssetCoin, setErrorMessage
             redemptionFee: '',
             destinationAddress: fAssetCoin?.address ?? ''
         },
-        validate: yupResolver(schema)
+        validate: yupResolver(schema),
+        onValuesChange: (values: any) => {
+            if (values?.lots?.length === 0) {
+                form.setFieldValue('lots', undefined);
+            }
+        }
     });
     form.watch('lots', ({ value }) => {
         debounceSetLots(value);
@@ -160,7 +165,7 @@ const RedeemForm = forwardRef<FormRef, IMintForm>(({ fAssetCoin, setErrorMessage
                         {t('redeem_modal.form.lots_label')}
                     </Text>
                 }
-                description={Object.keys(form.errors).length > 0 ? '' : inputDescription}
+                description={form.errors?.lots !== undefined ? '' : inputDescription}
                 inputWrapperOrder={['label', 'input', 'error', 'description']}
                 size="sm"
                 inputMode="numeric"
