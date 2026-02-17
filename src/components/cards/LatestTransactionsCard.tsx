@@ -171,7 +171,7 @@ export default function LatestTransactionsCard({ className, refreshKey, type }: 
                                 />
                             }}
                             parent={Text}
-                            className="text-14"
+                            className="text-14 whitespace-nowrap mr-2"
                         />
                         : <Link
                             href={href}

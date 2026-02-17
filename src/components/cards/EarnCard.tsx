@@ -1,4 +1,4 @@
-import { Text, Title, SimpleGrid, Badge, Button } from "@mantine/core";
+import { Text, Title, SimpleGrid, Badge, Button, Table } from "@mantine/core";
 import Link from "next/link";
 import BlazeSwapAltIcon from "@/components/icons/BlazeSwapAltIcon";
 import EnosysAltIcon from "@/components/icons/EnosysAltIcon";
@@ -14,6 +14,14 @@ import UpshiftIcon from "@/components/icons/UpshiftIcon";
 import { useTranslation } from "react-i18next";
 import { IEarn } from "@/types";
 import { FXRP, USDT0 } from "@/config/coin";
+import MysticIcon from "@/components/icons/MysticIcon";
+import HyperliquidIcon from "@/components/icons/HyperliquidIcon";
+import UsdcIcon from "@/components/icons/UsdcIcon";
+import UsdhIcon from "@/components/icons/UsdhIcon";
+import CycloIcon from "@/components/icons/CycloIcon";
+import FlamixIcon from "@/components/icons/FlamixIcon";
+import IgniteIcon from "@/components/icons/IgniteIcon";
+import SpectraIcon from "@/components/icons/SpectraIcon";
 
 
 interface IEarnCard {
@@ -38,9 +46,21 @@ export default function EarnCard({ earn }: IEarnCard) {
             case 'stratex':
                 return <StratexIcon className="rounded-lg" />;
             case 'moremarkets':
-                return <MoreMarketsIcon className="rounded-lg" />
+                return <MoreMarketsIcon className="rounded-lg" />;
             case 'upshift':
-                return <UpshiftIcon className="rounded-lg" />
+                return <UpshiftIcon className="rounded-lg" />;
+            case 'mystic':
+                return <MysticIcon className="rounded-lg" />;
+            case 'hyperliquid':
+                return <HyperliquidIcon className="rounded-lg" />;
+            case 'cyclo':
+                return <CycloIcon className="rounded-lg" />;
+            case 'flamix':
+                return <FlamixIcon className="rounded-lg" />;
+            case 'ignite':
+                return <IgniteIcon className="rounded-lg" />;
+            case 'spectra':
+                return <SpectraIcon className="rounded-lg" />;
         }
     }
 
@@ -63,6 +83,10 @@ export default function EarnCard({ earn }: IEarnCard) {
             tokenIcon = Usdt0Icon;
         } else if (token === 'stxrp') {
             tokenIcon = StXrpIcon;
+        } else if (token === 'usdc') {
+            tokenIcon = UsdcIcon;
+        } else if (token === 'usdh') {
+            tokenIcon = UsdhIcon;
         }
 
         return {
@@ -81,22 +105,14 @@ export default function EarnCard({ earn }: IEarnCard) {
                 {t('earn_card.title')}
             </Title>
             <div className="border-t border-[var(--flr-border-color)]">
-                <SimpleGrid
-                    cols={{ base: 1, sm: 2, md: 3 }}
-                    styles={{
-                        root: {
-                            '--sg-spacing-x': 0,
-                            '--sg-spacing-y': 0
-                        }
-                    }}
-                >
+                <div className="block md:hidden">
                     {Object.entries(earn).map(([provider, properties]) => (
                         <div
                             key={provider}
-                            className={`border-r border-b border-[var(--flr-border-color)]`}
+                            className="p-5 border-b border-[var(--flr-border-color)]"
                         >
-                            <div className="flex justify-between px-4 pt-6">
-                                <div className="flex items-center mr-2">
+                            <div className="flex justify-between">
+                                <div className="flex items-center">
                                     {getProviderIcon(provider)}
                                     <Text
                                         className="capitalize text-[var(--flr-shark)] text-20 mx-2"
@@ -104,96 +120,162 @@ export default function EarnCard({ earn }: IEarnCard) {
                                     >
                                         {provider}
                                     </Text>
-                                    <Badge
-                                        variant="outline"
-                                        size="xl"
-                                        radius="xs"
-                                        color="var(--flr-star-dust)"
-                                        classNames={{
-                                            label: 'text-16 font-normal text-[var(--flr-gray)]'
-                                        }}
-                                        className="px-2"
-                                    >
-                                        {t(`earn_card.${properties.type}_label`)}
-                                    </Badge>
                                 </div>
-                                <Button
-                                    variant="filled"
-                                    color="var(--flr-black)"
-                                    component={Link}
-                                    href={properties.url}
-                                    target="_blank"
-                                    radius="xl"
-                                    fw={300}
-                                    h={44}
-                                >
-                                    {t('earn_card.open_app_button')}
-                                </Button>
-                            </div>
-                            <div className="mt-5 border-t border-[var(--flr-border-color)] pt-4">
-                                <Text
-                                    c="var(--flr-gray)"
-                                    fw={400}
-                                    className="text-14 px-4 mb-1"
-                                >
-                                    {properties.coin_type === 'pairs'
-                                        ? t('earn_card.pools_pair_label')
-                                        : t('earn_card.eligible_assets_label')
-                                    }
-                                </Text>
                                 <div className="flex">
-                                    {properties.pairs.map((pair, index) => {
-                                        const { fassetIcon: FassetIcon, tokenIcon: TokenIcon } = getPairsIcon(pair);
-                                        const [fasset, token] = pair.split('/');
-
-                                        return (
-                                            <div
-                                                key={pair}
-                                                className={`
-                                                    flex items-center 
-                                                    pb-4 px-4
-                                                    ${properties.coin_type === 'pairs' ? 'grow' : ''}
-                                                `}
-                                            >
-                                                {FassetIcon &&
-                                                    <div className="flex flex-col items-center">
-                                                        <FassetIcon
-                                                            width="50"
-                                                            height="50"
-                                                            className="mr-1"
-                                                        />
-                                                        <Text
-                                                            c="var(--flr-dark-gray)"
-                                                            fw={400}
-                                                            className="text-14 mt-1"
-                                                        >
-                                                            {t(`earn_card.${fasset}_label`)}
-                                                        </Text>
-                                                    </div>
-                                                }
-                                                {TokenIcon &&
-                                                    <div className="flex flex-col items-center">
-                                                        <TokenIcon
-                                                            width="50"
-                                                            height="50"
-                                                        />
-                                                        <Text
-                                                            c="var(--flr-dark-gray)"
-                                                            fw={400}
-                                                            className="text-14 mt-1"
-                                                        >
-                                                            {t(`earn_card.${token}_label`)}
-                                                        </Text>
-                                                    </div>
-                                                }
-                                            </div>
-                                        );
-                                    })}
+                                    {properties.yt_url &&
+                                        <Button
+                                            variant="outline"
+                                            color="var(--flr-black)"
+                                            component={Link}
+                                            href={properties.yt_url}
+                                            target="_blank"
+                                            size="xs"
+                                            radius="xl"
+                                            fw={300}
+                                            h={36}
+                                            className="mr-2"
+                                        >
+                                            {t('earn_card.watch_tutorial_button')}
+                                        </Button>
+                                    }
+                                    <Button
+                                        variant="filled"
+                                        color="var(--flr-black)"
+                                        component={Link}
+                                        href={properties.url}
+                                        target="_blank"
+                                        size="xs"
+                                        radius="xl"
+                                        fw={300}
+                                        h={36}
+                                    >
+                                        {t('earn_card.open_app_button')}
+                                    </Button>
                                 </div>
+                            </div>
+                            <div className="flex items-center mt-3">
+                                <Text
+                                    fw={400}
+                                    c="var(--flr-shark)"
+                                    className="text-16"
+                                >
+                                    {properties.description}
+                                </Text>
+                                <Badge
+                                    variant="outline"
+                                    color="var(--flr-gray)"
+                                    size="lg"
+                                    radius="xs"
+                                    fw={400}
+                                    className="ml-5 shrink-0"
+                                >
+                                    {t(`earn_card.${properties.type}_label`)}
+                                </Badge>
                             </div>
                         </div>
                     ))}
-                </SimpleGrid>
+                </div>
+                <Table
+                    verticalSpacing="lg"
+                    horizontalSpacing="lg"
+                    variant="vertical"
+                    className="hidden md:table !border-t-0 !border-b-0 !border-l-0 border-r-0"
+                >
+                    <Table.Tbody>
+                        {Object.entries(earn).map(([provider, properties]) => (
+                            <Table.Tr key={provider}>
+                                <Table.Td>
+                                    <div className="flex items-center">
+                                        {getProviderIcon(provider)}
+                                        <Text
+                                            className="capitalize text-[var(--flr-shark)] text-20 mx-2"
+                                            fw={400}
+                                        >
+                                            {provider}
+                                        </Text>
+                                    </div>
+                                </Table.Td>
+                                <Table.Td>
+                                    <div className="flex items-center">
+                                        <div className="flex items-center mr-8">
+                                            {properties.pairs.map((pair, index) => {
+                                                const { fassetIcon: FassetIcon, tokenIcon: TokenIcon } = getPairsIcon(pair);
+
+                                                return (
+                                                    <div
+                                                        key={pair}
+                                                        className={`flex items-center ${TokenIcon && index < properties.pairs.length - 1 ? ' mr-4' : ''}`}
+                                                    >
+                                                        {FassetIcon &&
+                                                            <FassetIcon
+                                                                width="36"
+                                                                height="36"
+                                                                className="mr-1"
+                                                            />
+                                                        }
+                                                        {TokenIcon &&
+                                                            <TokenIcon
+                                                                width="36"
+                                                                height="36"
+                                                            />
+                                                        }
+                                                    </div>
+                                                );
+                                            })}
+                                            <Text
+                                                fw={400}
+                                                c="var(--flr-shark)"
+                                                className="ml-3 text-20"
+                                            >
+                                                {properties.description}
+                                            </Text>
+                                        </div>
+                                        <Badge
+                                            variant="outline"
+                                            color="var(--flr-gray)"
+                                            size="lg"
+                                            radius="xs"
+                                            fw={400}
+                                            className="shrink-0"
+                                        >
+                                            {t(`earn_card.${properties.type}_label`)}
+                                        </Badge>
+                                    </div>
+                                </Table.Td>
+                                <Table.Td>
+                                    <div className="flex gap-2 justify-end flex-wrap">
+                                        {properties.yt_url &&
+                                            <Button
+                                                variant="outline"
+                                                color="var(--flr-black)"
+                                                component={Link}
+                                                href={properties.yt_url}
+                                                target="_blank"
+                                                radius="xl"
+                                                fw={300}
+                                                h={44}
+                                            >
+                                                {t('earn_card.watch_tutorial_button')}
+                                            </Button>
+                                        }
+                                        <Button
+                                            variant="filled"
+                                            color="var(--flr-black)"
+                                            component={Link}
+                                            href={properties.url}
+                                            target="_blank"
+                                            radius="xl"
+                                            fw={300}
+                                            h={44}
+                                        >
+                                            {t('earn_card.open_app_button')}
+                                        </Button>
+                                    </div>
+                                </Table.Td>
+                            </Table.Tr>
+                        ))}
+                    </Table.Tbody>
+                </Table>
             </div>
         </div>
     )

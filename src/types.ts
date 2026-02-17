@@ -509,6 +509,8 @@ export interface IEarn {
         pairs: string[];
         coin_type: string;
         url: string;
+        yt_url: string;
+        description: string;
     }
 }
 

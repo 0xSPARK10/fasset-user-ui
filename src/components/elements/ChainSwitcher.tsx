@@ -60,7 +60,7 @@ export default function ChainSwitcher({ className }: IChainSwitcher) {
                         variant="outline"
                         radius="xl"
                         size="md"
-                        className="h-[40px] text-black border-gray-200 pl-1 pr-3 hover:bg-transparent hidden sm:block"
+                        className="h-[40px] text-black border-gray-200 pl-1 pr-3 hover:bg-transparent hidden min-[800px]:block"
                         classNames={{
                             section: 'my-1',
                             label: 'mr-3'
@@ -79,7 +79,7 @@ export default function ChainSwitcher({ className }: IChainSwitcher) {
                         classNames={{
                             section: 'my-2'
                         }}
-                        className="block sm:hidden h-[40px] text-black border-gray-200 pl-1 pr-3 hover:bg-transparent"
+                        className="block min-[800px]:hidden h-[40px] text-black border-gray-200 pl-1 pr-3 hover:bg-transparent"
                     >
                         {mainToken?.icon({ width: '30', height: '30' })}
                     </Button>

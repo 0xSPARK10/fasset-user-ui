@@ -172,7 +172,7 @@ export default function Layout({ children, ...props }: ILayout) {
                                 </div>
                             </div>
                         </div>
-                        <div className="hidden sm:flex items-center">
+                        <div className="hidden min-[800px]:flex items-center">
                             <Link
                                 href="/"
                                 className={`text-14 font-light mr-8 ${router.pathname === '/' ? 'underline underline-offset-4' : ''}`}
@@ -207,7 +207,7 @@ export default function Layout({ children, ...props }: ILayout) {
                                 opened={isMenuOpened}
                                 onClick={() => setIsMenuOpened(!isMenuOpened)}
                                 size={25}
-                                className="block sm:hidden ml-4"
+                                className="block min-[800px]:hidden ml-4"
                             />
                         </div>
                     </Container>

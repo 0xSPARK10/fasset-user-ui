@@ -351,17 +351,23 @@
         "want_to_deposit_title": "I want to deposit"
     },
     "earn_card": {
-        "borrow/lend_label": "Borrow / lend",
+        "borrow/lending_label": "Borrow/Lending",
         "dex_label": "DEX",
         "eligible_assets_label": "Eligible Asset(s)",
         "fxrp_label": "FXRP",
-        "open_app_button": "Open App",
+        "leverage_label": "Leverage",
+        "open_app_button": "Explore",
+        "perps_label": "Perps",
         "pools_pair_label": "Pool Pairs",
+        "prediction_label": "Prediction",
         "restaking_label": "Restaking",
         "stxrp_label": "stXRP",
         "title": "Earn",
         "usdt0_label": "USDT0",
-        "vaults_label": "Vaults"
+        "vault_label": "Vault",
+        "vaults_label": "Vaults",
+        "watch_tutorial_button": "Watch tutorial",
+        "yield-trading_label": "Yield-trading"
     },
     "error": {
         "error_message": "Error: {{message}}",

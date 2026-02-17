@@ -36,7 +36,7 @@ export default function ConnectWalletButton() {
                     }}
                     fw={400}
                 >
-                        <span className="block sm:hidden">
+                        <span className="block min-[800px]:hidden">
                             {mainToken.connectedWallet === WALLET.META_MASK &&
                                 <MetaMaskIcon width="30" height="30" />
                             }
@@ -47,7 +47,7 @@ export default function ConnectWalletButton() {
                                 <LedgerIcon width="30" height="30" />
                             }
                         </span>
-                    <span className="hidden sm:block">{truncateString(mainToken.address!)}</span>
+                    <span className="hidden min-[800px]:block">{truncateString(mainToken.address!)}</span>
                 </Button>
                 : <Button
                     color="black"
