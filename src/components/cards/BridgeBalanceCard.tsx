@@ -17,13 +17,11 @@ import { IFAssetCoin } from "@/types";
 import { COINS } from "@/config/coin";
 import BridgeModal from "@/components/modals/BridgeModal";
 import { useInterval } from "@mantine/hooks";
-import { BRIDGE_TYPE } from "@/constants";
+import { BALANCE_FETCH_INTERVAL, BRIDGE_TYPE } from "@/constants";
 
 interface IHyperLiquidBalanceCard {
     className?: string;
 }
-
-const BALANCE_FETCH_INTERVAL = 60000;
 
 export default function BridgeBalanceCard({ className }: IHyperLiquidBalanceCard) {
     const { mainToken } = useWeb3();

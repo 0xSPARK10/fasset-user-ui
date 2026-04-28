@@ -18,12 +18,14 @@ import { useWeb3 } from "@/hooks/useWeb3";
 import BlingIcon from "@/components/icons/BlingIcon";
 import { COINS } from "@/config/coin";
 import { CoinEnum } from "@/types";
+import { useNetworks } from "@/hooks/useNetworks";
 
 export default function Connect() {
     const [isBeforeYouStartOpened, setIsBeforeYourStartOpened] = useState<boolean>(false);
     const router = useRouter();
     const { openConnectWalletModal, closeConnectWalletModal } = useConnectWalletModal();
-    const { isConnected, mainToken } = useWeb3();
+    const { isConnected } = useWeb3();
+    const { isMainnet } = useNetworks();
     const { t } = useTranslation();
     const faucetCoins = COINS.filter(coin => coin.enabled && coin.faucetUrl !== undefined);
     const isMintPage = !router.query?.redirect || router.query?.redirect === '/mint';
@@ -37,8 +39,8 @@ export default function Connect() {
     };
 
     return (
-        <div className={mainToken?.network.mainnet ? 'my-auto' : ''}>
-            {!mainToken?.network?.mainnet &&
+        <div className={isMainnet ? 'my-auto' : ''}>
+            {!isMainnet &&
                 <Container
                     size="sm"
                     className="mb-24 mt-8"

@@ -20,12 +20,14 @@ import { useWeb3 } from "@/hooks/useWeb3";
 import { COINS } from "@/config/coin";
 import classes from "@/styles/pages/Mint.module.scss";
 import { useMintEnabled } from "@/api/minting";
-import { NETWORK_FLARE, NETWORK_SONGBIRD } from "@/config/networks";
+import { NETWORK_FLARE, NETWORK_SONGBIRD, XRP_NAMESPACE } from "@/config/networks";
+import { useNetworks } from "@/hooks/useNetworks";
 
 export default function Mint() {
     const [fAssetCoins, setFAssetCoins] = useState<IFAssetCoin[]>([]);
     const { t } = useTranslation();
     const { connectedCoins, mainToken } = useWeb3();
+    const { isMainnet } = useNetworks();
     const { scrollIntoView, targetRef } = useScrollIntoView<HTMLDivElement>({
         offset: 60,
     });
@@ -47,7 +49,7 @@ export default function Mint() {
 
     return (
         <Container fluid className={`${classes.container} mt-8`}>
-            {!mainToken?.network.mainnet &&
+            {!isMainnet &&
                 <Grid gutter="md">
                     <Grid.Col span={{ base: 12, sm: 6 }}>
                         <FaucetCard />
@@ -75,7 +77,7 @@ export default function Mint() {
                             className="mb-2"
                         />
                     )}
-                    {(!mainToken?.network.mainnet || ![NETWORK_FLARE.chainId, NETWORK_SONGBIRD.chainId].includes(mainToken.network.chainId)) &&
+                    {(!isMainnet || ![NETWORK_FLARE.chainId, NETWORK_SONGBIRD.chainId].includes(mainToken?.network.chainId!)) &&
                         <Trans
                             i18nKey={'dashboard.know_more_label'}
                             components={{
@@ -127,6 +129,7 @@ export default function Mint() {
             <LatestTransactionsCard
                 refreshKey={latestTransactionCardKey}
                 type="mint"
+                fAssetCoin={fAssetCoins.find(c => c.network.namespace === XRP_NAMESPACE)}
             />
         </Container>
     );

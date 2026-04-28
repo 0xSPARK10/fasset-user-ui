@@ -37,7 +37,7 @@ export interface IFAssetColumn {
     sortColumns?: { field: string, direction: 'asc' | 'desc', label: string }[];
     thClass?: string;
     thInnerClass?: string;
-    tdClass?: string;
+    tdClass?: string | ((item: any) => string);
     tdInnerClass?: string;
     onTdClick?: (item: any) => void;
 }
@@ -199,7 +199,7 @@ const FAssetTable = memo((
                 {columns.map(column => (
                     <Table.Td
                         key={column.id}
-                        className={`${column.tdClass ?? ''}`}
+                        className={`${typeof column.tdClass === 'function' ? column.tdClass(item) : (column.tdClass ?? '')}`}
                         onClick={column.onTdClick ? () => column.onTdClick?.(item) : undefined}
                     >
                         <div className={`${column.tdInnerClass ? column.tdInnerClass : ''}`}>
@@ -238,7 +238,7 @@ const FAssetTable = memo((
                                             {column.label}
                                         </Table.Td>
                                         <Table.Td
-                                            className={column.tdClass ?? ''}
+                                            className={typeof column.tdClass === 'function' ? column.tdClass(item) : (column.tdClass ?? '')}
                                         >
                                             {column.render !== undefined
                                                 ? column.render(item)

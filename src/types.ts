@@ -1,5 +1,8 @@
 import React, { ReactNode } from "react";
 import { MantineSize } from "@mantine/core";
+import { BRIDGE_TYPE } from "./constants";
+
+export type BridgeType = typeof BRIDGE_TYPE[keyof typeof BRIDGE_TYPE];
 
 export interface ITableRowAction<T> {
     name: string;
@@ -16,6 +19,7 @@ export interface IIconProps {
     height?: string;
     className?: string;
     style?: any;
+    color?: string;
     size?: number | MantineSize | (string & {}) | undefined;
     onClick?: () => void;
     disabled?: boolean;
@@ -40,6 +44,10 @@ export const enum CoinEnum {
     C2FLR = 'C2FLR',
     FLR = 'FLR',
     HYPE = 'HYPE',
+    WCFLR = 'WCFLR',
+    WC2FLR = 'WC2FLR',
+    WFLR = 'WFLR',
+    WSGB = 'WSGB',
 }
 
 export interface ICoin {
@@ -66,12 +74,14 @@ export interface ICoin {
     xpub?: string;
     bipPath?: string;
     isStableCoin?: boolean;
+    contractDecimals?: number; // on-chain decimals for parseUnits (e.g. 18 for wnat, 6 for fasset/collateral)
 }
 
 export interface INetwork {
     chainId: string;
     name: string;
     shortName?: string;
+    brandName?: string;
     rpcUrl: string;
     namespace: string;
     methods: INamespaceMethods;
@@ -115,6 +125,8 @@ export interface ICrEvent {
 export interface IMintStatus {
     status: boolean;
     step: number;
+    delayed?: boolean;
+    delayTimestamp?: number;
 }
 
 export interface IRedemptionStatus {
@@ -122,7 +134,8 @@ export interface IRedemptionStatus {
     incomplete: boolean;
     incompleteData: {
         redeemer: string;
-        remainingLots: string;
+        remainingLots?: string;
+        remainingAmountUBA?: string;
     }|null;
 }
 
@@ -144,6 +157,11 @@ export interface IExecutor {
     redemptionFee: string;
 }
 
+export interface IDirectMintingExecutor {
+    executorAddress: string;
+    executorFee: string;
+}
+
 export interface IAssetManagerAddress {
     address: string;
 }
@@ -160,6 +178,21 @@ export interface IRedemptionFee {
     redemptionFee: string;
     maxLotsOneRedemption: number;
     maxRedemptionLots: number;
+    minimumRedeemAmountUBA: string;
+}
+
+export interface IRedemptionQueue {
+    /** Max per single redemption to avoid Partial redemption */
+    maxLotsOneRedemption: number;
+    /** Max redeemable without failing the redemption — use this for UI limits */
+    maxLots: number;
+    /** Max per single redemption to avoid Partial redemption (in drops) */
+    maxAmountOneRedemptionDrops: string;
+    /** Max per single redemption to avoid Partial redemption (in XRP) */
+    maxAmountOneRedemptionXRP: string;
+    maxAmountDrops: string;
+    /** Max redeemable without failing the redemption (in XRP) — use this for UI limits */
+    maxAmountXRP: string;
 }
 
 export interface IMaxLots {
@@ -285,6 +318,7 @@ export interface IUserProgress {
     takenOver?: boolean;
     rejectionDefaulted?: boolean;
     txhash: string;
+    evm_txhash: string | null;
     missingUnderlying: boolean;
     underlyingTransactionData: {
         amount: string;
@@ -294,6 +328,13 @@ export interface IUserProgress {
         lastUnderlyingBlock: string;
         expirationMinutes: string;
     };
+    directMinting?: boolean;
+    directMintingStatus?: 'INPROGRESS' | 'DELAYED' | 'EXECUTED' | 'EXECUTED_TO_SMART_ACCOUNT' | 'MINTING_PAYMENT_TOO_SMALL_FOR_FEE';
+    delayTimestamp?: number | null;
+    redeemWithTag?: boolean;
+    redeemStatus?: 'INPROGRESS' | 'FAILED' | 'BLOCKED' | 'DEFAULTED' | 'COMPLETED';
+    destinationTag?: string;
+    remainingAmount?: string;
 }
 
 export interface IEstimateFee {
@@ -304,6 +345,7 @@ export interface IEstimateFee {
 export interface IRedemptionDefault {
     incomplete: boolean;
     remainingLots?: string;
+    remainingAmountUBA?: string;
 }
 
 export interface IUtxo {
@@ -503,6 +545,11 @@ export interface IMintEnabled {
     status: boolean;
 }
 
+export interface IMintingCapInfo {
+    totalSupply: string;
+    mintingCap: string;
+}
+
 export interface IEarn {
     [key: string]: {
         type: string;
@@ -657,4 +704,37 @@ export interface IOFTHistory {
     incomplete: boolean;
     remainingLots: string;
     redemptionBlocked: boolean;
+}
+
+export interface IOFTRedemptionFees{
+  composerFeePPM: string;
+  executorAddress: string;
+  executorFee: string;  
+}
+
+export interface IDirectMintingInfo {
+    paymentAddress: string;
+    minMintingAmount?: string;
+    mintingFeeBIPS: string;
+    minimumMintingFeeUBA: string;
+    executorAddress: string;
+    executorFee: string;
+    fassetsExecutorFee: string;
+}
+
+export interface IMintingRecipient {
+    recipient: string;
+}
+
+export interface ITagsByAddress {
+    tagId: string;
+    mintingRecipient: string;
+    allowedExecutor: string;
+    executorChangePending?: boolean;
+    pendingNewExecutor?: string;
+    executorChangeActiveAfterTs?: number;
+}
+
+export interface ITagReservationFee {
+    reservationFee: string;
 }

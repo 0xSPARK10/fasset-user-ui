@@ -5,8 +5,7 @@ import FXrpIcon from "@/components/icons/FXrpIcon";
 import XrpIcon from "@/components/icons/XrpIcon";
 import { formatNumberWithSuffix, toNumber } from "@/utils";
 import moment from "moment/moment";
-import { FILTERS } from "@/constants";
-import { LineChart } from "@mantine/charts";
+import { FILTERS, IS_MAINNET } from "@/constants";
 
 interface IProofOfReservesCard {
     timeData: ITimeData | undefined;
@@ -76,7 +75,7 @@ export default function ProofOfReservesCard({ timeData, filter, ecoSystemInfo }:
                             className="text-16 uppercase"
                         >
                             {t('proof_of_reserves_card.total_label', {
-                                fasset: process.env.NETWORK === 'mainnet' ? 'FXRP' : 'FTestXRP'
+                                fasset: IS_MAINNET ? 'FXRP' : 'FTestXRP'
                             })}
                         </Title>
                         <div className="flex items-center mt-2">

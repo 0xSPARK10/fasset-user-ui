@@ -29,7 +29,12 @@
     --flr-teal: #26A17B;
     --flr-lightest-blue: #DFE9FD;
     --flr-blue: #2775CA;
+    --flr-sky: #1B677A;
+    --flr-sky-lighter: #98DAEC;
+    --flr-lightest-sky: #F6FCFD;
     --tab-border-color: #fff;
+    --errors-border-color: #B0190E;
+    --errors-highlight-color: #FCEAE8;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -122,6 +127,16 @@ ol {
         &:focus {
             border-color: var(--mantine-color-black);
         }
+    }
+}
+
+// Prevent iOS Safari from auto-zooming the viewport on input focus.
+// iOS zooms when font-size < 16px; overrides Mantine's default 14px (--mantine-font-size-sm) back to 16px.
+// If Mantine raises its default input font-size above 16px this rule becomes a no-op — verify after Mantine upgrades.
+// @supports (-webkit-touch-callout: none) matches iOS Safari only.
+@supports (-webkit-touch-callout: none) {
+    .mantine-Input-input {
+        font-size: 16px;
     }
 }
 
@@ -264,6 +279,30 @@ ol {
             border-color: var(--mantine-color-black);
         }
     }
+}
+
+.segmented-control-root {
+    background: var(--flr-white);
+    border: 1px solid var(--flr-black);
+    padding: 2px;
+}
+
+.segmented-control-control {
+    --separator-color: var(--flr-black);
+}
+
+.segmented-control-indicator {
+    background: var(--flr-black);
+}
+
+.segmented-control-label {
+    color: var(--flr-black);
+    font-weight: 500;
+    padding: 4px 8px;
+}
+
+.segmented-control-label:where([data-active]) {
+    color: var(--flr-white);
 }
 
 // Action icons

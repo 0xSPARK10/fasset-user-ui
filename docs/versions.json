@@ -1,0 +1,6 @@
+{
+  "DEV_SPEC": { "doc": "1.6", "app": "v1.3", "updated": "2026-04-24" },
+  "PRODUCT_OWNER": { "doc": "1.1", "app": "v1.3", "updated": "2026-04-24" },
+  "BUSINESS_RULES": { "doc": "1.3", "app": "v1.3", "updated": "2026-04-21" },
+  "CHANGELOG": { "doc": "1.0", "app": "v1.3", "updated": "2026-04-21" }
+}

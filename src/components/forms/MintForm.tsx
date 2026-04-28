@@ -1,752 +1,653 @@
 import React, {
-    useEffect,
-    useState,
-    forwardRef,
-    useImperativeHandle,
-    useCallback,
-    useRef
+	useEffect,
+	useState,
+	forwardRef,
+	useImperativeHandle,
+	useRef,
 } from "react";
 import {
-    Button,
-    Divider,
-    Loader,
-    LoadingOverlay,
-    NumberInput,
-    Popover,
-    Text,
-    FocusTrap,
-    SimpleGrid
+	Divider,
+	Loader,
+	LoadingOverlay,
+	Text,
+	FocusTrap,
 } from "@mantine/core";
+import MintDestinationEditor from "@/components/forms/MintDestinationEditor";
 import CryptoJS from "crypto-js";
 import { useForm, UseFormReturnType } from "@mantine/form";
 import { yupResolver } from "mantine-form-yup-resolver";
 import * as yup from "yup";
-import { useDebouncedCallback, useElementSize, useMediaQuery } from "@mantine/hooks";
+import {
+	useDebouncedCallback,
+	useDebouncedValue,
+	useElementSize,
+	useMediaQuery,
+} from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
-import CopyIcon from "@/components/icons/CopyIcon";
-import AgentsList from "@/components/mint/AgentsList";
-import { showErrorNotification } from "@/hooks/useNotifications";
-import { truncateString, fromLots, toLots, toNumber, formatNumber, toSatoshi, parseUnits } from "@/utils";
-import { IAgent, IFAssetCoin, ISelectedAgent } from "@/types";
+import { toNumber, isZeroAddress } from "@/utils";
+import { devLog } from "@/utils/debug";
+import { formatInputAmount, formatFeeAmount } from "@/core/fees/format";
+import { IFAssetCoin } from "@/types";
+import { IAlertMessage } from "@/components/elements/FormAlert";
+import AmountInput from "@/components/elements/AmountInput";
 import { useWeb3 } from "@/hooks/useWeb3";
-import { useMaxLots, useReturnAddresses } from "@/api/minting";
-import { useUnderlyingBalance, useNativeBalance } from "@/api/balance";
-import { useBestAgent, useAllAgents, useFassetPrice } from "@/api/user";
+import { useUnderlyingBalance } from "@/api/balance";
+import { useFassetPrice } from "@/api/user";
 import { WALLET } from "@/constants";
-import classes from "@/styles/components/forms/MintForm.module.scss";
+import { useDirectMintingInfo, useMintingRecipient, useMintingCapInfo } from "@/api/minting";
+import { isAddress } from "ethers";
+import { useUserTags } from "@/api/tags";
 
 interface IMintForm {
-    isFormDisabled?: (status: boolean) => void;
-    setSelectedAgent: (agent: ISelectedAgent) => void;
-    selectedAgent: ISelectedAgent | undefined;
-    setLots: (lots: number | undefined) => void;
-    lots: number | undefined;
-    fAssetCoin: IFAssetCoin;
-    refreshBalance: () => void;
-    setHighMintingFee: (fee: number | undefined) => void;
-    onError: (error: string) => void;
+	isFormDisabled?: (status: boolean) => void;
+	fAssetCoin: IFAssetCoin;
+	refreshBalance: () => void;
+	setHighMintingFee: (fee: number | undefined, transfer?: number) => void;
+	onError: (alert?: IAlertMessage) => void;
 }
 
 export type FormRef = {
-    form: () => UseFormReturnType<any>;
-}
+	form: () => UseFormReturnType<any>;
+};
 
 const MINTING_FEE_LIMIT = 2;
 
 const MintForm = forwardRef<FormRef, IMintForm>(
-    ({
-        isFormDisabled,
-        setSelectedAgent,
-        selectedAgent,
-        lots,
-        setLots,
-        fAssetCoin,
-        refreshBalance,
-        setHighMintingFee,
-        onError
-    }: IMintForm, ref) => {
-    const [maxLots, setMaxLots] = useState<number>();
-    const [transfer, setTransfer] = useState<number>();
-    const [mintingFee, setMintingFee] = useState<number>();
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [areLotsLimited, setAreLotsLimited] = useState<boolean>(false);
-    const [isDisabled, setIsDisabled] = useState<boolean>(true);
-    const [isAgentPopoverActive, setIsAgentPopoverActive] = useState<boolean>(false);
-    const [isManualSelectedAgent, setIsManualSelectedAgent] = useState<boolean>(false);
-    const hasRun = useRef(false);
-    const hasXamanInsufficientFunds = useRef(false);
+	(
+		{
+			isFormDisabled,
+			fAssetCoin,
+			refreshBalance,
+			setHighMintingFee,
+			onError,
+		}: IMintForm,
+		ref,
+	) => {
+		const [transfer, setTransfer] = useState<number>();
+		const [isLoading, setIsLoading] = useState<boolean>(false);
+		const [isDisabled, setIsDisabled] = useState<boolean>(true);
+		const [destinationMode, setDestinationMode] = useState<"address" | "tag">(
+			"address",
+		);
+		const hasRun = useRef(false);
+		const hasXamanInsufficientFunds = useRef(false);
+		const hasMinAmountError = useRef(false);
+		const hasMintCapError = useRef(false);
+		const [tagForLookup, setTagForLookup] = useState("");
 
-    const { walletConnectConnector, connectedCoins, mainToken } = useWeb3();
-    const popoverSize = useElementSize();
-    const transferLabelSize = useElementSize();
-    const mintingFeeLabelSize = useElementSize();
-    const reservationLabelSize = useElementSize();
-    const { t } = useTranslation();
-    const isMobile = useMediaQuery('(max-width: 640px)');
-    const bestAgent = useBestAgent();
-    const fetchMaxLots = useMaxLots(fAssetCoin.type, false);
-    const agents = useAllAgents(fAssetCoin.type);
-    const returnAddresses = useReturnAddresses(
-        fAssetCoin.type,
-        transfer && mintingFee ? toSatoshi(transfer + mintingFee) : 0,
-        false
-    );
-    const fAssetPrice = useFassetPrice(fAssetCoin.type, false);
+		const { walletConnectConnector, connectedCoins, mainToken } = useWeb3();
+		const addressForTagLookup = mainToken?.address ?? "";
+		const transferLabelSize = useElementSize();
+		const mintingFeeLabelSize = useElementSize();
+		const { t } = useTranslation();
+		const isMobile = useMediaQuery("(max-width: 640px)");
 
-    const mintFeePercentage = mintingFee !== undefined && transfer !== undefined && transfer !== 0
-        ? (mintingFee / transfer) * 100
-        : 0;
-    const isMintingFeeHigh = mintFeePercentage > MINTING_FEE_LIMIT;
+		const mintingData = useDirectMintingInfo(fAssetCoin.type);
+		const mintingCapInfo = useMintingCapInfo(fAssetCoin.type);
+		const fAssetPrice = useFassetPrice(fAssetCoin.type, false);
 
-    const connectedCoin = connectedCoins.find(coin => coin.type == fAssetCoin.type);
-    const underlyingBalance = useUnderlyingBalance(
-        connectedCoin && connectedCoin.connectedWallet === WALLET.LEDGER && connectedCoin.xpub !== undefined
-            ? CryptoJS.AES.decrypt(connectedCoin.xpub!, process.env.XPUB_SECRET!).toString(CryptoJS.enc.Utf8)
-            : fAssetCoin?.address!,
-        fAssetCoin.type,
-        fAssetCoin?.address !== undefined,
-        connectedCoin && connectedCoin.connectedWallet === WALLET.LEDGER && connectedCoin.xpub !== undefined
-    );
+		const connectedCoin = connectedCoins.find(
+			(coin) => coin.type == fAssetCoin.type,
+		);
+		const underlyingBalance = useUnderlyingBalance(
+			connectedCoin &&
+				connectedCoin.connectedWallet === WALLET.LEDGER &&
+				connectedCoin.xpub !== undefined
+				? CryptoJS.AES.decrypt(
+						connectedCoin.xpub!,
+						process.env.XPUB_SECRET!,
+					).toString(CryptoJS.enc.Utf8)
+				: fAssetCoin?.address!,
+			fAssetCoin.type,
+			fAssetCoin?.address !== undefined,
+			connectedCoin &&
+				connectedCoin.connectedWallet === WALLET.LEDGER &&
+				connectedCoin.xpub !== undefined,
+		);
 
-    const nativeBalances = useNativeBalance(mainToken?.address ?? '', mainToken?.address !== undefined);
-    const schema = yup.object().shape({
-        lots: yup.number()
-            .required(t('validation.messages.required', { field: t('mint_modal.form.lots_label') }))
-            .min(1)
-    });
-    const form = useForm({
-        mode: 'uncontrolled',
-        initialValues: {
-            lots: undefined,
-            agentAddress: '',
-            collateralReservationFee: '',
-            feeBIPS: '',
-            estimatedFee: undefined,
-            minterUnderlyingAddresses: [],
-            utxos: []
-        },
-        validate: yupResolver(schema),
-        onValuesChange: (values: any) => {
-            if (values?.lots?.length === 0) {
-                form.setFieldValue('lots', undefined);
-            }
-        }
-    });
+		const schema = yup.object().shape({
+			amount: yup
+				.number()
+				.required(
+					t("validation.messages.required", {
+						field: t("mint_modal.form.input_label"),
+					}),
+				)
+				.min(1),
+			destinationAddress: yup.string().when("destinationMode", {
+				is: "address",
+				then: (s) =>
+					s
+						.required(
+							t("validation.messages.required", {
+								field: t("mint_modal.form.destination_address_label"),
+							}),
+						)
+						.test(
+							"is-valid-address",
+							t("validation.messages.invalid_address"),
+							(value) => isAddress(value ?? ""),
+						),
+				otherwise: (s) => s.optional(),
+			}),
+		});
 
-    const inputDescription = `${t('mint_modal.form.lots_limit_label', {
-        nativeName: fAssetCoin.nativeName,
-        lots: maxLots,
-        lotSize: fAssetCoin.lotSize
-    })}\n ${areLotsLimited ? t('mint_modal.form.maximum_number_of_lots_label') + "\n" : ''} ${t('mint_modal.form.amounted_based_label', { nativeName: fAssetCoin.nativeName })}`;
-    const labelWidth = Math.max(transferLabelSize.width, mintingFeeLabelSize.width, reservationLabelSize.width);
+		const form = useForm({
+			mode: "controlled",
+			initialValues: {
+				amount: undefined,
+				destinationAddress: mainToken?.address ?? "",
+				destinationTag: "",
+				resolvedAddress: "",
+				addressTag: "",
+				destinationMode: "address" as "address" | "tag",
+			},
+			validate: yupResolver(schema),
+			onValuesChange: (values: any) => {
+				if (values?.amount?.length === 0) {
+					form.setFieldValue("amount", undefined);
+				}
+			},
+		});
 
-    const reservationFee = lots && bestAgent?.data?.collateralReservationFee
-        ? BigInt(bestAgent?.data?.collateralReservationFee) + parseUnits(mainToken?.minWalletBalance!, 18)
-        : undefined;
+		const [debouncedTag] = useDebouncedValue(tagForLookup, 500);
+		const hasValidTransfer =
+			typeof transfer === "number" && !Number.isNaN(transfer);
 
-    const refetchBestAgent = useCallback(async (setAgent: boolean = true) => {
-        try {
-            if (isFormDisabled) {
-                isFormDisabled(true);
-            }
+		const recipientQuery = useMintingRecipient(
+			fAssetCoin.type,
+			debouncedTag,
+			debouncedTag.length > 0,
+		);
 
-            const response = await bestAgent.mutateAsync({
-                fAsset: fAssetCoin.type,
-                lots: lots as number
-            });
+		const tagsByAddressQuery = useUserTags(
+			fAssetCoin.type,
+			addressForTagLookup,
+			addressForTagLookup.length > 0 && isAddress(addressForTagLookup),
+		);
 
-            if (setAgent) {
-                const fee = (transfer ?? 0) * ((Number(response?.feeBIPS) ?? 0) / 10000);
-                setMintingFee(fee);
+		const hasValidAmount = () => {
+			const amount = form.getValues().amount;
+			return typeof amount === "number" && !Number.isNaN(amount) && amount >= minMintingAmount;
+		};
 
-                setSelectedAgent({
-                    name: response?.agentName,
-                    address: response?.agentAddress,
-                    feeBIPS: response?.feeBIPS,
-                    underlyingAddress: response?.underlyingAddress,
-                    infoUrl: response?.infoUrl
-                });
-                form.setValues((prev) => ({
-                    ...prev,
-                    agentAddress: response?.agentAddress,
-                    collateralReservationFee: response?.collateralReservationFee,
-                    feeBIPS: response?.feeBIPS
-                }));
-            } else {
-                form.setFieldValue('collateralReservationFee', response?.collateralReservationFee);
-            }
-        } catch (error: any) {
-            error = error as AxiosError;
-            if (error.response.status === 400) {
-                setIsDisabled(true);
-                if (isFormDisabled) {
-                    isFormDisabled(true);
-                }
+		// Syncs resolvedAddress form field with API result after tag lookup.
+		// setFieldValue("resolvedAddress", "") is only called when value is non-empty
+		// to avoid Mantine clearing the field error as a side effect.
+		useEffect(() => {
+			if (destinationMode !== "tag" || !debouncedTag) return;
 
-                form.setFieldError(
-                    'lots',
-                    !isManualSelectedAgent
-                        ? error?.response?.data?.message
-                        : t('mint_modal.form.error_agent_no_lots_available')
-                );
-            } else {
-                showErrorNotification(error?.response?.data?.message);
-            }
-        } finally {
-            if (isFormDisabled && !hasXamanInsufficientFunds.current) {
-                isFormDisabled(false);
-            }
-        }
-    }, [bestAgent, form]);
+			if (recipientQuery.data?.recipient && !isZeroAddress(recipientQuery.data.recipient)) {
+				form.setFieldValue("resolvedAddress", recipientQuery.data.recipient);
+				form.clearFieldError("resolvedAddress");
+				if (isFormDisabled) isFormDisabled(!hasValidAmount());
+			} else if (!recipientQuery.isFetching) {
+				if (form.getValues().resolvedAddress) {
+					form.setFieldValue("resolvedAddress", "");
+				}
+				form.setFieldError(
+					"resolvedAddress",
+					t("mint_modal.form.tag_no_address_error_label"),
+				);
+				if (isFormDisabled) isFormDisabled(true);
+			}
+		}, [recipientQuery.data, recipientQuery.isFetching, debouncedTag, destinationMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const debounceSetLots = useDebouncedCallback(async (value) => {
-        setLots(value);
-        setTransfer(fromLots(value, fAssetCoin.lotSize) as number);
-        if (value && selectedAgent !== undefined) {
-            const fee = fromLots(value, fAssetCoin.lotSize) as number * ((Number(selectedAgent.feeBIPS) ?? 0) / 10000);
-            setMintingFee(fee);
-        }
-    }, 500);
+		// Syncs addressTag form field with the first registered tag found for the destination address.
+		// Used to auto-display the tag in address mode (read-only).
+		useEffect(() => {
+			if (!addressForTagLookup) return;
+			const filteredTags = tagsByAddressQuery.data?.filter((tag) => tag.mintingRecipient === addressForTagLookup)
+			form.setFieldValue("addressTag", filteredTags?.[0]?.tagId ?? "");
+		}, [tagsByAddressQuery.data, addressForTagLookup]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const setAgent = (event: React.MouseEvent<HTMLDivElement>, agent: IAgent) => {
-        if (event.target instanceof SVGElement) {
-            return;
-        }
+		// Disable Next button while tag is being fetched for the entered address.
+		useEffect(() => {
+			if (!isFormDisabled) return;
+			if (tagsByAddressQuery.isFetching) {
+				isFormDisabled(true);
+			} else if (destinationMode === "address") {
+				const addr = form.getValues().destinationAddress;
+				isFormDisabled(!hasValidAmount() || !isAddress(addr ?? "") || hasXamanInsufficientFunds.current);
+			}
+		}, [tagsByAddressQuery.isFetching]); // eslint-disable-line react-hooks/exhaustive-deps
 
-        setIsManualSelectedAgent(true);
+		form.watch("destinationTag", ({ value }) => {
+			setTagForLookup(value as string);
+			form.setFieldValue("resolvedAddress", "");
+			form.clearFieldError("resolvedAddress");
+			if (isFormDisabled) isFormDisabled(true);
+		});
 
-        setSelectedAgent({
-            name: agent.agentName,
-            address: agent.vault,
-            feeBIPS: agent.feeBIPS,
-            underlyingAddress: agent.underlyingAddress,
-            infoUrl: agent.url,
-        });
-        setIsAgentPopoverActive(false);
+		form.watch("destinationMode", ({ value }) => {
+			setDestinationMode(value as "address" | "tag");
+			if (value === "address") {
+				const addr = form.getValues().destinationAddress;
+				if (isFormDisabled)
+					isFormDisabled(
+						!hasValidAmount() || !isAddress(addr ?? "") || hasXamanInsufficientFunds.current,
+					);
+			} else {
+				const resolvedAddress = form.getValues().resolvedAddress;
+				if (isFormDisabled) isFormDisabled(!hasValidAmount() || !resolvedAddress);
+			}
+		});
 
-        let balance = toNumber(underlyingBalance?.data?.balance!);
-        const fee = transfer! * ((Number(agent.feeBIPS) ?? 0) / 10000);
-        setMintingFee(fee);
-        // substract fee from balance and recalculate max lots to mint
-        balance -= fee;
-        // wallet needs to have minimal 10 coins
-        balance -= fAssetCoin.minWalletBalance;
+		form.watch("destinationAddress", ({ value }) => {
+			if (form.getValues().destinationMode !== "address") return;
+			if (value !== (mainToken?.address ?? "")) {
+				form.setFieldValue("addressTag", "");
+			}
+			if (isFormDisabled)
+				isFormDisabled(
+					!hasValidAmount() || !isAddress(value ?? "") || hasXamanInsufficientFunds.current,
+				);
+		});
 
-        if (balance < 0) {
-            balance = 0;
-        }
+		const feeRate = Number(mintingData.data?.mintingFeeBIPS ?? 0) / 10000;
+		const minimumMintingFee =
+			Number(mintingData.data?.minimumMintingFeeUBA ?? 0) / 10 ** 6;
+		// TODO: use API value once backend returns minMintingAmount
+		// const minMintingAmount =
+		// 	Number(mintingData.data?.minMintingAmount ?? 0) / 10 ** 6;
+		const minMintingAmount = 10;
+		const executorFee =
+			Number(mintingData.data?.fassetsExecutorFee ?? 0) / 10 ** 6;
 
-        const balanceLots = toLots(balance, fAssetCoin.lotSize) as number;
-        setMaxLots(Math.min(balanceLots, Number(agent.freeLots)));
+		// Fee model (MIGRATION_v1.3.md):
+		//   systemFee    = max(totalSend × feeRate, minimumMintingFee)
+		//   totalSend    = transfer + systemFee + executorFee
+		//
+		// Solving for systemFee when percentage case applies (systemFee = totalSend × feeRate):
+		//   totalSend = transfer + totalSend × feeRate + executorFee
+		//   totalSend × (1 − feeRate) = transfer + executorFee
+		//   totalSend = (transfer + executorFee) / (1 − feeRate)
+		//   systemFee = totalSend − transfer − executorFee
+		//             = (transfer + executorFee) × feeRate / (1 − feeRate)
+		//
+		// effectiveMax: largest transfer that fits in availableToSpend = rawBalance − minWalletBalance − executorFee
+		//   percentage case: transfer = (availableToSpend + executorFee) × (1 − feeRate) − executorFee
+		//   flat-fee  case:  transfer = availableToSpend − minimumMintingFee
+		//   threshold between cases: transfer where percentage fee = minimumMintingFee
+		//     → transfer_threshold = minimumMintingFee / feeRate (before fee correction)
+		//
+		// required = minMintingAmount + minFee + executorFee + minWalletBalance
+		//   minFee  = max((minMintingAmount + executorFee) × feeRate / (1 − feeRate), minimumMintingFee)
+		const percentageMintingFee =
+			hasValidTransfer ? (transfer + executorFee) * feeRate / (1 - feeRate) : undefined;
+		const mintingFee =
+			hasValidTransfer
+				? Math.max(percentageMintingFee ?? 0, minimumMintingFee)
+				: undefined;
+		const totalFees =
+			hasValidTransfer && mintingFee !== undefined
+				? mintingFee + executorFee
+				: undefined;
+		const totalSend =
+			hasValidTransfer && mintingFee !== undefined
+				? transfer + mintingFee + executorFee
+				: undefined;
+		const mintFeePercentage =
+			mintingFee !== undefined && hasValidTransfer && transfer !== 0
+				? (mintingFee / transfer) * 100
+				: 0;
+		const isMintingFeeHigh = mintFeePercentage > MINTING_FEE_LIMIT;
 
-        const values = form.getValues();
-        form.setValues((prev) => ({
-            ...prev,
-            agentAddress: agent.vault,
-            feeBIPS: agent.feeBIPS,
-            lots: values.lots > Number(agent.freeLots) ? Number(agent.freeLots) : lots
-        }));
+		const rawBalance = toNumber(underlyingBalance.data?.balance ?? "0");
+		const minFee = Math.max((minMintingAmount + executorFee) * feeRate / (1 - feeRate), minimumMintingFee);
+		const required =
+			minMintingAmount +
+			minFee +
+			executorFee +
+			fAssetCoin.minWalletBalance;
+		const availableToSpend =
+			rawBalance - fAssetCoin.minWalletBalance - executorFee;
+		const mintingFeeThreshold =
+			feeRate > 0 ? minimumMintingFee / feeRate : Number.POSITIVE_INFINITY;
+		const effectiveMax =
+			availableToSpend <= 0
+				? 0
+				: availableToSpend <= mintingFeeThreshold + minimumMintingFee
+					? Math.max(availableToSpend - minimumMintingFee, 0)
+					: (availableToSpend + executorFee) * (1 - feeRate) - executorFee
+		const hasMintCap =
+			mintingCapInfo.data !== undefined &&
+			mintingCapInfo.data.mintingCap !== "0";
+		const mintCapRemaining = hasMintCap
+			? Number(BigInt(mintingCapInfo.data!.mintingCap) - BigInt(mintingCapInfo.data!.totalSupply)) / 1e6
+			: Infinity;
+		const isMintCapReached = hasMintCap && mintCapRemaining <= 0;
 
-        if (values.lots) {
-            refetchBestAgent(false);
-        }
-    }
+		const maxAmount = (() => {
+			if (underlyingBalance.data?.balance == null) return undefined;
+			if (rawBalance < required) return 0;
+			if (!hasMintCap) return effectiveMax;
+			const capped = Math.min(effectiveMax, Math.max(mintCapRemaining, 0));
+			if (capped < effectiveMax) {
+				devLog(`[MintCap] Max reduced for ${fAssetCoin.type}: ${effectiveMax} → ${capped} (cap remaining: ${mintCapRemaining})`);
+			}
+			return capped;
+		})();
 
-    useEffect(() => {
-        return () => {
-            setLots(undefined)
-        }
-    }, []);
 
-    useEffect(() => {
-        if (!mintingFee || !selectedAgent || fAssetCoin.type.toLowerCase().includes('xrp')) {
-            form.setFieldValue(
-                'minterUnderlyingAddresses',
-                fAssetCoin.type.toLowerCase().includes('xrp') ? [fAssetCoin.address!] : []
-            );
-            return;
-        }
+		const inputDescription = `${t("mint_modal.form.lots_limit_label", {
+			nativeName: fAssetCoin.nativeName,
+			value:
+				maxAmount !== undefined
+					? formatInputAmount(maxAmount, 0)
+					: 0,
+			tokenName: fAssetCoin.type,
+		})}`;
 
-        const fetch = async () => {
-            const response = await returnAddresses.refetch();
-            form.setValues((prev) => ({
-                ...prev,
-                minterUnderlyingAddresses: response.data?.addresses!,
-                utxos: response.data?.utxos!,
-                estimatedFee: response.data?.estimatedFee
-            }));
-        }
+		const labelWidth = Math.max(
+			transferLabelSize.width,
+			mintingFeeLabelSize.width,
+		);
 
-        fetch();
-    }, [mintingFee, selectedAgent]);
+		useEffect(() => {
+			if (mintingCapInfo.isLoading) return;
+			if (isMintCapReached) {
+				devLog(`[MintCap] Cap reached for ${fAssetCoin.type} — minting disabled`);
+				hasMintCapError.current = true;
+				setTransfer(undefined);
+				onError({ msg: t("mint_modal.form.mint_cap_reached"), type: 'info' });
+				if (isFormDisabled) isFormDisabled(true);
+			} else if (hasMintCapError.current) {
+				hasMintCapError.current = false;
+				if (!hasMinAmountError.current) {
+					onError();
+				}
+			}
+		}, [isMintCapReached, mintingCapInfo.isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const checkXamanBalance = async () => {
-        const response = await fAssetPrice.refetch();
-        hasXamanInsufficientFunds.current = false;
-        onError('');
+		const debounceSetAmount = useDebouncedCallback(async (value) => {
+			if (hasMintCapError.current) return;
+			if (
+				value === undefined ||
+				value === null ||
+				value === "" ||
+				typeof value !== "number" ||
+				Number.isNaN(value)
+			) {
+				setTransfer(undefined);
+				if (isFormDisabled) isFormDisabled(true);
+				return;
+			}
+			setTransfer(value);
+			if (value > 0 && value < minMintingAmount) {
+				hasMinAmountError.current = true;
+				if (isFormDisabled) isFormDisabled(true);
+				onError({
+					msg: t("mint_modal.form.min_amount_label", {
+						lotSize: minMintingAmount,
+						valueToken: fAssetCoin.nativeName,
+					}),
+					type: "info",
+				});
+			} else {
+				if (hasMinAmountError.current) {
+					hasMinAmountError.current = false;
+					onError();
+				}
+				const mode = form.getValues().destinationMode;
+				const addr = form.getValues().destinationAddress;
+				const resolvedAddress = form.getValues().resolvedAddress;
+				const addressOk = mode === "address" ? isAddress(addr ?? "") : !!resolvedAddress;
+				if (isFormDisabled) isFormDisabled(!addressOk || hasXamanInsufficientFunds.current || hasMintCapError.current);
+			}
+		}, 500);
 
-        if (response.data?.price && lots) {
-            const balance = toNumber(underlyingBalance.data?.balance!);
-            let totalUsd = response.data.price * ((fromLots(lots, fAssetCoin.lotSize) as number) + (mintingFee ?? 0));
-            let xamanFee = 0;
+		const checkXamanBalance = async () => {
+			const response = await fAssetPrice.refetch();
+			hasXamanInsufficientFunds.current = false;
+			onError();
 
-            if (totalUsd > 50000 && totalUsd <= 100000) {
-                xamanFee = (totalUsd * 0.001); // 0.1%
-            } else if (totalUsd > 100000) {
-                xamanFee = (totalUsd * 0.0007); // 0.07%
-            }
+			if (response.data?.price && transfer) {
+				const balance = toNumber(underlyingBalance.data?.balance!);
+				let totalUsd = response.data.price * (totalSend ?? 0);
+				let xamanFee = 0;
 
-            totalUsd += xamanFee;
-            const totalXrp = totalUsd / response.data.price;
+				if (totalUsd > 50000 && totalUsd <= 100000) {
+					xamanFee = totalUsd * 0.001;
+				} else if (totalUsd > 100000) {
+					xamanFee = totalUsd * 0.0007;
+				}
 
-            if (isFormDisabled && (totalXrp > (balance - fAssetCoin.minWalletBalance))) {
-                isFormDisabled(true);
-                hasXamanInsufficientFunds.current = true;
-                onError(t('mint_modal.form.error_insufficient_balance_label', { tokenName: 'XRP' }))
-            }
-        }
-    }
+				totalUsd += xamanFee;
+				const totalXrp = totalUsd / response.data.price;
 
-    useEffect(() => {
-        if (!mintingFee) return;
-        if (isMintingFeeHigh) {
-            setHighMintingFee(mintingFee);
-        } else {
-            setHighMintingFee(undefined);
-        }
+				if (
+					isFormDisabled &&
+					totalXrp > balance - fAssetCoin.minWalletBalance
+				) {
+					isFormDisabled(true);
+					hasXamanInsufficientFunds.current = true;
+					onError({
+						msg: t("mint_modal.form.error_insufficient_balance_label", {
+							tokenName: "XRP",
+						}),
+					});
+				}
+			}
+		};
 
-        if (fAssetCoin?.connectedWallet === WALLET.XAMAN) {
-            checkXamanBalance();
-        }
-    }, [mintingFee, isMintingFeeHigh]);
+		// Notifies parent when minting fee exceeds threshold so it can show a warning.
+		// Also checks Xaman wallet balance since Xaman adds its own fee on top.
+		useEffect(() => {
+			if (mintingFee === undefined || mintingData.isPending) return;
+			if (transfer === undefined || (minMintingAmount > 0 && transfer < minMintingAmount)) {
+				setHighMintingFee(undefined);
+				return;
+			}
+			if (isMintingFeeHigh) {
+				setHighMintingFee(mintingFee, transfer);
+			} else {
+				setHighMintingFee(undefined);
+			}
 
-    useEffect(() => {
-        if (lots) {
-            refetchBestAgent(!isManualSelectedAgent);
-        } else {
-            setMintingFee(undefined);
-        }
-    }, [lots]);
+			if (fAssetCoin?.connectedWallet === WALLET.XAMAN) {
+				checkXamanBalance();
+			}
+		}, [mintingFee, isMintingFeeHigh]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    useEffect(() => {
-        if (!underlyingBalance.data || !nativeBalances.data || hasRun.current) return;
+		// Shows an error and disables the form if the user's underlying balance
+		// is below the minimum required to cover amount + fees + wallet reserve.
+		// hasBalanceError ref prevents clearing the error on every re-render.
+		const hasBalanceError = useRef(false);
+		useEffect(() => {
+			if (!underlyingBalance.data?.balance || !mintingData.data) return;
 
-        const fetch = async () => {
-            try {
-                setIsDisabled(false);
-                if (isFormDisabled && !hasXamanInsufficientFunds.current) {
-                    isFormDisabled(false);
-                }
+			if (rawBalance < required) {
+				hasBalanceError.current = true;
+				onError({
+					msg: t(
+						"mint_modal.form.error_insufficient_balance_amount_is_needed_label",
+						{ value: formatFeeAmount(required, fAssetCoin.decimals), tokenName: fAssetCoin.nativeName },
+					),
+				});
+				if (isFormDisabled) isFormDisabled(true);
+			} else if (hasBalanceError.current) {
+				hasBalanceError.current = false;
+				onError();
+			}
+		}, [underlyingBalance.data, mintingData.data]); // eslint-disable-line react-hooks/exhaustive-deps
 
-                setIsLoading(true);
+		// Runs once when underlying balance data first arrives.
+		// For Ledger/UTXO wallets (balance === null): fetches UTXO addresses via WalletConnect.
+		// For standard wallets: just unlocks the form.
+		// hasRun ref prevents re-triggering on subsequent balance refreshes.
+		useEffect(() => {
+			if (!underlyingBalance.data || hasRun.current) return;
 
-                if (underlyingBalance.data.balance === null) {
-                    await walletConnectConnector.fetchUtxoAddresses(fAssetCoin.network.namespace, fAssetCoin.network.chainId, fAssetCoin.address!);
-                    return;
-                }
+			const fetch = async () => {
+				try {
+					setIsDisabled(false);
+					setIsLoading(true);
 
-                const maxLotsResponse = await fetchMaxLots.refetch({ throwOnError: true });
-                setAreLotsLimited(maxLotsResponse.data?.lotsLimited ?? false);
+					if (underlyingBalance.data.balance === null) {
+						await walletConnectConnector.fetchUtxoAddresses(
+							fAssetCoin.network.namespace,
+							fAssetCoin.network.chainId,
+							fAssetCoin.address!,
+						);
+						return;
+					}
 
-                const agentMaxLots = Number(maxLotsResponse.data?.maxLots!);
-                let balanceLots = Math.floor((toNumber(underlyingBalance.data.balance!) - fAssetCoin.minWalletBalance) / fAssetCoin.lotSize);
-                if (balanceLots < 0) {
-                    balanceLots = 0;
-                }
+					hasRun.current = true;
+				} catch (error: any) {
+					if (error.code === 4001) {
+						refreshBalance();
+					}
+				} finally {
+					setIsLoading(false);
+				}
+			};
 
-                hasRun.current = true;
-                // get fee for max lots to mint
-                const response = await bestAgent.mutateAsync({
-                    fAsset: fAssetCoin.type,
-                    lots: Math.min(balanceLots, agentMaxLots)
-                });
+			fetch();
+		}, [underlyingBalance.data]); // eslint-disable-line react-hooks/exhaustive-deps
 
-                let balance = toNumber(underlyingBalance.data.balance!);
-                const fee = (transfer ?? balance) * ((Number(response.feeBIPS) ?? 0) / 10000);
-                // substract fee from coin balance and recalculate max lots to mint
-                balance -= fee;
-                // wallet needs to have minimal X coins
-                balance -= fAssetCoin.minWalletBalance;
-                if (balance < 0) {
-                    balance = 0;
-                }
+		useImperativeHandle(ref, () => ({
+			form: () => form,
+		}));
 
-                balanceLots = toLots(balance, fAssetCoin.lotSize) as number;
-                setMaxLots(Math.min(balanceLots, agentMaxLots));
-            } catch (error: any) {
-                if (error.code === 4001) {
-                    refreshBalance();
-                } else {
-                    error = error as AxiosError;
-                    if (error?.response?.status === 400) {
-                        if (error?.response?.data?.message.toLowerCase().includes('cannot mint more than')) {
-                            await fetchMaxLots.refetch();
-                            return;
-                        }
+		form.watch("amount", ({ value }) => {
+			debounceSetAmount(value);
+		});
 
-                        setIsDisabled(true);
-                        if (isFormDisabled) {
-                            isFormDisabled(true);
-                        }
-                        form.setFieldError('lots', error?.response?.data?.message);
-                    } else {
-                        showErrorNotification(error?.response?.data?.message);
-                    }
-                }
-            } finally {
-                setIsLoading(false);
-            }
-        }
+		return (
+			<div>
+				<LoadingOverlay visible={isLoading || underlyingBalance.isPending || mintingData.isPending} />
+				<FocusTrap active={true}>
+					<AmountInput
+						form={form}
+						autoFocus
+						fAssetCoin={fAssetCoin}
+						maxAmount={underlyingBalance.isPending ? undefined : isMintCapReached ? 0 : maxAmount}
+						allowDecimal={false}
+						placeholder={mintingData.data ? `min is ${minMintingAmount}` : undefined}
+						description={
+							underlyingBalance.isPending || isLoading
+								? t("mint_modal.form.lots_waiting_balance_label", {
+										coin: fAssetCoin.nativeName,
+									})
+								: isDisabled
+									? ""
+									: inputDescription
+						}
+						disabled={isDisabled}
+						readOnly={isMintCapReached}
+						onBlur={(value) => {
+							if (hasMintCapError.current || hasBalanceError.current || hasXamanInsufficientFunds.current) return;
+							if (value && minMintingAmount > 0 && value < minMintingAmount) {
+								onError({
+									msg: t("mint_modal.form.min_amount_label", {
+										lotSize: minMintingAmount,
+										valueToken: fAssetCoin.nativeName,
+									}),
+									type: "info",
+								});
+							} else {
+								onError();
+							}
+						}}
+					/>
+				</FocusTrap>
+				<div className="flex items-center mt-2 sm:hidden">
+					{fAssetCoin.icon({ width: "30", height: "30" })}
+					<Text fw={500} className="text-18 mx-2">
+						{transfer ? (
+							formatFeeAmount(transfer, fAssetCoin.decimals)
+						) : (
+							<span>&mdash;</span>
+						)}
+					</Text>
+					<Text c="var(--flr-gray)" fw={400} className="text-18">
+						{fAssetCoin.symbol}
+					</Text>
+				</div>
+				<Divider
+					className="my-8"
+					styles={{
+						root: {
+							marginLeft: isMobile ? "-1rem" : "-2.75rem",
+							marginRight: isMobile ? "-1rem" : "-2.75rem",
+						},
+					}}
+				/>
+				<MintDestinationEditor form={form} isAddressTagLoading={tagsByAddressQuery.isFetching} />
+				<Divider
+					className="my-8"
+					styles={{
+						root: {
+							marginLeft: isMobile ? "-1rem" : "-2.75rem",
+							marginRight: isMobile ? "-1rem" : "-2.75rem",
+						},
+					}}
+				/>
+				<div className="mt-2">
+					<Text fw={400} c="var(--flr-gray)" className="mb-1 text-12 uppercase">
+						{t("mint_modal.form.you_will_send_label")}
+					</Text>
+					<div className="flex justify-between">
+						<Text className="text-16" fw={400}>
+							{t("mint_modal.form.transfer_label")}
+						</Text>
+						<div className="flex items-center">
+							{fAssetCoin.nativeIcon &&
+								fAssetCoin.nativeIcon({ width: "16", height: "16" })}
+							<Text className="mx-2 text-16" fw={400}>
+								{transfer ? (
+									formatFeeAmount(transfer, fAssetCoin.decimals)
+								) : (
+									<span>&mdash;</span>
+								)}
+							</Text>
+							<Text
+								ref={transferLabelSize.ref}
+								className="text-16"
+								fw={400}
+								c="var(--flr-gray)"
+								style={{ width: labelWidth > 0 ? `${labelWidth}px` : "auto" }}
+							>
+								{fAssetCoin.nativeName}
+							</Text>
+						</div>
+					</div>
+					<Text fw={400} c="var(--flr-gray)" className="mb-1 mt-5 uppercase text-12">
+						{t("mint_modal.form.fees_label")}
+					</Text>
+					<div className="flex justify-between items-center">
+						<Text className="text-16" fw={400} c="var(--flr-black)">
+							{t("mint_modal.form.minting_fee_label")}
+						</Text>
+						<div className="flex items-center">
+							{fAssetCoin.nativeIcon &&
+								fAssetCoin.nativeIcon({ width: "16", height: "16" })}
+							<Text className="mx-2 text-16" fw={400}>
+								{mintingData.isPending ? (
+									<Loader size={14} />
+								) : totalFees !== undefined ? (
+									formatFeeAmount(totalFees, fAssetCoin.decimals)
+								) : (
+									<span>&mdash;</span>
+								)}
+							</Text>
+							<Text
+								ref={mintingFeeLabelSize.ref}
+								className="text-16"
+								fw={400}
+								c="var(--flr-gray)"
+								style={{ width: labelWidth > 0 ? `${labelWidth}px` : "auto" }}
+							>
+								{fAssetCoin.nativeName}
+							</Text>
+						</div>
+					</div>
+				</div>
+			</div>
+		);
+	},
+);
 
-        fetch();
-    }, [underlyingBalance.data, nativeBalances.data]);
-
-    useEffect(() => {
-        if (!fetchMaxLots.isError) return;
-
-        const error: any = fetchMaxLots?.error;
-        if (error?.response?.status === 400) {
-            setIsDisabled(true);
-            if (isFormDisabled) {
-                isFormDisabled(true);
-            }
-            form.setFieldError('lots', error?.response?.data?.message);
-        } else {
-            showErrorNotification(error?.response?.data?.message);
-        }
-    }, [fetchMaxLots.isError]);
-
-    useImperativeHandle(ref, () => ({
-        form: () => {
-            return form;
-        }
-    }));
-
-    form.watch('lots', ({ value }) => {
-        debounceSetLots(value);
-    });
-
-    return (
-        <div ref={popoverSize.ref}>
-            <LoadingOverlay visible={isLoading || underlyingBalance.isPending} />
-            <FocusTrap active={true}>
-                <NumberInput
-                    {...form.getInputProps('lots')}
-                    key={form.key('lots')}
-                    label={
-                        <Text
-                            className="text-12"
-                            fw={400}
-                            c="var(--flr-gray)"
-                        >
-                            {t('mint_modal.form.lots_label')}
-                        </Text>
-                    }
-                    description={
-                        underlyingBalance.isPending || isLoading
-                            ? t('mint_modal.form.lots_waiting_balance_label', {coin: fAssetCoin.nativeName})
-                            : isDisabled
-                                ? ''
-                                : inputDescription
-                    }
-                    inputWrapperOrder={['label', 'input', 'error', 'description']}
-                    inputMode="numeric"
-                    type="tel"
-                    size="sm"
-                    step={1}
-                    min={maxLots !== undefined && maxLots > 0 ? 1 : 0}
-                    max={maxLots}
-                    allowDecimal={false}
-                    disabled={isDisabled}
-                    clampBehavior="strict"
-                    className="mt-3"
-                    classNames={{
-                        label: 'uppercase',
-                        input: classes.lotsInput,
-                        wrapper: 'flex-shrink-0 w-full sm:w-2/4'
-                    }}
-                    inputContainer={children => (
-                        <div className="flex items-center justify-between flex-wrap sm:flex-nowrap">
-                            {children}
-                            <div className="sm:ml-8 mb-1 hidden sm:flex items-center">
-                                {fAssetCoin.icon({ width: "24", height: "24" })}
-                                <Text
-                                    fw={500}
-                                    c="var(--flr-black)"
-                                    className="text-18 mx-2"
-                                >
-                                    {
-                                        fromLots(
-                                            typeof lots === 'number'
-                                                ? lots
-                                                : (lots !== undefined && (lots as string).length > 0 ? lots : undefined),
-                                            fAssetCoin.lotSize,
-                                            fAssetCoin.decimals,
-                                            true
-                                        )
-                                    }
-                                </Text>
-                                <Text
-                                    c="var(--flr-gray)"
-                                    className="text-18"
-                                    fw={400}
-                                >
-                                    {fAssetCoin.type}
-                                </Text>
-                            </div>
-                        </div>
-                    )}
-                />
-            </FocusTrap>
-            <div className="flex items-center mt-2 sm:hidden">
-                {fAssetCoin.icon({ width: "30", height: "30" })}
-                <Text
-                    fw={500}
-                    className="text-18 mx-2"
-                >
-                    {fromLots(lots, fAssetCoin.lotSize, fAssetCoin.decimals,true)}
-                </Text>
-                <Text
-                    c="var(--flr-gray)"
-                    fw={400}
-                    className="text-18"
-                >
-                    {fAssetCoin.symbol}
-                </Text>
-            </div>
-            <Divider
-                className="my-8"
-                styles={{
-                    root: {
-                        marginLeft: isMobile ? '-1rem' : '-2.75rem',
-                        marginRight: isMobile ? '-1rem' : '-2.75rem'
-                    }
-                }}
-            />
-            <SimpleGrid
-                cols={{base: 1, xs: 3 }}
-            >
-                <div>
-                    <Text
-                        c="var(--flr-gray)"
-                        className="text-12 uppercase"
-                    >
-                        {t('mint_modal.form.name_label')}
-                    </Text>
-                    <Text
-                        c="var(--flr-black)"
-                        className="text-16"
-                    >
-                        {!isManualSelectedAgent && bestAgent.isPending
-                            ? <Loader size={14}/>
-                            : (
-                                (lots || isManualSelectedAgent) && selectedAgent?.name
-                                    ? selectedAgent?.name
-                                    : <span>&mdash;</span>
-                            )
-                        }
-                    </Text>
-                </div>
-                <div>
-                    <Text
-                        c="var(--flr-gray)"
-                        className="text-12 uppercase"
-                    >
-                        {t('mint_modal.form.address_label')}
-                    </Text>
-                    <div className="flex items-center">
-                        <Text
-                            c="var(--flr-black)"
-                            className="text-16"
-                        >
-                            {!isManualSelectedAgent && bestAgent.isPending
-                                ? <Loader size={14} />
-                                : (
-                                    (lots || isManualSelectedAgent) && selectedAgent?.address
-                                        ? truncateString(selectedAgent?.address, 5, 5)
-                                        : <span>&mdash;</span>
-                                )
-                            }
-                        </Text>
-                        {(isManualSelectedAgent || lots) && selectedAgent?.address &&
-                            <CopyIcon
-                                text={selectedAgent.address}
-                                color="var(--flr-black)"
-                            />
-                        }
-                    </div>
-                </div>
-                <div className="max-[576px]:order-2">
-                    <Popover
-                        width={popoverSize.width + 15}
-                        opened={isAgentPopoverActive}
-                        onChange={() => setIsAgentPopoverActive(!isAgentPopoverActive)}
-                        position={isMobile ? 'bottom' : 'bottom-end'}
-                    >
-                        <Popover.Target>
-                            <Button
-                                variant="gradient"
-                                radius="xl"
-                                onClick={() => setIsAgentPopoverActive(!isAgentPopoverActive)}
-                                disabled={(!isManualSelectedAgent && !lots) || isDisabled}
-                                className="max-[576px]:w-full"
-                            >
-                                {t('mint_modal.form.change_agent_button')}
-                            </Button>
-                        </Popover.Target>
-                        <Popover.Dropdown className="p-2 md:p-3">
-                            <AgentsList
-                                agents={agents}
-                                setAgent={setAgent}
-                                lots={lots}
-                            />
-                        </Popover.Dropdown>
-                    </Popover>
-                </div>
-                <div>
-                    <Text
-                        c={isMintingFeeHigh ? 'var(--flr-red)' : 'var(--flr-gray)'}
-                        className="text-12 uppercase"
-                    >
-                        {t('mint_modal.form.minting_fee_label')}
-                    </Text>
-                    <Text
-                        c={isMintingFeeHigh ? 'var(--flr-red)' : 'var(--flr-black)'}
-                        className="text-16"
-                    >
-                        {bestAgent.isPending
-                            ? <Loader size={14} />
-                            : (
-                                lots
-                                    ? `${formatNumber(mintFeePercentage, 2)}%`
-                                    : <span>&mdash;</span>
-                            )
-                        }
-                    </Text>
-                </div>
-            </SimpleGrid>
-            <Divider
-                className="my-8"
-                styles={{
-                    root: {
-                        marginLeft: isMobile ? '-1rem' : '-2.75rem',
-                        marginRight: isMobile ? '-1rem' : '-2.75rem'
-                    }
-                }}
-            />
-            <div className="mt-2">
-                <Text
-                    fw={400}
-                    c="var(--flr-gray)"
-                    className="mb-1 text-12 uppercase"
-                >
-                    {t('mint_modal.form.you_will_send_label')}
-                </Text>
-                <div className="flex justify-between">
-                    <Text
-                        className="text-16"
-                        fw={400}
-                    >
-                        {t('mint_modal.form.transfer_label')}
-                    </Text>
-                    <div className="flex items-center">
-                        {fAssetCoin.nativeIcon && fAssetCoin.nativeIcon({ width: "16", height: "16" })}
-                        <Text
-                            className="mx-2 text-16"
-                            fw={400}
-                        >
-                            {transfer
-                                ? formatNumber(transfer, fAssetCoin.decimals)
-                                : <span>&mdash;</span>
-                            }
-                        </Text>
-                        <Text
-                            ref={transferLabelSize.ref}
-                            className="text-16"
-                            fw={400}
-                            c="var(--flr-gray)"
-                            style={{ width: labelWidth > 0 ? `${labelWidth}px` : 'auto' }}
-                        >
-                            {fAssetCoin.nativeName}
-                        </Text>
-                    </div>
-                </div>
-                <Text
-                    fw={400}
-                    c="var(--flr-gray)"
-                    className="mb-1 mt-5 uppercase text-12"
-                >
-                    {t('mint_modal.form.fees_label')}
-                </Text>
-                <div className="flex justify-between items-center">
-                    <Text
-                        className="text-16"
-                        fw={400}
-                        c="var(--flr-black)"
-                    >
-                        {t('mint_modal.form.minting_fee_label')}
-                    </Text>
-                    <div className="flex items-center">
-                        {fAssetCoin.nativeIcon && fAssetCoin.nativeIcon({ width: "16", height: "16" })}
-                        <Text
-                            className="mx-2 text-16"
-                            fw={400}
-                        >
-                            {bestAgent.isPending
-                                ? <Loader size={14} />
-                                : (mintingFee
-                                    ? formatNumber(mintingFee, fAssetCoin.decimals)
-                                    : <span>&mdash;</span>)
-                            }
-                        </Text>
-                        <Text
-                            ref={mintingFeeLabelSize.ref}
-                            className="text-16"
-                            fw={400}
-                            c="var(--flr-gray)"
-                            style={{ width: labelWidth > 0 ? `${labelWidth}px` : 'auto' }}
-                        >
-                            {fAssetCoin.nativeName}
-                        </Text>
-                    </div>
-                </div>
-                <div className="flex justify-between items-center mt-2">
-                    <Text
-                        className="text-16"
-                        fw={400}
-                        c="var(--flr-black)"
-                    >
-                        {t('mint_modal.form.reservation_fee_label')}
-                    </Text>
-                    <div className="flex items-center">
-                        {mainToken?.icon !== undefined && mainToken?.icon({ width: "16", height: "16" })}
-                        <Text
-                            className="mx-2 text-16"
-                            fw={400}
-                        >
-                            {bestAgent.isPending
-                                ? <Loader size={14} />
-                                : (reservationFee
-                                    ? Number(Number(reservationFee) / 1e18).toLocaleString('en-US', { maximumFractionDigits: 2 })
-                                    : <span>&mdash;</span>)
-                            }
-                        </Text>
-                        <Text
-                            ref={reservationLabelSize.ref}
-                            className="text-16"
-                            fw={400}
-                            c="var(--flr-gray)"
-                            style={{ width: labelWidth > 0 ? `${labelWidth}px` : 'auto' }}
-                        >
-                            {mainToken?.type}
-                        </Text>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-});
-
-MintForm.displayName = 'MintForm';
+MintForm.displayName = "MintForm";
 export default MintForm;

@@ -96,8 +96,18 @@ export const LAYER_ZERO_STATUS = {
     CONFIRMING: 'CONFIRMING',
 };
 
+export const IS_MAINNET = process.env.NETWORK === 'mainnet';
+
+export const FASSETS_EXPLORER_URL = IS_MAINNET
+    ? 'https://flare.space/dapp/fassets-explorer'
+    : 'https://flare-space-test.matheo.si/dapp/fassets-explorer';
+
+export const BALANCE_FETCH_INTERVAL = 90000;
+
 export const BRIDGE_TYPE = {
     HYPER_EVM: 'hyper_evm',
     HYPER_CORE: 'hyper_core',
-    FLARE: 'flare'
+    FLARE: 'flare',
+    XRPL: 'xrpl'
 } as const;
+

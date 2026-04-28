@@ -26,8 +26,9 @@ import { useModalState } from "@/hooks/useModalState";
 import { ICoin, IFAssetCoin } from "@/types";
 import { COINS } from "@/config/coin";
 import { toNumber, truncateString } from "@/utils";
-import { NETWORK_FLARE, NETWORK_FLARE_COSTON2_TESTNET, NETWORK_SONGBIRD, XRP_NAMESPACE } from "@/config/networks";
-import { WALLET } from "@/constants";
+import { NETWORK_FLARE, NETWORK_FLARE_COSTON2_TESTNET } from "@/config/networks";
+import { useNetworks } from "@/hooks/useNetworks";
+import { BALANCE_FETCH_INTERVAL, WALLET } from "@/constants";
 import CryptoJS from "crypto-js";
 
 interface IBalanceCard {
@@ -36,14 +37,12 @@ interface IBalanceCard {
     disabledFassets: string[];
 }
 
-const BALANCE_FETCH_INTERVAL = 60000;
-const USER_PROGRESS_FETCH_INTERVAL = 60000;
-
 export default function BalanceCard({ className, onViewPendingTransactionsClick, disabledFassets }: IBalanceCard) {
     const [fAssetCoins, setfAssetCoins] = useState<(IFAssetCoin & { cantRedeem?: boolean, redeemDisabled?: boolean })[]>([]);
     const [isMintModalActive, setIsMintModalActive] = useState<boolean>(false);
     const [isRedeemModalActive, setIsRedeemModalActive] = useState<boolean>(false);
     const { connectedCoins, mainToken } = useWeb3();
+    const { isMainnet } = useNetworks();
     const { t } = useTranslation();
     const [localMainToken, setLocalMainToken] = useState<ICoin>();
     const [stableCoins, setStableCoins] = useState<ICoin[]>([]);
@@ -75,14 +74,13 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
     const pendingTransactions = userProgress.data
          ? userProgress.data.filter(progress => !progress.status).length
          : 0;
-    const isPartialRedeemCardActive = mainToken?.network?.name === NETWORK_SONGBIRD.name && fAssetCoins.filter(fAssetCoin => fAssetCoin?.cantRedeem).length > 0;
 
     const nativeBalanceFetchInterval = useInterval(() => {
         nativeBalance.refetch();
     }, BALANCE_FETCH_INTERVAL);
     const userProgressFetchInterval = useInterval(() => {
         userProgress.refetch();
-    }, USER_PROGRESS_FETCH_INTERVAL);
+    }, BALANCE_FETCH_INTERVAL);
 
     useEffect(() => {
         if (nativeBalance.isPending || underlyingBalances.isPending) return;
@@ -364,47 +362,6 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                             </div>
                         }
                     </div>
-                    {isPartialRedeemCardActive &&
-                        <div className="flex items-center mt-2 rounded p-3 bg-[#FCEBE2] whitespace-pre-line">
-                            <IconExclamationCircle
-                                style={{ width: rem(25), height: rem(25) }}
-                                color="var(--flr-orange)"
-                                className="mr-3 flex-shrink-0"
-                            />
-                            <div>
-                                <Text>{
-                                    t('balance_card.exchange_remaining_fassets_title', {
-                                        fAssets: fAssetCoins.filter(fAssetCoin => fAssetCoin.cantRedeem).map(fAssetCoin => fAssetCoin.type).join(', ')
-                                    })}
-                                </Text>
-                                <Trans
-                                    i18nKey="balance_card.exchange_remaining_fassets_description_label"
-                                    components={{
-                                        a1: <Anchor
-                                            underline="always"
-                                            href="https://app.blazeswap.xyz/swap/"
-                                            target="_blank"
-                                            fw={400}
-                                            c="var(--flr-black)"
-                                            className="text-12"
-                                        />,
-                                        a2: <Anchor
-                                            underline="always"
-                                            href="https://v3.dex.enosys.global/"
-                                            target="_blank"
-                                            fw={400}
-                                            c="var(--flr-black)"
-                                            className="text-12"
-                                        />
-                                    }}
-                                    parent={Text}
-                                    c="var(--flr-black)"
-                                    className="text-12"
-                                    fw={400}
-                                />
-                            </div>
-                        </div>
-                    }
                     {fAssetCoins.map((fAssetCoin) => (
                         <div
                             key={fAssetCoin.type}
@@ -449,26 +406,7 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                                         {t('balance_card.mint_button')}
                                     </Button>
                                 </Tooltip>
-                                {fAssetCoin?.redeemDisabled
-                                    ? <Tooltip
-                                        label={t('balance_card.redeem_disabled_tooltip')}
-                                        withArrow
-                                    >
-                                        <Button
-                                            variant="gradient"
-                                            size="xs"
-                                            radius="xl"
-                                            fw={400}
-                                            disabled={true}
-                                            onClick={() => {
-                                                activeFAssetCoin.current = fAssetCoin;
-                                                setIsRedeemModalActive(true);
-                                            }}
-                                        >
-                                            {t('balance_card.redeem_button')}
-                                        </Button>
-                                    </Tooltip>
-                                    : <Button
+                                <Button
                                         variant="gradient"
                                         size="xs"
                                         radius="xl"
@@ -480,7 +418,7 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                                     >
                                         {t('balance_card.redeem_button')}
                                     </Button>
-                                }
+                                
                             </div>
                         </div>
                     ))}
@@ -497,7 +435,7 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                         className="text-24"
                         fw={300}
                     >
-                        {mainToken && (mainToken.network.mainnet || [NETWORK_FLARE_COSTON2_TESTNET.chainId, NETWORK_FLARE.chainId].includes(mainToken.network.chainId))
+                        {mainToken && (isMainnet || [NETWORK_FLARE_COSTON2_TESTNET.chainId, NETWORK_FLARE.chainId].includes(mainToken.network.chainId))
                             ? t('balance_card.stablecoins_title')
                             : t('balance_card.stablecoins_eth_title')
                         }

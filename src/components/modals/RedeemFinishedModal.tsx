@@ -9,7 +9,7 @@ import { IconCircleCheck } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import FAssetModal from "@/components/modals/FAssetModal";
 import { IFAssetCoin, IRedemptionDefaultStatus } from "@/types";
-import { fromLots, toNumber } from "@/utils";
+import { formatNumber, toNumber } from "@/utils";
 import { COINS } from "@/config/coin";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useNativeBalance, useUnderlyingBalance } from "@/api/balance";
@@ -19,8 +19,8 @@ interface IRedeemFinishedModal {
     onClose: () => void;
     fAssetCoin: IFAssetCoin;
     redemptionDefaultResponse?: IRedemptionDefaultStatus|undefined;
-    totalLots: number;
-    redeemedLots: number;
+    totalAmount: number;
+    redeemedAmount: number;
 }
 
 export default function RedeemFinishedModal({
@@ -28,8 +28,8 @@ export default function RedeemFinishedModal({
     onClose,
     fAssetCoin,
     redemptionDefaultResponse,
-    redeemedLots,
-    totalLots
+    redeemedAmount,
+    totalAmount
 }: IRedeemFinishedModal) {
     const { t } = useTranslation();
     const { mainToken } = useWeb3();
@@ -37,7 +37,7 @@ export default function RedeemFinishedModal({
     const nativeBalances = useNativeBalance(mainToken?.address ?? '', opened);
     const underlyingBalance = useUnderlyingBalance(fAssetCoin.address!, fAssetCoin.type, opened);
 
-    const isPartialRedeem = redeemedLots !== totalLots;
+    const isPartialRedeem = redeemedAmount !== totalAmount;
     let vaultCollateralsPaid: any[] = [];
     if (opened && redemptionDefaultResponse?.status && redemptionDefaultResponse?.vaultCollateralPaid) {
         vaultCollateralsPaid = redemptionDefaultResponse.vaultCollateralPaid.map(vaultCollateral => {
@@ -104,8 +104,8 @@ export default function RedeemFinishedModal({
                             >
                                 {t('redeem_finished_modal.partial_redemption_label', {
                                     coinName: fAssetCoin?.type!,
-                                    totalAmount: fromLots(totalLots, fAssetCoin.lotSize, fAssetCoin.decimals, true),
-                                    redeemedAmount: fromLots(redeemedLots, fAssetCoin.lotSize, fAssetCoin.decimals, true)
+                                    totalAmount: formatNumber(totalAmount, fAssetCoin.decimals),
+                                    redeemedAmount: formatNumber(redeemedAmount, fAssetCoin.decimals)
                                 })}
                             </Text>
                         }
@@ -144,7 +144,7 @@ export default function RedeemFinishedModal({
                                     c="var(--flr-black)"
                                     className="text-16 mx-2"
                                 >
-                                    {fromLots(redeemedLots, fAssetCoin.lotSize, fAssetCoin.decimals, true)}
+                                    {formatNumber(redeemedAmount, fAssetCoin.decimals)}
                                 </Text>
                                 <Text
                                     c="var(--flr-gray)"

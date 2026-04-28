@@ -23,6 +23,7 @@ import { useFassetState } from "@/api/user";
 import { usePools, useUserPools } from "@/api/pool";
 import { useModalState } from "@/hooks/useModalState";
 import { COINS } from "@/config/coin";
+import { useNetworks } from "@/hooks/useNetworks";
 import { CoinEnum } from "@/types";
 import { useVersion } from "@/api/version";
 
@@ -38,6 +39,7 @@ export default function Layout({ children, ...props }: ILayout) {
 
     const { t } = useTranslation();
     const { walletConnectConnector, isConnected, connectedCoins, mainToken, isBridgeEnabled } = useWeb3();
+    const { isMainnet } = useNetworks();
     const { isMintModalActive, isRedeemModalActive } = useModalState();
 
     const isTestnet = process.env.NETWORK === 'testnet';
@@ -161,7 +163,7 @@ export default function Layout({ children, ...props }: ILayout) {
                                         fw={300}
                                         c="var(--flr-dark-gray)"
                                     >
-                                        {mainToken?.network?.mainnet
+                                        {isMainnet
                                             ? (mainToken?.type === CoinEnum.SGB
                                                 ? t('layout.header.songbird_label')
                                                 : t('layout.header.flare_label')
@@ -172,7 +174,7 @@ export default function Layout({ children, ...props }: ILayout) {
                                 </div>
                             </div>
                         </div>
-                        <div className="hidden min-[800px]:flex items-center">
+                        <div className="hidden min-[845px]:flex items-center">
                             <Link
                                 href="/"
                                 className={`text-14 font-light mr-8 ${router.pathname === '/' ? 'underline underline-offset-4' : ''}`}
@@ -184,6 +186,12 @@ export default function Layout({ children, ...props }: ILayout) {
                                 className={`text-14 font-light mr-8 ${router.pathname === '/mint' ? 'underline underline-offset-4' : ''}`}
                             >
                                 {t('layout.header.mint_label')}
+                            </Link>
+                            <Link
+                                href="/tags"
+                                className={`text-14 font-light mr-8 ${router.pathname === '/tags' ? 'underline underline-offset-4' : ''}`}
+                            >
+                                {t('layout.header.my_tags_label')}
                             </Link>
                             <Link
                                 href="/pools"
@@ -207,7 +215,7 @@ export default function Layout({ children, ...props }: ILayout) {
                                 opened={isMenuOpened}
                                 onClick={() => setIsMenuOpened(!isMenuOpened)}
                                 size={25}
-                                className="block min-[800px]:hidden ml-4"
+                                className="block min-[845px]:hidden ml-4"
                             />
                         </div>
                     </Container>
@@ -284,6 +292,13 @@ export default function Layout({ children, ...props }: ILayout) {
                             onClick={() => setIsMenuOpened(false)}
                         >
                             {t('layout.header.mint_label')}
+                        </Link>
+                        <Link
+                            href="/tags"
+                            className={`font-light text-32 mb-8 ${router.pathname === '/tags' ? 'underline underline-offset-8' : ''}`}
+                            onClick={() => setIsMenuOpened(false)}
+                        >
+                            {t('layout.header.my_tags_label')}
                         </Link>
                         <Link
                             href="/pools"

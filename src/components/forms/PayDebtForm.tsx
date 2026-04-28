@@ -60,7 +60,7 @@ const PayDebtForm = forwardRef<FormRef, IPayDebtForm>(({ collateralPool }: IPayD
     const labelWidth = transferLabelSize.width > gasFeeLabelSize.width ? transferLabelSize.width : gasFeeLabelSize.width;
 
     const form = useForm({
-        mode: 'uncontrolled',
+        mode: 'controlled',
         initialValues: {
             debtAmount: undefined,
         },
@@ -106,10 +106,9 @@ const PayDebtForm = forwardRef<FormRef, IPayDebtForm>(({ collateralPool }: IPayD
 
     return (
         <>
-            <NumberInput
-                {...form.getInputProps('debtAmount')}
-                key={form.key('debtAmount')}
-                size="sm"
+	            <NumberInput
+	                {...form.getInputProps('debtAmount')}
+	                size="sm"
                 inputMode="numeric"
                 type="tel"
                 allowNegative={false}

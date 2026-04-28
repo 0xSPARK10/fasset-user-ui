@@ -96,7 +96,7 @@ export default function EarnCard({ earn }: IEarnCard) {
     }
 
     return (
-        <div className="flex flex-col bg-[var(--flr-lightest-gray)] relative h-full md:border-t border-l border-[var(--flr-border-color)]">
+        <div id="earn" className="flex flex-col bg-[var(--flr-lightest-gray)] relative h-full md:border-t border-l border-[var(--flr-border-color)]">
             <Title
                 className="bg-[var(--flr-white)] text-16 uppercase px-[15px] lg:px-6 py-4 min-h-14 leading-[24px] border-r border-[var(--flr-border-color)]"
                 fw={400}

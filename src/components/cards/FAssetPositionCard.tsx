@@ -112,7 +112,7 @@ export default function FAssetPositionCard({ balance, isLoading }: IFAssetPositi
                     >
                         {token?.token?.icon({ width: isMobile ? "45" : "70", height: isMobile ? "45" : "70" })}
                         {token?.balance !== '0'
-                            ? <div className="ml-2 flex items-center">
+                            ? <div className="ml-5 flex flex-col items-start">
                                 <Text
                                     className="text-32"
                                     c="var(--flr-black)"
@@ -120,14 +120,7 @@ export default function FAssetPositionCard({ balance, isLoading }: IFAssetPositi
                                 >
                                     {formatNumberWithSuffix(token?.balance, token?.symbol?.toLowerCase().includes('btc') ? 4 : 2)}
                                 </Text>
-                                <div className="ml-12">
-                                    <Text
-                                        className="text-16"
-                                        fw={400}
-                                        c="var(--flr-gray)"
-                                    >
-                                        {formatNumberWithSuffix(token?.lots ?? 0, 0)} {t('fasset_position_card.lots_label')}
-                                    </Text>
+                                <div>
                                     <Text
                                         className="text-16"
                                         fw={400}

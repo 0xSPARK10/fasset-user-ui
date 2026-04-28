@@ -8,7 +8,8 @@ import {
     Stepper,
     Checkbox,
     Pagination,
-    Drawer
+    Drawer,
+    SegmentedControl
 } from "@mantine/core";
 import localFont from "next/font/local";
 
@@ -159,5 +160,17 @@ export const defaultThemeOverride: MantineThemeOverride = {
                 }
             }
         }),
+        SegmentedControl: SegmentedControl.extend({
+            defaultProps: {
+                radius: 'xl',
+                size: 'xs'
+            },
+            classNames: {
+                root: "segmented-control-root",
+                control: "segmented-control-control",
+                indicator: "segmented-control-indicator",
+                label: "segmented-control-label",
+            }
+        })
     }
 }

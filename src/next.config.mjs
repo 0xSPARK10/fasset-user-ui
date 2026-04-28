@@ -1,3 +1,23 @@
+import { execSync } from "node:child_process";
+
+const git = (cmd) => {
+    try {
+        return execSync(cmd).toString().trim();
+    } catch {
+        return ""
+    }
+}
+
+
+const buildInfo = JSON.stringify({
+    buildDate: new Date().toISOString(),
+    mode: process.env.NEXT_PUBLIC_APP_ENV || process.env.NODE_ENV,
+    commit: process.env.CI_COMMIT || git("git rev-parse --short HEAD"),
+    branch: process.env.CI_BRANCH || git("git rev-parse --abbrev-ref HEAD"),
+});
+
+
+
 const nextConfig = {
     reactStrictMode: true,
     basePath: process.env.FRONTEND_URL || '',
@@ -41,6 +61,9 @@ const nextConfig = {
         defaultLocale: "en",
     },
     env: {
+        ...(process.env.NEXT_PUBLIC_APP_ENV === 'development') && {
+            BUILD_INFO: buildInfo
+        },
         WALLETCONNECT_PROJECT_ID: process.env.WALLETCONNECT_PROJECT_ID,
         API_URL: process.env.API_URL,
         APP_URL: process.env.APP_URL,
@@ -66,9 +89,12 @@ const nextConfig = {
         BRIDGE_FXRP_ADDRESS: process.env.BRIDGE_FXRP_ADDRESS,
         BRIDGE_FXRP_OFT_ADAPTER_ADDRESS: process.env.BRIDGE_FXRP_OFT_ADAPTER_ADDRESS,
         BRIDGE_HYPE_FXRP_OFT_ADAPTER_ADDRESS: process.env.BRIDGE_HYPE_FXRP_OFT_ADAPTER_ADDRESS,
-        HYPERLIQUID_COMPOSER_ADDRESS: process.env.HYPERLIQUID_COMPOSER_ADDRESS
+        HYPERLIQUID_COMPOSER_ADDRESS: process.env.HYPERLIQUID_COMPOSER_ADDRESS,
+        FXRP_COMPOSER_ADDRESS: process.env.FXRP_COMPOSER_ADDRESS,
+        MINTING_TAG_MANAGER_ADDRESS: process.env.MINTING_TAG_MANAGER_ADDRESS
     },
-    output: "standalone"
+    output: "standalone",
+
 };
 
 export default nextConfig;

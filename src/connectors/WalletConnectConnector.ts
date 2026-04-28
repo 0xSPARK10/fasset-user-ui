@@ -11,7 +11,6 @@ import { ETH_NAMESPACE, HYPERLIQUID_EVM, HYPERLIQUID_EVM_TESTNET, XRP_NAMESPACE 
 import { COINS } from "@/config/coin";
 import { CoinEnum, ICoin, INetwork } from "@/types";
 import { WALLET } from "@/constants";
-import { Client } from "xrpl";
 
 export interface IWalletConnectConnector {
     connect: (networks: INetwork[]) => Promise<boolean>;
@@ -42,7 +41,7 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
     const mainToken = COINS.find(coin => !coin.isFAssetCoin && !coin.isStableCoin && coin.enabled && coin.isMainToken);
     const isBridgeEnabled = [CoinEnum.C2FLR, CoinEnum.FLR].includes(mainToken?.type!);
 
-    const connect = async(networks: INetwork[]) => {
+    const connect = async (networks: INetwork[]) => {
         try {
             if (!universalProvider) {
                 throw new ReferenceError('WalletConnect Client is not initialized.');
@@ -113,7 +112,7 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
         }
     }
 
-    const disconnect = async(redirect: boolean = true) => {
+    const disconnect = async (redirect: boolean = true) => {
         if (universalProvider?.session) {
             await universalProvider?.disconnect();
         }
@@ -199,7 +198,7 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
     };
 
     const parseDerivationPath = (items: { address: string, path: string }[]) => {
-        let account: string|undefined = undefined;
+        let account: string | undefined = undefined;
         const receiveAddresses: string[] = [];
         const changeAddresses: string[] = [];
 
@@ -250,7 +249,7 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
         }
     };
 
-    const fetchUtxoAddresses = async(namespace: string, chainId: string, accountAddress: string, reset: boolean = false) => {
+    const fetchUtxoAddresses = async (namespace: string, chainId: string, accountAddress: string, reset: boolean = false) => {
         try {
             const response = await universalProvider?.client?.request({
                 chainId: `${namespace}:${chainId}`,
@@ -285,44 +284,35 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
         }
     }
 
-    const init = async() => {
+    const init = async () => {
         if (isInitializing.current) return;
         await createClient();
     }
 
-    const request = async({ chainId, method, params }: { chainId: string, method: string, params: any }) => {
-        const [namespace, id] = chainId.split(':');
-        if (namespace === XRP_NAMESPACE) {
-            const connectedCoin = localConnectedCoins.find(localCoin => localCoin.address === params.Account);
-            const coin = COINS.find(coin => coin.type === connectedCoin?.type!);
-            const server = coin?.network?.mainnet
-            ? 'wss://s1.ripple.com'
-            : 'wss://s.altnet.rippletest.net:51233';
-            const client = new Client(server);
-            await client.connect();
-            const accountInfo = await client.request({
-                command: 'account_info',
-                account: params.Account
-            });
-            const fee = await client.request({ command: 'fee' });
-            const baseFee = "12";
-            params.Fee = Number(fee.result.drops.base_fee) > Number(baseFee) ? fee.result.drops.base_fee : baseFee;
-            params.Sequence = accountInfo.result.account_data.Sequence;
-        }
 
-        return universalProvider?.client?.request({
-            chainId: chainId,
-            topic: universalProvider?.session?.topic ?? '',
-            request: {
-                method: method,
-                params: namespace === XRP_NAMESPACE
-                    ? {
-                        tx_json: params,
-                        autofill: false,
-                    }
-                    : params
-            },
-        });
+    const request = async ({ requestId, chainId, method, params }: { requestId?: string, chainId: string, method: string, params: any }) => {
+        const [namespace] = chainId.split(':');
+        const requestParams = namespace === XRP_NAMESPACE
+            ? {
+                tx_json: params,
+                autofill: true,
+            }
+            : params;
+
+        try {
+            const response = await universalProvider?.client?.request({
+                chainId: chainId,
+                topic: universalProvider?.session?.topic ?? '',
+                request: {
+                    method: method,
+                    params: requestParams
+                },
+            });
+            return response;
+        } catch (error: any) {
+            error.requestId = error?.requestId ?? requestId;
+            throw error;
+        }
     }
 
     const getSigner = async (token?: ICoin) => {

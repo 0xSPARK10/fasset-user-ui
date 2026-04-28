@@ -319,7 +319,7 @@ export default function RetryMintModal({ opened, onClose, underlyingTransaction 
                             className="p-8"
                             styles={{
                                 root: {
-                                    backgroundColor: '#FCEBE2'
+                                    backgroundColor: 'var(--flr-lightest-orange)'
                                 }
                             }}
                         >

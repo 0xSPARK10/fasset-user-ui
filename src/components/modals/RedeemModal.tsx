@@ -18,10 +18,11 @@ import {
 import { useTranslation, Trans } from "react-i18next";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRedemptionStatus, useRedemptionDefaultStatus, useRequestRedemptionDefault } from "@/api/redemption";
-import { useAssetManagerAddress } from "@/api/user";
-import { useRedeem } from "@/hooks/useContracts";
+import { useAssetManagerAddress, USER_KEY } from "@/api/user";
+import { useRedeem, useRedeemWithTagSupported } from "@/hooks/useContracts";
 import { modals } from "@mantine/modals";
 import { isError } from "ethers";
+import { ethers } from "ethers";
 import RedeemForm, { FormRef } from "@/components/forms/RedeemForm";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
 import WalletConnectOpenWalletCard from "@/components/cards/WalletConnectOpenWalletCard";
@@ -31,14 +32,16 @@ import RedeemFinishedModal from "@/components/modals/RedeemFinishedModal";
 import { useNativeBalance, useUnderlyingBalance } from "@/api/balance";
 import { ErrorDecoder } from "ethers-decode-error";
 import { AssetManagerAbi } from "@/abi";
-import { ICoin, IFAssetCoin } from "@/types";
+import { IFAssetCoin } from "@/types";
 import { BTC_NAMESPACE } from "@/config/networks";
-import { fromLots, toNumber, toLots } from "@/utils";
+import { formatNumber, toNumber } from "@/utils";
+import { devLog } from "@/utils/debug";
 import { COOKIE_WINDDOWN, WALLET } from "@/constants";
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { Cookies } from "react-cookie";
-import CryptoJS from "crypto-js";
 import { useWeb3 } from "@/hooks/useWeb3";
+import FormAlert, { IAlertMessage } from "@/components/elements/FormAlert";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface IRedeemModal {
     opened: boolean;
@@ -64,7 +67,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
     const [isWaitingModalActive, setIsWaitingModalActive] = useState<boolean>(false);
     const [isFinishedModalActive, setIsFinishedModalActive] = useState<boolean>(false);
     const [isUnresponsiveAgentModalActive, setIsUnresponsiveAgentModalActive] = useState<boolean>(false);
-    const [redeemLots, setRedeemLots] = useState<number>();
+    const [requestedAmount, setRequestedAmount] = useState<number>();
     const [txHash, setTxHash] = useState<string>();
     const formRef = useRef<FormRef>(null);
     const closeModal = useRef<boolean>(true);
@@ -72,51 +75,102 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
     const [errorMessage, setErrorMessage] = useState<string>();
     const [coreVaultErrorMessage, setCoreVaultErrorMessage] = useState<string>('');
     const [formValues, setFormValues] = useState<any>();
-    const [redeemedLots, setRedeemedLots] = useState<number>();
-    const [isNextButtonDisabled, setIsNextButtonDisabled] = useState<boolean>(false);
+    const [redeemedAmount, setRedeemedAmount] = useState<number>();
     const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
+    const [destinationTag, setDestinationTag] = useState<string>('');
+    const [xrplDestAddress, setXrplDestAddress] = useState<string>(fAssetCoin?.address ?? '');
+    const [formAlert, setFormAlert] = useState<IAlertMessage | undefined>();
+    const [hasValidAmount, setHasValidAmount] = useState<boolean>(false);
+    const queryClient = useQueryClient();
 
     const mediaQueryMatches = useMediaQuery('(max-width: 640px)');
     const { connectedCoins, mainToken } = useWeb3();
     const connectedCoin = connectedCoins.find(coin => coin.type == fAssetCoin?.type);
     const cookies = new Cookies();
     const assetManagerAddress = useAssetManagerAddress(fAssetCoin?.type ?? '', fAssetCoin !== undefined && opened);
+    const redeemWithTagSupported = useRedeemWithTagSupported(
+        assetManagerAddress?.data?.address ?? '',
+        opened && !!assetManagerAddress?.data?.address,
+    );
     const redeem = useRedeem();
     const nativeBalance = useNativeBalance(mainToken?.address!);
     const requestRedemptionDefault = useRequestRedemptionDefault();
     const redemptionStatus = useRedemptionStatus(fAssetCoin?.type ?? '', txHash!, false);
     const redemptionDefaultStatus = useRedemptionDefaultStatus(txHash!, false);
     const underlyingBalance = useUnderlyingBalance(
-        fAssetCoin?.address?? '',
+        xrplDestAddress,
         fAssetCoin?.type ?? '',
-        fAssetCoin?.address !== undefined,
+        xrplDestAddress.length > 0,
         connectedCoin && connectedCoin.connectedWallet === WALLET.LEDGER
     );
 
+    const isDepositAuthBlocking = !!underlyingBalance.data?.accountInfo?.depositAuth;
+    const isRequireDestTagBlocking = !!underlyingBalance.data?.accountInfo?.requireDestTag && String(destinationTag ?? '').trim() === '';
+    const hasInsufficientBalance = formAlert?.type === 'info';
+    const isNextButtonDisabled = !hasValidAmount || coreVaultErrorMessage.length > 0 || isDepositAuthBlocking || isRequireDestTagBlocking || hasInsufficientBalance;
+
+    const parseAmountFromUBA = useCallback((amountUBA?: string) => {
+        if (!amountUBA || !fAssetCoin) return undefined;
+        return Number(
+            ethers.formatUnits(amountUBA, fAssetCoin.contractDecimals ?? 6),
+        );
+    }, [fAssetCoin]);
+
+    const calculateRedeemedAmount = useCallback((
+        totalAmount: number,
+        incompleteData?: { remainingLots?: string; remainingAmountUBA?: string } | null,
+    ) => {
+        if (!fAssetCoin || !incompleteData) return totalAmount;
+
+        if (incompleteData.remainingAmountUBA !== undefined) {
+            const remainingAmount = parseAmountFromUBA(incompleteData.remainingAmountUBA);
+            return remainingAmount !== undefined
+                ? Math.max(totalAmount - remainingAmount, 0)
+                : totalAmount;
+        }
+
+        if (incompleteData.remainingLots !== undefined) {
+            return Math.max(
+                totalAmount - (toNumber(incompleteData.remainingLots) * fAssetCoin.lotSize),
+                0,
+            );
+        }
+
+        return totalAmount;
+    }, [fAssetCoin, parseAmountFromUBA]);
+
     const redemptionStatusFetchInterval = useInterval(async () => {
         const response = await redemptionStatus.refetch();
+        devLog('[REDEEM] redemptionStatus poll:', { txHash, status: response?.data?.status, data: response?.data });
         if (response?.data?.status === 'SUCCESS') {
             closeModal.current = false;
             modals.close(WAITING_MODAL);
-            const redeemedLots = response?.data?.incomplete
-                ? redeemLots! - toNumber(response?.data?.incompleteData?.remainingLots!)
-                : redeemLots!;
-
-            setRedeemedLots(redeemedLots);
+            const resolvedRedeemedAmount = calculateRedeemedAmount(
+                requestedAmount ?? 0,
+                response?.data?.incomplete ? response.data.incompleteData : null,
+            );
+             queryClient.invalidateQueries({
+                queryKey: [USER_KEY.USER_PROGRESS, mainToken?.address, connectedCoin?.address],
+                exact: true,
+                refetchType: "all"
+            })
+            setRedeemedAmount(resolvedRedeemedAmount);
             setIsFinishedModalActive(true);
         } else if (response?.data?.status === 'DEFAULT') {
             closeModal.current = false;
             modals.close(WAITING_MODAL);
-            const redeemedLots = response?.data?.incomplete
-                ? redeemLots! - toNumber(response?.data?.incompleteData?.remainingLots!)
-                : redeemLots!;
+            const resolvedRedeemedAmount = calculateRedeemedAmount(
+                requestedAmount ?? 0,
+                response?.data?.incomplete ? response.data.incompleteData : null,
+            );
 
-            setRedeemedLots(redeemedLots);
+            setRedeemedAmount(resolvedRedeemedAmount);
             setTimeout(() => {
                 openUnresponsiveAgentModal();
             }, 300);
         }
     }, REDEMPTION_STATUS_FETCH_INTERVAL);
+
     const redemptionDefaultStatusFetchInterval = useInterval(async () => {
         const response = await redemptionDefaultStatus.refetch();
         if (response?.data?.status) {
@@ -127,45 +181,67 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
         }
     }, REDEMPTION_DEFAULT_FETCH_INTERVAL);
 
-    useEffect(() => {
-        if (!nativeBalance.data) return;
-        const balance = nativeBalance.data.find(balance => balance.symbol.toLowerCase() === fAssetCoin?.type?.toLowerCase());
-
-        if (balance && fAssetCoin?.lotSize) {
-            const max = toLots(toNumber(balance.balance), fAssetCoin.lotSize) as number;
-            setIsNextButtonDisabled(max === 0);
-        }
-
-    }, [nativeBalance]);
-
     const requestRedeem = async (values?: any) => {
         try {
             setIsLedgerButtonDisabled(true);
-            const lots = values?.lots || formValues.lots;
-            setRedeemLots(lots);
+            const amount = values?.amount || formValues.amount;
+            const destinationTag =
+                String(values?.destinationTag ?? '').trim() ||
+                String(formValues?.destinationTag ?? '').trim() ||
+                undefined;
+
+            if (destinationTag && !redeemWithTagSupported.data) {
+                setErrorMessage(t('redeem_modal.form.destination_tag_not_supported_error'));
+                setCurrentStep(STEP_AMOUNT);
+                return;
+            }
+
+            const amountUBA = ethers.parseUnits(
+                String(amount),
+                fAssetCoin?.contractDecimals ?? 6,
+            ).toString();
+            setRequestedAmount(amount);
+
+            devLog('[REDEEM] requestRedeem params:', {
+                assetManagerAddress: assetManagerAddress?.data?.address,
+                userAddress: mainToken?.address,
+                amountUBA,
+                destinationAddress: values?.destinationAddress || formValues?.destinationAddress,
+                executorAddress: values?.executorAddress || formValues.executorAddress,
+                executorFee: values?.executorFee || formValues.executorFee,
+                destinationTag,
+            });
 
             const response = await redeem.mutateAsync({
                 assetManagerAddress: assetManagerAddress?.data?.address!,
                 userAddress: mainToken?.address!,
-                lots: lots,
+                amountUBA,
                 userUnderlyingAddress: values?.destinationAddress || formValues?.destinationAddress,
                 executorAddress: values?.executorAddress || formValues.executorAddress,
-                executorFee: values?.executorFee || formValues.executorFee
+                executorFee: values?.executorFee || formValues.executorFee,
+                destinationTag,
             });
+
+            devLog('[REDEEM] redeem tx hash:', response.hash);
 
             const redeemResponse = await requestRedemptionDefault.mutateAsync({
                 txHash: response.hash,
                 fAsset: fAssetCoin?.type!,
-                amount: lots * fAssetCoin?.lotSize!,
+                amount: amountUBA,
                 userAddress: mainToken?.address!
             });
 
-            const redeemedLots = redeemResponse.incomplete
-                ? lots - toNumber(redeemResponse?.remainingLots!)
-                : lots;
+            devLog('[REDEEM] redemptionDefault response:', redeemResponse);
+
+            const resolvedRedeemedAmount = redeemResponse.incomplete
+                ? calculateRedeemedAmount(amount, {
+                    remainingLots: redeemResponse.remainingLots,
+                    remainingAmountUBA: redeemResponse.remainingAmountUBA,
+                })
+                : amount;
 
             setCurrentWalletStep(STEP_WALLET_COMPLETED);
-            openWaitingModal(redeemedLots, lots, redeemResponse.incomplete);
+            openWaitingModal(resolvedRedeemedAmount, amount, redeemResponse.incomplete);
             setTxHash(response.hash);
 
             const balanceResponse = await nativeBalance.refetch();
@@ -206,23 +282,15 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
         const status = form?.validate();
         if (status?.hasErrors || !form) return;
 
-        if (underlyingBalance.data?.accountInfo?.depositAuth) {
-            setErrorMessage(t('redeem_modal.limited_deposit_auth_settings_label'));
-            return;
-        } else if (underlyingBalance.data?.accountInfo?.requireDestTag) {
-            setErrorMessage(t('redeem_modal.limited_destination_tags_settings_label'));
-            return;
-        }
-
         setCurrentStep(STEP_CONFIRM);
         const values = form.getValues();
         setFormValues(values);
         if (mainToken?.connectedWallet === WALLET.LEDGER) return;
 
         await requestRedeem(values);
-    }, [formRef, redeem, requestRedemptionDefault, assetManagerAddress, fAssetCoin]);
+    }, [formRef, redeem, requestRedemptionDefault, assetManagerAddress, fAssetCoin, calculateRedeemedAmount]);
 
-    const openWaitingModal = useCallback((redeemedLots: number, totalLots: number, isPartial: boolean = false) => {
+    const openWaitingModal = useCallback((redeemedAmount: number, totalAmount: number, isPartial: boolean = false) => {
         setIsWaitingModalActive(true);
 
         modals.open({
@@ -250,9 +318,9 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
                                     className="whitespace-pre-line mb-1"
                                 >
                                     {t('redeem_modal.waiting_modal.action_partial_redemption_label', {
-                                        redeemedAmount: (fromLots(redeemedLots, fAssetCoin?.lotSize!, fAssetCoin?.decimals!, true) as string)?.replace(/(\.\d*?[1-9])0+$|\.0*$/, '$1'),
+                                        redeemedAmount: formatNumber(redeemedAmount, fAssetCoin?.decimals!),
                                         coinName: fAssetCoin?.type!,
-                                        totalAmount: (fromLots(totalLots, fAssetCoin?.lotSize!, fAssetCoin?.decimals!, true) as string)?.replace(/(\.\d*?[1-9])0+$|\.0*$/, '$1')
+                                        totalAmount: formatNumber(totalAmount, fAssetCoin?.decimals!)
                                     })}
                                 </Text>
                             }
@@ -260,7 +328,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
                                 size="sm"
                                 className="whitespace-pre-line"
                             >
-                            {t(fAssetCoin?.network?.namespace === BTC_NAMESPACE
+                                {t(fAssetCoin?.network?.namespace === BTC_NAMESPACE
                                     ? 'redeem_modal.waiting_modal.btc_network_action_label'
                                     : 'redeem_modal.waiting_modal.action_label')
                                 }
@@ -280,7 +348,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
                             i18nKey={fAssetCoin?.network?.namespace === BTC_NAMESPACE
                                 ? `redeem_modal.waiting_modal.btc_network_description_label`
                                 : `redeem_modal.waiting_modal.description_label`
-                        }
+                            }
                             components={{
                                 a: <Anchor
                                     underline="always"
@@ -370,11 +438,23 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
         setCurrentStep(STEP_AMOUNT);
         setCurrentWalletStep(STEP_WALLET_REDEMPTION);
         setErrorMessage(undefined);
+        setFormAlert(undefined);
+        setHasValidAmount(false);
+        setDestinationTag('');
+        setXrplDestAddress(fAssetCoin?.address ?? '');
+        setRequestedAmount(undefined);
+        setRedeemedAmount(undefined);
         setIsWaitingModalActive(false);
         setIsUnresponsiveAgentModalActive(false);
         setIsFinishedModalActive(false);
         onClose(fetchProgress);
     }
+
+    useEffect(() => {
+        if (opened && fAssetCoin?.address) {
+            setXrplDestAddress(fAssetCoin.address);
+        }
+    }, [opened, fAssetCoin?.address]);
 
     useEffect(() => {
         if (!txHash) return;
@@ -407,57 +487,23 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
                             withIcon={false}
                         >
                             <div>
-                                {coreVaultErrorMessage &&
-                                    <div className="flex items-center mb-5 border border-[var(--flr-orange)] p-3 bg-[var(--flr-lightest-orange)]">
-                                        <IconExclamationCircle
-                                            style={{ width: rem(25), height: rem(25) }}
-                                            color="var(--flr-orange)"
-                                            className="mr-3 flex-shrink-0"
-                                        />
-                                        <Text
-                                            className="text-16"
-                                            fw={400}
-                                            c="var(--flr-black)"
-                                        >
-                                            {coreVaultErrorMessage}
-                                        </Text>
-                                    </div>
-                                }
-                                {(underlyingBalance.data?.accountInfo?.depositAuth || underlyingBalance.data?.accountInfo?.requireDestTag) &&
-                                    <div className="flex items-center mb-5 border border-red-700 p-3 bg-red-100">
-                                        <IconExclamationCircle
-                                            style={{ width: rem(25), height: rem(25) }}
-                                            color="var(--flr-red)"
-                                            className="mr-3 flex-shrink-0"
-                                        />
-                                        <Text
-                                            className="text-16"
-                                            fw={400}
-                                            c="var(--flr-red)"
-                                        >
-                                            {underlyingBalance.data?.accountInfo?.depositAuth
-                                                ? t('redeem_modal.limited_deposit_auth_settings_label')
-                                                : t(t('redeem_modal.limited_destination_tags_settings_label'))
-                                            }
-                                        </Text>
-                                    </div>
-                                }
-                                {errorMessage &&
-                                    <div className="flex items-center mb-5 border border-red-700 p-3 bg-red-100">
-                                        <IconExclamationCircle
-                                            style={{ width: rem(25), height: rem(25) }}
-                                            color="var(--flr-red)"
-                                            className="mr-3 flex-shrink-0"
-                                        />
-                                        <Text
-                                            className="text-16"
-                                            fw={400}
-                                            c="var(--flr-red)"
-                                        >
-                                            {errorMessage}
-                                        </Text>
-                                    </div>
-                                }
+                                <FormAlert message={coreVaultErrorMessage || undefined} type="warning" />
+                                <FormAlert
+                                    message={isDepositAuthBlocking
+                                        ? t('redeem_modal.limited_deposit_auth_settings_label')
+                                        : undefined
+                                    }
+                                    type="error"
+                                />
+                                <FormAlert
+                                    message={isRequireDestTagBlocking
+                                        ? t('redeem_modal.limited_destination_tags_settings_label')
+                                        : undefined
+                                    }
+                                    type="error"
+                                />
+                                <FormAlert message={formAlert?.msg} type={formAlert?.type} />
+                                <FormAlert message={errorMessage} type="error" />
                                 <Text
                                     className="text-24"
                                     fw={300}
@@ -472,6 +518,11 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
                                         setErrorMessage={(message: string) => {
                                             setCoreVaultErrorMessage(message);
                                         }}
+                                        onDestinationAddressChange={(address) => setXrplDestAddress(address)}
+                                        onDestinationTagChange={(tag) => setDestinationTag(tag)}
+                                        onFormAlert={(alert) => setFormAlert(alert)}
+                                        supportsDestinationTag={!!redeemWithTagSupported.data}
+                                        isFormDisabled={(status) => setHasValidAmount(!status)}
                                     />
                                 }
                             </div>
@@ -576,7 +627,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
                             radius="xl"
                             size="sm"
                             fullWidth
-                            disabled={coreVaultErrorMessage.length > 0 || isNextButtonDisabled}
+                            disabled={isNextButtonDisabled}
                             className="hover:text-white"
                         >
                             {t('redeem_modal.next_button')}
@@ -591,8 +642,8 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
                         onCloseModal(true);
                     }}
                     fAssetCoin={fAssetCoin}
-                    totalLots={redeemLots ?? 0}
-                    redeemedLots={redeemedLots ?? 0}
+                    totalAmount={requestedAmount ?? 0}
+                    redeemedAmount={redeemedAmount ?? 0}
                     redemptionDefaultResponse={redemptionDefaultStatus.data}
                 />
             }

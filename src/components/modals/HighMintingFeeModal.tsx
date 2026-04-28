@@ -4,24 +4,23 @@ import { useTranslation, Trans } from "react-i18next";
 import FAssetModal from "@/components/modals/FAssetModal";
 import { useFassetPrice } from "@/api/user";
 import { IFAssetCoin } from "@/types";
-import { formatNumber, fromLots } from "@/utils";
+import { formatNumber } from "@/utils";
 
 interface IHighMintingFeeModal {
     opened: boolean;
     onClose: (proceed: boolean) => void;
     fAssetCoin: IFAssetCoin;
     mintingFee: number;
-    lots: number | undefined;
+    transfer: number;
 }
 
-export default function HighMintingFeeModal({ opened, onClose, fAssetCoin, mintingFee, lots }: IHighMintingFeeModal) {
+export default function HighMintingFeeModal({ opened, onClose, fAssetCoin, mintingFee, transfer }: IHighMintingFeeModal) {
     const [text, setText] = useState<string>();
     const [isProceedWithMintingChecked, setIsProceedWithMintingChecked] = useState<boolean>(false);
     const [isButtonDisabled, setIsButtonDisabled] = useState<boolean>(false);
     const { t } = useTranslation();
     const fassetPrice = useFassetPrice(fAssetCoin.type, opened);
 
-    const transfer = (lots ? fromLots(lots, fAssetCoin.lotSize) : 0) as number;
     const percentage = transfer ? (mintingFee / transfer) * 100 : 0
     const isMintingFeeAbove50 = percentage >= 50;
     const mintingFeeUsd = fassetPrice.data ? fassetPrice.data.price * mintingFee : 0;

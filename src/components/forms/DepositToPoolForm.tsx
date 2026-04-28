@@ -109,10 +109,9 @@ const DepositToPoolForm = forwardRef<FormRef, IDepositToPoolForm>(({ collateralP
 
     return (
         <>
-            <NumberInput
-                {...form.getInputProps('amount')}
-                key={form.key('amount')}
-                min={1}
+	            <NumberInput
+	                {...form.getInputProps('amount')}
+	                min={1}
                 size="sm"
                 inputMode="numeric"
                 type="tel"

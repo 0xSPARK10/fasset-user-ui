@@ -67,7 +67,7 @@ const ClaimRewardsFromPoolForm = forwardRef<FormRef, IClaimRewardsFromPoolForm>(
     });
 
     const form = useForm({
-        mode: 'uncontrolled',
+        mode: 'controlled',
         initialValues: {
             amount: undefined
         },
@@ -115,10 +115,9 @@ const ClaimRewardsFromPoolForm = forwardRef<FormRef, IClaimRewardsFromPoolForm>(
 
     return (
         <>
-            <NumberInput
-                {...form.getInputProps('amount')}
-                key={form.key('amount')}
-                min={0}
+	            <NumberInput
+	                {...form.getInputProps('amount')}
+	                min={0}
                 max={maxWithdrawal ?? 0}
                 allowLeadingZeros={false}
                 inputMode="numeric"

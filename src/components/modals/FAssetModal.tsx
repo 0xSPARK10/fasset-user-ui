@@ -36,7 +36,7 @@ const FAssetModal: React.FC<IFAssetModal> & {
 };
 
 const Body = ({ children }: { children: React.ReactNode }) => (
-    <div className="px-0 sm:px-7">
+    <div className="px-0 sm:px-7 pb-5">
         {children}
     </div>
 );

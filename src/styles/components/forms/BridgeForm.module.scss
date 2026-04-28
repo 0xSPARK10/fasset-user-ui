@@ -1,7 +1,0 @@
-.segmentedControlLabel {
-    color: var(--flr-black);
-
-    &:where([data-active]) {
-        color: var(--flr-white);
-    }
-}

@@ -13,7 +13,10 @@ import {
     IReturnAddress,
     IPrepareUtxo,
     IUtxo,
-    IMintEnabled
+    IMintEnabled,
+    IDirectMintingInfo,
+    IMintingRecipient,
+    IMintingCapInfo,
 } from "@/types";
 import { useWeb3 } from "@/hooks/useWeb3";
 
@@ -25,7 +28,33 @@ export const MINTING_KEY = {
     ECOSYSTEM_INFO: 'minting.ecosystemInfo',
     CR_STATUS: 'minting.crStatus',
     RETURN_ADDRESSES: 'minting.returnAddresses',
-    MINT_ENABLED: 'minting.mintEnabled'
+    MINT_ENABLED: 'minting.mintEnabled',
+    DIRECT_MINTING_INFO: 'minting.directMintingInfo',
+    MINTING_RECIPIENT: 'minting.mintingRecipient',
+    MINTING_CAP_INFO: 'minting.mintingCapInfo',
+}
+
+export function useMintingRecipient(fAsset: string,  tagId: string, enabled: boolean = true) {
+    return useQuery({
+        queryKey: [MINTING_KEY.MINTING_RECIPIENT, fAsset, tagId],
+        queryFn: async (): Promise<IMintingRecipient> => {
+            const response = await apiClient.get(`mintingRecipient/${fAsset}/${tagId}`);
+            return response.data as IMintingRecipient;
+        },
+        enabled: enabled,
+        staleTime: Infinity,
+    })
+}
+
+export function useDirectMintingInfo(fAsset: string, enabled: boolean = true) {
+    return useQuery({
+        queryKey: [MINTING_KEY.DIRECT_MINTING_INFO, fAsset],
+        queryFn: async (): Promise<IDirectMintingInfo> => {
+            const response = await apiClient.get(`directMintingInfo/${fAsset}`);
+            return response.data as IDirectMintingInfo;
+        },
+        enabled: enabled
+    })
 }
 
 export function useMaxLots(fAsset: string, enabled: boolean = true) {
@@ -242,5 +271,16 @@ export function useMintEnabled(enabled: boolean = true) {
             return response.data as IMintEnabled[];
         },
         enabled: enabled
+    });
+}
+
+export function useMintingCapInfo(fAsset: string, enabled: boolean = true) {
+    return useQuery({
+        queryKey: [MINTING_KEY.MINTING_CAP_INFO, fAsset],
+        queryFn: async (): Promise<IMintingCapInfo> => {
+            const response = await apiClient.get(`mintingCapInfo/${fAsset}`);
+            return response.data as IMintingCapInfo;
+        },
+        enabled: enabled,
     });
 }

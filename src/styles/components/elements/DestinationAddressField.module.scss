@@ -1,0 +1,16 @@
+.inputReadOnly {
+    cursor: default;
+    background-color: var(--flr-lightest-gray);
+    border: none;
+}
+
+.inputError {
+    cursor: default;
+    border: 1px solid var(--errors-border-color) !important;
+    background-color: var(--errors-highlight-color) !important;
+    color: var(--errors-border-color) !important;
+}
+
+.inputErrorText {
+    color: var(--errors-border-color);
+}

@@ -1,15 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { IHyperCoreInfo, IMessage } from "@/types";
-import { useWeb3 } from "@/hooks/useWeb3";
+import { IS_MAINNET } from "@/constants";
 
 const layerZeroApiClient = axios.create({
-    baseURL: process.env.NETWORK === 'mainnet'
+    baseURL: IS_MAINNET
         ? 'https://scan.layerzero-api.com/v1'
         : 'https://scan-testnet.layerzero-api.com/v1'
 });
 const hyperliquidApiClient = axios.create({
-    baseURL: process.env.NETWORK === 'mainnet'
+    baseURL: IS_MAINNET
         ? 'https://api.hyperliquid.xyz'
         : 'https://api.hyperliquid-testnet.xyz'
 });

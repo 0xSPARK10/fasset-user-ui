@@ -67,7 +67,7 @@ const SendCPTForm = forwardRef<FormRef, ISendCPTForm>(({ collateralPool, payDebt
     });
 
     const form = useForm({
-        mode: 'uncontrolled',
+        mode: 'controlled',
         initialValues: {
             amount: undefined,
             account: ""
@@ -146,10 +146,9 @@ const SendCPTForm = forwardRef<FormRef, ISendCPTForm>(({ collateralPool, payDebt
                     wrapper: 'flex-shrink-0 basis-full sm:basis-3/5'
                 }}
             />
-            <NumberInput
-                {...form.getInputProps('amount')}
-                key={form.key('amount')}
-                inputMode="numeric"
+	            <NumberInput
+	                {...form.getInputProps('amount')}
+	                inputMode="numeric"
                 type="tel"
                 size="sm"
                 allowNegative={false}

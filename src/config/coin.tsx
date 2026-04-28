@@ -29,7 +29,7 @@ import {
     NETWORK_XRPL,
     NETWORK_XRPL_TESTNET
 } from "@/config/networks";
-import { BIP44_PATH, WALLET } from "@/constants";
+import { BIP44_PATH, IS_MAINNET, WALLET } from "@/constants";
 import HypeIcon from "@/components/icons/HypeIcon";
 import FXrpHypeEVMIcon from "@/components/icons/FXrpHypeEVMIcon";
 
@@ -37,7 +37,7 @@ const enabledUnderlyingFassets = process.env.ENABLED_UNDERLYING_FASSETS && proce
     ? process.env.ENABLED_UNDERLYING_FASSETS.split(',').map(fasset => fasset.toLowerCase())
     : [];
 
-const isMainnet = process.env.NETWORK === 'mainnet';
+const isMainnet = IS_MAINNET;
 const mainnetChain = isMainnet
     ? process.env.MAINNET_CHAIN
     : undefined;
@@ -92,6 +92,7 @@ export const FTEST_XRP: ICoin = {
     faucetUrl: 'https://test.bithomp.com/faucet',
     supportedWallets: [WALLET.WALLET_CONNECT, WALLET.LEDGER, WALLET.XAMAN],
     decimals: 2,
+    contractDecimals: 6,
     bipPath: BIP44_PATH.TESTNET.XRP
 }
 
@@ -108,6 +109,7 @@ export const FTEST_BTC: ICoin = {
     faucetUrl: ['https://coinfaucet.eu/en/btc-testnet4/', 'https://faucet.testnet4.dev/'],
     supportedWallets: [WALLET.WALLET_CONNECT, WALLET.LEDGER],
     decimals: 8,
+    contractDecimals: 6,
     bipPath: BIP44_PATH.TESTNET.BTC
 }
 
@@ -124,6 +126,7 @@ export const FTEST_DOGE: ICoin = {
     faucetUrl: ['https://faucet.doge.toys/', 'https://dogecoin-faucet.ruan.dev/'],
     supportedWallets: [WALLET.WALLET_CONNECT],
     decimals: 2,
+    contractDecimals: 6,
     bipPath: BIP44_PATH.TESTNET.DOGE
 }
 
@@ -138,7 +141,8 @@ export const TEST_USDT: ICoin = {
     enabled: !isMainnet,
     isFAssetCoin: false,
     isStableCoin: true,
-    decimals: 2
+    decimals: 2,
+    contractDecimals: 6,
 }
 
 export const TEST_USDC: ICoin = {
@@ -150,7 +154,8 @@ export const TEST_USDC: ICoin = {
     enabled: !isMainnet,
     isFAssetCoin: false,
     isStableCoin: true,
-    decimals: 2
+    decimals: 2,
+    contractDecimals: 6,
 }
 
 export const TEST_ETH: ICoin = {
@@ -192,6 +197,7 @@ export const FXRP: ICoin = {
     isFAssetCoin: true,
     supportedWallets: [WALLET.WALLET_CONNECT, WALLET.LEDGER, WALLET.XAMAN],
     decimals: 2,
+    contractDecimals: 6,
     bipPath: BIP44_PATH.MAINNET.XRP
 }
 
@@ -207,6 +213,7 @@ export const FBTC: ICoin = {
     isFAssetCoin: true,
     supportedWallets: [WALLET.WALLET_CONNECT, WALLET.LEDGER],
     decimals: 8,
+    contractDecimals: 6,
     bipPath: BIP44_PATH.MAINNET.BTC
 }
 
@@ -222,6 +229,7 @@ export const FDOGE: ICoin = {
     isFAssetCoin: true,
     supportedWallets: [WALLET.WALLET_CONNECT, WALLET.LEDGER],
     decimals: 2,
+    contractDecimals: 6,
     bipPath: BIP44_PATH.MAINNET.DOGE
 }
 
@@ -234,7 +242,8 @@ export const USDX: ICoin = {
     enabled: isMainnet,
     isFAssetCoin: false,
     isStableCoin: true,
-    decimals: 2
+    decimals: 2,
+    contractDecimals: 6,
 }
 
 export const FLR: ICoin = {
@@ -262,7 +271,8 @@ export const USDT0: ICoin = {
     enabled: isMainnet,
     isFAssetCoin: false,
     isStableCoin: true,
-    decimals: 2
+    decimals: 2,
+    contractDecimals: 6,
 }
 
 export const HYPE: ICoin = {
@@ -324,6 +334,58 @@ export const FXRP_HYPE: ICoin = {
 }
 
 
+export const WCFLR: ICoin = {
+    type: CoinEnum.WCFLR,
+    icon: (props) => <CflrIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    nativeName: 'WCFLR',
+    lotSize: 0,
+    minWalletBalance: 0,
+    network: NETWORK_FLARE_COSTON_TESTNET,
+    enabled: !isMainnet && testnetChain === 'CFLR',
+    isFAssetCoin: false,
+    decimals: 2,
+    contractDecimals: 18,
+}
+
+export const WC2FLR: ICoin = {
+    type: CoinEnum.WC2FLR,
+    icon: (props) => <C2FlrIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    nativeName: 'WC2FLR',
+    lotSize: 0,
+    minWalletBalance: 0,
+    network: NETWORK_FLARE_COSTON2_TESTNET,
+    enabled: !isMainnet && testnetChain === 'C2FLR',
+    isFAssetCoin: false,
+    decimals: 2,
+    contractDecimals: 18,
+}
+
+export const WFLR: ICoin = {
+    type: CoinEnum.WFLR,
+    icon: (props) => <FlrIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    nativeName: 'WFLR',
+    lotSize: 0,
+    minWalletBalance: 0,
+    network: NETWORK_FLARE,
+    enabled: isMainnet && mainnetChain === 'FLR',
+    isFAssetCoin: false,
+    decimals: 2,
+    contractDecimals: 18,
+}
+
+export const WSGB: ICoin = {
+    type: CoinEnum.WSGB,
+    icon: (props) => <SgbIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    nativeName: 'WSGB',
+    lotSize: 0,
+    minWalletBalance: 0,
+    network: NETWORK_SONGBIRD,
+    enabled: isMainnet && mainnetChain === 'SGB',
+    isFAssetCoin: false,
+    decimals: 2,
+    contractDecimals: 18,
+}
+
 export const COINS = [
     CFLR,
     C2FLR,
@@ -339,12 +401,18 @@ export const COINS = [
     FBTC,
     FDOGE,
     USDX,
-    USDT0
+    USDT0,
+    WCFLR,
+    WC2FLR,
+    WFLR,
+    WSGB
 ];
 
 export const BRIDGE_COINS = [
     FTEST_XRP_HYPE,
     FXRP_HYPE
 ];
+
+export const FASSET_COIN = COINS.find(c => c.enabled && c.isFAssetCoin)!;
 
 

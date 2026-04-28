@@ -26,6 +26,7 @@ interface IWeb3Context {
     isBridgeEnabled: boolean;
     mainToken: ICoin | undefined;
     bridgeToken: ICoin | undefined;
+    displayWalletName: string | undefined;
     ledgerConnector: ILedgerConnector;
     walletConnectConnector: IWalletConnectConnector;
     metaMaskConnector: IMetaMaskConnector;
@@ -104,6 +105,9 @@ export function Web3Provider({ children }: { children: ReactNode | ReactNode[] }
     const mainToken = isConnected
         ? connectedCoins.find(coin => !coin.isFAssetCoin && !coin.isStableCoin && coin.enabled && coin.isMainToken)
         : COINS.find(coin => !coin.isFAssetCoin && !coin.isStableCoin && coin.enabled && coin.isMainToken);
+    const displayWalletName = mainToken?.connectedWallet === WALLET.WALLET_CONNECT
+        ? walletConnectConnector.connectedWallet
+        : mainToken?.connectedWallet;
     const isBridgeEnabled = [CoinEnum.C2FLR, CoinEnum.FLR].includes(mainToken?.type!);
     let bridgeToken: ICoin | undefined = undefined;
 
@@ -133,6 +137,7 @@ export function Web3Provider({ children }: { children: ReactNode | ReactNode[] }
             connectedWallets,
             mainToken,
             bridgeToken,
+            displayWalletName,
             ledgerConnector,
             walletConnectConnector,
             metaMaskConnector,

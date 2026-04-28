@@ -15,24 +15,28 @@ import { IconCheck, IconCircleCheck, IconFilePlus, IconSettings } from "@tabler/
 import { useInterval, useMediaQuery, useMounted } from "@mantine/hooks";
 import { CONTRACT_KEY, useBridgeApprove, useBridgeSend } from "@/hooks/useContracts";
 import { parseUnits } from "@/utils";
+import { devLog } from "@/utils/debug";
 import { isError } from "ethers";
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { ErrorDecoder } from "ethers-decode-error";
 import { FAssetOFTAdapterAbi } from "@/abi";
-import { useMessage } from "@/api/bridge";
+import { BRIDGE_KEY, useMessage } from "@/api/bridge";
 import { modals } from "@mantine/modals";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { BRIDGE_TYPE, LAYER_ZERO_STATUS, WALLET } from "@/constants";
+import { BridgeConfig } from "@/components/modals/BridgeModal";
 import WalletConnectOpenWalletCard from "@/components/cards/WalletConnectOpenWalletCard";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
 import { useQueryClient } from "@tanstack/react-query";
+import { BALANCE_KEY } from "@/api/balance";
+import { OFT_KEY } from "@/api/oft";
 
 interface IConfirmStepper {
     token: ICoin;
     formValues: Record<string, any>;
     onError: (error: string) => void;
     onClose: (status: boolean) => void;
-    bridgeType: typeof BRIDGE_TYPE[keyof typeof BRIDGE_TYPE];
+    bridgeConfig: BridgeConfig;
 }
 
 const CHECK_STATUS_INTERVAL = 10000;
@@ -42,7 +46,7 @@ const WAITING_MODAL = 'waiting_modal';
 const STEP_APPROVE = 0;
 const STEP_BRIDGE = 1;
 
-export default function ConfirmStepper({ token, formValues, onError, onClose, bridgeType }: IConfirmStepper) {
+export default function ConfirmStepper({ token, formValues, onError, onClose, bridgeConfig }: IConfirmStepper) {
     const { t } = useTranslation();
     const isMounted = useMounted();
     const { mainToken, bridgeToken } = useWeb3();
@@ -55,12 +59,13 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
     const [txHash, setTxHash] = useState<string>();
     const getMessage = useMessage(txHash ?? '', false);
 
-    const [currentStep, setCurrentStep] = useState<number>(bridgeType !== BRIDGE_TYPE.FLARE ? STEP_APPROVE : STEP_BRIDGE);
+    const [currentStep, setCurrentStep] = useState<number>(bridgeConfig.needsApproval ? STEP_APPROVE : STEP_BRIDGE);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
 
     const checkStatusInterval = useInterval(async () => {
         const response = await getMessage.refetch();
+        devLog('[BRIDGE] LayerZero status poll:', { txHash, status: response.data?.[0]?.status?.name, data: response.data?.[0] });
         if (response.isSuccess) {
             const data = response.data?.[0];
             if (data?.status?.name === LAYER_ZERO_STATUS.DELIVERED) {
@@ -69,14 +74,38 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                 checkStatusInterval.stop();
                 setIsLedgerButtonDisabled(false);
                 queryClient.invalidateQueries({
-                    queryKey: [CONTRACT_KEY.HYPER_EVM_BALANCE, mainToken?.address],
+                    queryKey: [BALANCE_KEY.NATIVE_BALANCE, mainToken?.address],
                     exact: true,
                     refetchType: 'all'
                 });
-                queryClient.resetQueries({
-                    queryKey: [CONTRACT_KEY.HYPE_BALANCE, mainToken?.address],
+                queryClient.invalidateQueries({
+                    queryKey: [OFT_KEY.USER_HISTORY, mainToken?.address],
                     exact: true,
+                    refetchType: 'all'
                 });
+                if (bridgeConfig.type !== BRIDGE_TYPE.HYPER_CORE) {
+                    queryClient.invalidateQueries({
+                        queryKey: [CONTRACT_KEY.HYPER_EVM_BALANCE, mainToken?.address],
+                        exact: true,
+                        refetchType: 'all'
+                    });
+                }
+                if (bridgeConfig.type === BRIDGE_TYPE.HYPER_CORE) {
+                    queryClient.invalidateQueries({
+                        queryKey: [BRIDGE_KEY.BALANCE, mainToken?.address],
+                        exact: true,
+                        refetchType: 'all'
+                    });
+                }
+                // feeTokenKey === 'hype' identifies FLARE and XRPL bridge types,
+                // which are the only types where HYPE is spent as a bridge fee
+                if (bridgeConfig.feeTokenKey === 'hype') {
+                    queryClient.invalidateQueries({
+                        queryKey: [CONTRACT_KEY.HYPE_BALANCE, mainToken?.address],
+                        exact: true,
+                        refetchType: 'all'
+                    });
+                }
             } else if ([LAYER_ZERO_STATUS.FAILED, LAYER_ZERO_STATUS.BLOCKED, LAYER_ZERO_STATUS.PAYLOAD_STORED].includes(data?.status?.name)) {
                 onError(data?.status?.message);
                 checkStatusInterval.stop();
@@ -88,7 +117,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
     useEffect(() => {
         if (!isMounted || mainToken?.connectedWallet === WALLET.LEDGER) return;
 
-        if (bridgeType !== BRIDGE_TYPE.FLARE) {
+        if (bridgeConfig.needsApproval) {
             approve();
         } else {
             send();
@@ -107,7 +136,9 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
         try {
             setIsLoading(true);
             setIsLedgerButtonDisabled(true);
+            devLog('[BRIDGE] approve amount:', parseUnits(formValues.amount, 6).toString());
             await bridgeApprove.mutateAsync(parseUnits(formValues.amount, 6).toString());
+            devLog('[BRIDGE] approve done, proceeding to send');
             setCurrentStep(STEP_BRIDGE);
 
             if (mainToken?.connectedWallet !== WALLET.LEDGER) {
@@ -134,11 +165,34 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
             setIsLoading(true);
             setIsLedgerButtonDisabled(true);
 
+            const netAmount = parseUnits(formValues.amount, 6);
+            const composerFeePPM = BigInt(formValues.composerFeePPM ?? '0');
+            const PPM_DENOMINATOR = BigInt(1_000_000);
+            const grossAmount = composerFeePPM > BigInt(0)
+                ? (netAmount * PPM_DENOMINATOR) / (PPM_DENOMINATOR - composerFeePPM)
+                : netAmount;
+            devLog('[BRIDGE] send params:', {
+                netAmount: netAmount.toString(),
+                grossAmount: grossAmount.toString(),
+                fee: formValues.fee?.toString(),
+                bridgeType: formValues.type,
+                executorFee: formValues.executorFee,
+                composerFeePPM: formValues.composerFeePPM,
+                destinationAddress: formValues.destinationAddress,
+                destinationTag: formValues.destinationTag || undefined,
+            });
+
             const hash = await bridgeSend.mutateAsync({
                 amount: parseUnits(formValues.amount, 6).toString(),
                 fee: formValues.fee,
-                bridgeType: formValues.type
+                bridgeType: formValues.type,
+                executorFee: formValues.executorFee,
+                composerFeePPM: formValues.composerFeePPM,
+                destinationAddress: formValues.destinationAddress,
+                destinationTag: formValues.destinationTag || undefined,
             });
+
+            devLog('[BRIDGE] send tx hash:', hash);
             setTxHash(hash);
         } catch (error: any) {
             if (isError(error, 'ACTION_REJECTED')) {
@@ -159,7 +213,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
     const openWaitingModal = () => {
         modals.open({
             modalId: WAITING_MODAL,
-            title: t(`bridge_modal.${bridgeType !== BRIDGE_TYPE.FLARE ? 'hyperliquid' : 'flare'}_title`, { fAsset: token?.type }),
+            title: t(`bridge_modal.${bridgeConfig.titleKey}_title`, { fAsset: token?.type }),
             closeOnClickOutside: false,
             closeOnEscape: false,
             centered: true,
@@ -179,7 +233,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                             size="sm"
                             className="whitespace-pre-line"
                         >
-                            {t('bridge_modal.waiting_modal.description_label')}
+                            {t(`bridge_modal.waiting_modal.${bridgeConfig.finishedDescriptionKey === 'xrpl' ? 'description_xrpl_label' : 'description_label'}`)}
                         </Text>
                     </div>
                 </div>
@@ -199,14 +253,14 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
             zIndex: 3000,
             size: 600,
             fullScreen: mediaQueryMatches,
-            title: t(`bridge_modal.${bridgeType !== BRIDGE_TYPE.FLARE ? 'hyperliquid' : 'flare'}_title`, { fAsset: token?.type }),
+            title: t(`bridge_modal.${bridgeConfig.titleKey}_title`, { fAsset: token?.type }),
             children: (
                 <div className="px-0 sm:px-7">
                     <Title
                         className="text-24"
                         fw={300}
                     >
-                        {t('bridge_modal.finished_modal.title')}
+                        {t(`bridge_modal.finished_modal.${bridgeConfig.finishedDescriptionKey === 'xrpl' ? 'title_xrpl' : 'title'}`)}
                     </Title>
                     <div className="flex items-center mt-5">
                         <IconCircleCheck
@@ -219,7 +273,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                             className="text-16"
                             fw={400}
                         >
-                            {t(`bridge_modal.finished_modal.description_${bridgeType !== BRIDGE_TYPE.FLARE ? 'hyperliquid' : 'flare'}_label`, {
+                            {t(`bridge_modal.finished_modal.description_${bridgeConfig.finishedDescriptionKey}_label`, {
                                 fAsset: token?.type,
                                 bridgeType: formValues?.type === BRIDGE_TYPE.HYPER_CORE ? 'Hyperliquid' : 'HyperEVM'
                             })}
@@ -268,7 +322,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                 fw={400}
                 c="var(--flr-black)"
             >
-                {bridgeType !== BRIDGE_TYPE.FLARE
+                {bridgeConfig.needsApproval
                     ? t('mint_modal.confirm_step_description')
                     : t('bridge_modal.confirm_step_description')
                 }
@@ -282,7 +336,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                     stepDescription: 'max-w-[300px]'
                 }}
             >
-                {bridgeType !== BRIDGE_TYPE.FLARE &&
+                {bridgeConfig.needsApproval &&
                     <Stepper.Step
                         label={
                             <Text
@@ -322,7 +376,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                             fw={500}
                             c={currentStep === STEP_APPROVE ? 'var(--flr-light-gray)' : 'var(--flr-black)'}
                         >
-                            {t(`bridge_modal.bridge_${bridgeType !== BRIDGE_TYPE.FLARE ? 'hyperliquid' : 'flare'}_step_label`, {
+                            {t(`bridge_modal.bridge_${bridgeConfig.titleKey}_step_label`, {
                                 fAsset: token?.type
                             })}
                         </Text>
@@ -333,7 +387,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                             fw={400}
                             c={currentStep === STEP_APPROVE ? 'var(--flr-light-gray)' : lighten('var(--flr-gray)', 0.378)}
                         >
-                            {t(`bridge_modal.bridge_${bridgeType !== BRIDGE_TYPE.FLARE ? 'hyperliquid' : 'flare'}_step_description`, { fAsset: token?.type })}
+                            {t(`bridge_modal.bridge_${bridgeConfig.titleKey}_step_description`, { fAsset: token?.type })}
                         </Text>
                     }
                     icon={
@@ -372,7 +426,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                         }}
                     />
                     <LedgerConfirmTransactionCard
-                        appName={bridgeType !== BRIDGE_TYPE.FLARE
+                        appName={bridgeConfig.ledgerApp === 'source'
                             ? mainToken?.network?.ledgerApp!
                             : bridgeToken?.network?.ledgerApp!
                         }

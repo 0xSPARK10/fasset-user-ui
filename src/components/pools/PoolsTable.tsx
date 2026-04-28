@@ -43,11 +43,10 @@ import ClaimRewardsFromPoolModal from "@/components/modals/ClaimRewardsFromPoolM
 import type { IFAssetColumn } from "@/components/elements/FAssetTable";
 import { CoinEnum, IPool, ITableRowAction } from "@/types";
 import { useWeb3 } from "@/hooks/useWeb3";
+import { useNetworks } from "@/hooks/useNetworks";
 import { truncateString, formatNumber, isMaxCRValue, toNumber, formatNumberWithSuffix } from "@/utils";
 import { COINS } from "@/config/coin";
 import classes from "@/styles/pages/Agents.module.scss";
-import SgbAltIcon from "@/components/icons/SgbAltIcon";
-import FlareIcon from "@/components/icons/FlareIcon";
 
 const TYPE_ACTIVE_POOLS = 'active';
 const TYPE_OTHER_POOLS = 'others';
@@ -77,6 +76,7 @@ export default function PoolsTable({ pools, className, style, type, showAll }: I
 
     const { t } = useTranslation();
     const { isConnected, mainToken } = useWeb3();
+    const { isMainnet } = useNetworks();
 
     const tokenFilters = COINS.filter(coin => coin.isFAssetCoin && coin.enabled);
 
@@ -237,7 +237,7 @@ export default function PoolsTable({ pools, className, style, type, showAll }: I
             badgeColor = 'var(--flr-lightest-red)';
         } else if (pool.health === 1) {
             textColor = 'var(--flr-orange)';
-            badgeColor = '#FCEBE2';
+            badgeColor = 'var(--flr-lightest-orange)';
         }
 
         let textColorStatus = 'var(--flr-red)';
@@ -542,7 +542,7 @@ export default function PoolsTable({ pools, className, style, type, showAll }: I
                 return type === TYPE_ACTIVE_POOLS
                     ? <div>
                         <div className="flex items-center">
-                            {mainToken?.network.mainnet
+                            {isMainnet
                                 ? <SgbIcon width="15" height="15" />
                                 : <FlrAltIcon width="15" height="15" />
                             }

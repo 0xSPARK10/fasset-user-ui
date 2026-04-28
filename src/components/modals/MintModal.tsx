@@ -3,20 +3,15 @@ import {
     Stepper,
     Button,
     Text,
-    rem,
-    Anchor,
 } from "@mantine/core";
-import { IconExclamationCircle, IconArrowUpRight } from "@tabler/icons-react";
 import ConfirmStepper from "@/components/mint/ConfirmStepper";
 import { useQueryClient } from "@tanstack/react-query";
-import { useTranslation, Trans } from "react-i18next";
-import { useEstimateFee } from "@/api/minting";
-import { useNativeBalance } from "@/api/balance";
+import { useTranslation } from "react-i18next";
 import MintForm, { FormRef } from "@/components/forms/MintForm";
 import FAssetModal from "@/components/modals/FAssetModal";
 import HighMintingFeeModal from "@/components/modals/HighMintingFeeModal";
-import { parseUnits } from "@/utils";
-import { IFAssetCoin, ISelectedAgent } from "@/types";
+import { IFAssetCoin } from "@/types";
+import FormAlert, { IAlertMessage } from "@/components/elements/FormAlert";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { MINTING_KEY } from "@/api/minting";
 
@@ -34,21 +29,19 @@ export default function MintModal({ opened, onClose, fAssetCoin }: IMintModal) {
     const [formValues, setFormValues] = useState<any>();
     const [isRefreshButtonLoading, setIsRefreshButtonIsLoading] = useState<boolean>(false);
     const [currentStep, setCurrentStep] = useState<number>(STEP_AMOUNT);
-    const [errorMessage, setErrorMessage] = useState<string>();
+    const [errorMessage, setErrorMessage] = useState<IAlertMessage>();
     const [isRefreshButtonVisible, setIsRefreshButtonVisible] = useState<boolean>(false);
     const [isMintWaitingModalActive, setIsMintWaitingModalActive] = useState<boolean>(false);
-    const [selectedAgent, setSelectedAgent] = useState<ISelectedAgent>();
-    const [lots, setLots] = useState<number>();
+    const [mintTransfer, setMintTransfer] = useState<number>(0);
     const [isHighMintingFeeModalActive, setIsHighMintingFeeModalActive] = useState<boolean>(false);
     const [highMintingFee, setHighMintingFee] = useState<number>();
 
-    const { walletConnectConnector, mainToken } = useWeb3();
+    const { walletConnectConnector } = useWeb3();
     const formRef = useRef<FormRef>(null);
+    const stepperErrorRef = useRef<IAlertMessage>();
     const { t } = useTranslation();
     const queryClient = useQueryClient();
 
-    const nativeBalances = useNativeBalance(mainToken?.address ?? '', false);
-    const estimatedFee = useEstimateFee(fAssetCoin.type);
 
     const onNextStepClick = useCallback(async () => {
         const form = formRef.current?.form();
@@ -58,26 +51,19 @@ export default function MintModal({ opened, onClose, fAssetCoin }: IMintModal) {
         const status = form?.validate();
         if (status?.hasErrors || !form) return;
 
-        const nativeBalance = nativeBalances.data && nativeBalances.data.find(nativeBalance => nativeBalance.symbol.toLowerCase() === mainToken?.type.toLowerCase());
-        const minFee = BigInt(values.collateralReservationFee) + parseUnits(mainToken?.minWalletBalance!, 18);
-
-        if (nativeBalance && parseUnits(nativeBalance.balance.replace(/,/g, ''), 18) < minFee) {
-            setErrorMessage(t('mint_modal.form.error_insufficient_balance_label', { tokenName: mainToken?.type }));
-            return;
-        }
-
         if (highMintingFee !== undefined) {
             setIsHighMintingFeeModalActive(true);
             return;
         }
 
+        stepperErrorRef.current = undefined;
         setFormValues(values);
         setCurrentStep(STEP_CONFIRM);
-    }, [formRef, nativeBalances, mainToken?.address]);
+    }, [formRef, highMintingFee]);
 
     const refreshBalance = () => {
         setIsNextButtonDisabled(true);
-        setErrorMessage(`${t('notifications.request_rejected_by_user_label')} ${t('underlying_balance_card.update_balance_label')}`);
+        setErrorMessage({ msg: `${t('notifications.request_rejected_by_user_label')} ${t('underlying_balance_card.update_balance_label')}` });
         setIsRefreshButtonVisible(true);
     }
 
@@ -88,9 +74,9 @@ export default function MintModal({ opened, onClose, fAssetCoin }: IMintModal) {
             setIsNextButtonDisabled(false);
         } catch (error: any) {
             if (error.code === 4001) {
-                setErrorMessage(t('notifications.request_rejected_by_user_label'));
+                setErrorMessage({ msg: t('notifications.request_rejected_by_user_label') });
             } else {
-                setErrorMessage(error.message);
+                setErrorMessage({ msg: error.message });
             }
         } finally {
             setIsRefreshButtonIsLoading(false);
@@ -145,22 +131,7 @@ export default function MintModal({ opened, onClose, fAssetCoin }: IMintModal) {
                             withIcon={false}
                         >
                             <div>
-                                {errorMessage &&
-                                    <div className="flex items-center mb-5 border border-red-700 p-3 bg-red-100">
-                                        <IconExclamationCircle
-                                            style={{ width: rem(25), height: rem(25) }}
-                                            color="var(--flr-red)"
-                                            className="mr-3 flex-shrink-0"
-                                        />
-                                        <Text
-                                            className="text-16"
-                                            fw={400}
-                                            c="var(--flr-red)"
-                                        >
-                                            {errorMessage}
-                                        </Text>
-                                    </div>
-                                }
+                                <FormAlert message={errorMessage?.msg} type={errorMessage?.type} />
                                 {isRefreshButtonVisible &&
                                     <Button
                                         onClick={fetchBalance}
@@ -184,22 +155,22 @@ export default function MintModal({ opened, onClose, fAssetCoin }: IMintModal) {
                                 {opened &&
                                     <MintForm
                                         ref={formRef}
-                                        selectedAgent={selectedAgent}
-                                        setSelectedAgent={setSelectedAgent}
-                                        lots={lots}
-                                        setLots={setLots}
                                         fAssetCoin={fAssetCoin}
                                         isFormDisabled={(status) => setIsNextButtonDisabled(status)}
                                         refreshBalance={refreshBalance}
-                                        setHighMintingFee={(mintingFee) => {
+                                        setHighMintingFee={(mintingFee, transfer) => {
                                             if (mintingFee !== undefined) {
-                                                setErrorMessage(t('mint_modal.minting_fee_high_warning_label'));
+                                                setErrorMessage({ msg: t('mint_modal.minting_fee_high_warning_label'), type: 'warning' });
+                                                setMintTransfer(transfer ?? 0);
                                             } else {
-                                                setErrorMessage('');
+                                                setErrorMessage(prev => prev?.msg === t('mint_modal.minting_fee_high_warning_label') ? undefined : prev);
                                             }
                                             setHighMintingFee(mintingFee);
                                         }}
-                                        onError={(error) => { setErrorMessage(error); }}
+                                        onError={(alert) => {
+                                            if (!alert && stepperErrorRef.current) return;
+                                            setErrorMessage(alert);
+                                        }}
                                     />
                                 }
                             </div>
@@ -210,7 +181,7 @@ export default function MintModal({ opened, onClose, fAssetCoin }: IMintModal) {
                             <ConfirmStepper
                                 fAssetCoin={fAssetCoin}
                                 formValues={formValues}
-                                onError={(error) => { setErrorMessage(error); setCurrentStep(STEP_AMOUNT) }}
+                                onError={(alert) => { stepperErrorRef.current = alert; setErrorMessage(alert); setCurrentStep(STEP_AMOUNT); }}
                                 onClose={(status) => {
                                     if (status) {
                                         setIsMintWaitingModalActive(true);
@@ -219,7 +190,6 @@ export default function MintModal({ opened, onClose, fAssetCoin }: IMintModal) {
                                         onClose(true);
                                     }
                                 }}
-                                selectedAgent={selectedAgent!}
                             />
                         </Stepper.Step>
                     </Stepper>
@@ -246,7 +216,7 @@ export default function MintModal({ opened, onClose, fAssetCoin }: IMintModal) {
                 onClose={onCloseHighMintingFeeModal}
                 fAssetCoin={fAssetCoin}
                 mintingFee={highMintingFee ?? 0}
-                lots={lots}
+                transfer={mintTransfer}
             />
         </>
     );

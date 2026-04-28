@@ -4,6 +4,7 @@ import {
     IAgent,
     IAssetManagerAddress,
     IBestAgent,
+    IDirectMintingExecutor,
     IExecutor,
     IFassetPrice,
     IFassetState,
@@ -66,11 +67,24 @@ export function useExecutor(fAsset: string, enabled: boolean = true) {
     });
 }
 
-export function useUserProgress(address: string, enabled: boolean = true) {
+export function useDirectMintingExecutor(fAsset: string, enabled: boolean = true) {
     return useQuery({
-        queryKey: [USER_KEY.USER_PROGRESS, address],
+        queryKey: [USER_KEY.EXECUTOR, 'directMinting', fAsset],
         queryFn: async () => {
-            const response = await apiClient.get(`userProgress/${address}`);
+            const response = await apiClient.get(`directMintingExecutor/${fAsset}`);
+            return response.data as IDirectMintingExecutor;
+        },
+        enabled: enabled
+    });
+}
+
+export function useUserProgress(address: string, enabled: boolean = true, xrpAddress?: string) {
+    return useQuery({
+        queryKey: [USER_KEY.USER_PROGRESS, address, xrpAddress],
+        queryFn: async () => {
+            const response = await apiClient.get(`userProgress/${address}`, {
+                params: xrpAddress ? { xrpAddress } : undefined
+            });
             return response.data as IUserProgress[];
         },
         enabled: enabled

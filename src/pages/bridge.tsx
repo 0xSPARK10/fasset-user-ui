@@ -10,11 +10,15 @@ import BridgeUnderlyingBalanceCard from "@/components/cards/BridgeUnderlyingBala
 import { GetServerSideProps } from "next";
 import LatestTransactionsCard from "@/components/cards/LatestTransactionsCard";
 import { IconArrowUpRight } from "@tabler/icons-react";
-import { NETWORK_FLARE_COSTON2_TESTNET } from "@/config/networks";
+import BridgeAccountBalanceCard from "@/components/cards/BridgeAccountBalanceCard";
+import { useNetworks } from "@/hooks/useNetworks";
+import UnderlyingBalanceCard from "@/components/cards/UnderlyingBalanceCard";
+import { IS_MAINNET } from "@/constants";
 
 export default function Bridge() {
     const { t } = useTranslation();
-    const { connectedCoins, mainToken } = useWeb3();
+    const { connectedCoins } = useWeb3();
+    const { isMainnet } = useNetworks();
     const [latestTransactionCardKey, setLatestTransactionCardKey] = useState<number>(0);
 
     const fAssetCoins = useMemo<IFAssetCoin[]>(() => {
@@ -42,29 +46,30 @@ export default function Bridge() {
                 {t('bridge.title')}
             </Title>
             <Grid
-                gutter="md"
+                gutter="xl"
                 className="mt-5"
             >
                 <Grid.Col span={{ base: 12, md: 6 }}>
-                    <BridgeBalanceCard />
+                    <BridgeBalanceCard  className="mb-2"/>
+                     <BridgeAccountBalanceCard />
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, md: 6 }}>
-                    {/*fAssetCoins.map(coin =>
+                    {fAssetCoins.map(coin =>
                         <UnderlyingBalanceCard
                             fAssetCoin={coin}
                             key={'card_' + coin.type}
                             className="mb-2"
                         />
-                    )*/}
+                    )}
                     <BridgeUnderlyingBalanceCard />
                     <Trans
                         i18nKey={'bridge.hyperliquid_trading_platform_label'}
                         components={{
                             a: <Anchor
                                 underline="always"
-                                href={mainToken?.network?.chainId === NETWORK_FLARE_COSTON2_TESTNET.chainId
-                                    ? 'https://app.hyperliquid-testnet.xyz/trade'
-                                    : 'https://app.hyperliquid.xyz/trade'
+                                href={isMainnet
+                                    ? 'https://app.hyperliquid.xyz/trade'
+                                    : 'https://app.hyperliquid-testnet.xyz/trade'
                                 }
                                 target="_blank"
                                 className="inline-flex ml-1 mt-2 text-14"
@@ -81,6 +86,8 @@ export default function Bridge() {
                         className="text-center mt-3 text-14"
                     />
                 </Grid.Col>
+                        
+                   
             </Grid>
             <Title
                 fw={300}
@@ -117,7 +124,7 @@ export default function Bridge() {
 Bridge.protected = true;
 
 export const getServerSideProps: GetServerSideProps = async () => {
-    if ((process.env.NETWORK === 'testnet' && process.env.TESTNET_CHAIN !== CoinEnum.C2FLR) || (process.env.NETWORK === 'mainnet' && process.env.MAINNET_CHAIN !== CoinEnum.FLR)) {
+    if ((process.env.NETWORK === 'testnet' && process.env.TESTNET_CHAIN !== CoinEnum.C2FLR) || (IS_MAINNET && process.env.MAINNET_CHAIN !== CoinEnum.FLR)) {
         return {
             notFound: true,
         };

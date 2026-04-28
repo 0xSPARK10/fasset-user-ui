@@ -5,6 +5,7 @@ import {
     IRedemptionDefaultStatus,
     IRedemptionFee,
     IRedemptionFeeData,
+    IRedemptionQueue,
     IRedemptionStatus,
     ITrailingFee
 } from "@/types";
@@ -14,7 +15,8 @@ export const REDEMPTION_KEY = {
     REDEMPTION_STATUS: 'redemption.redemptionStatus',
     REQUEST_REDEMPTION_DEFAULT_STATUS: 'redemption.requestRedemptionDefaultStatus',
     TRAILING_FEE: 'redemption.trailingFee',
-    REDEMPTION_FEE_DATA: 'redemption.redemptionFeeData'
+    REDEMPTION_FEE_DATA: 'redemption.redemptionFeeData',
+    REDEMPTION_QUEUE: 'redemption.redemptionQueue'
 }
 
 export function useRedemptionFee(fAsset: string, enabled: boolean = true) {
@@ -39,6 +41,17 @@ export function useRedemptionStatus(fAsset: string, txHash: string, enabled: boo
     })
 }
 
+export function useRedemptionQueue(fAsset: string, enabled: boolean = true) {
+    return useQuery({
+        queryKey: [REDEMPTION_KEY.REDEMPTION_QUEUE, fAsset],
+        queryFn: async () => {
+            const response = await apiClient.get(`redemptionQueue/${fAsset}`);
+            return response.data as IRedemptionQueue;
+        },
+        enabled,
+    });
+}
+
 export function useRedemptionDefaultStatus(txHash: string, enabled: boolean = true) {
     return useQuery({
         queryKey: [REDEMPTION_KEY.REQUEST_REDEMPTION_DEFAULT_STATUS, txHash],
@@ -59,7 +72,7 @@ export function useRequestRedemptionDefault() {
            userAddress
        }: {
             txHash: string,
-            amount: number,
+            amount: string,
             fAsset: string,
             userAddress: string
         }) => {
@@ -68,4 +81,3 @@ export function useRequestRedemptionDefault() {
         }
     });
 }
-

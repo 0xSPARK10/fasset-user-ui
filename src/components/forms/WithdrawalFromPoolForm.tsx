@@ -28,7 +28,6 @@ import { toNumber } from "@/utils";
 import { useExitCollateralPool } from "@/hooks/useContracts";
 import { ErrorDecoder } from "ethers-decode-error";
 import { CollateralPoolAbi } from "@/abi";
-import { COINS } from "@/config/coin";
 
 interface IWithdrawalFromPoolForm {
     collateralPool: IPool;
@@ -57,7 +56,7 @@ const WithdrawalFromPoolForm = forwardRef<FormRef, IWithdrawalFromPoolForm>(({ c
     });
 
     const form = useForm({
-        mode: 'uncontrolled',
+        mode: 'controlled',
         initialValues: {
             amount: undefined,
             natReturn: '',
@@ -146,10 +145,9 @@ const WithdrawalFromPoolForm = forwardRef<FormRef, IWithdrawalFromPoolForm>(({ c
 
     return (
         <>
-            <NumberInput
-                {...form.getInputProps('amount')}
-                key={form.key('amount')}
-                min={maxWithdrawal ? (maxWithdrawal < 1 ? maxWithdrawal : 1) : 0}
+	            <NumberInput
+	                {...form.getInputProps('amount')}
+	                min={maxWithdrawal ? (maxWithdrawal < 1 ? maxWithdrawal : 1) : 0}
                 size="sm"
                 inputMode="numeric"
                 type="tel"
