@@ -33,7 +33,8 @@ export default function SelectWalletButton({ wallet, disabled = false, selectNet
         disconnect,
         connectedCoins,
         walletConnectConnector,
-        mainToken
+        mainToken,
+        getConnectedCoin
     } = useWeb3();
     const { t } = useTranslation();
     const { closeConnectWalletModal, openConnectWalletModal } = useConnectWalletModal();
@@ -110,7 +111,7 @@ export default function SelectWalletButton({ wallet, disabled = false, selectNet
                     return;
                 }
                 if (wallet.id === WALLET.XAMAN) {
-                    const isConnectedToFlr = connectedCoins.find(coin => coin.type === mainToken?.type) !== undefined;
+                    const isConnectedToFlr = mainToken ? getConnectedCoin(mainToken.type) !== undefined : false;
                     if (!isConnectedToFlr) {
                         closeConnectWalletModal();
                         openConnectFlrModal();

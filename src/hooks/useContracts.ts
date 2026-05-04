@@ -13,7 +13,7 @@ import {
 import { useWeb3 } from "@/hooks/useWeb3";
 import { XRP_NAMESPACE } from "@/config/networks";
 import { formatUnit } from "@/utils";
-import { devLog, devError } from "@/utils/debug";
+import { createLogger } from "@/utils/debug";
 import { ICoin, INetwork, IUtxo } from "@/types";
 import { WALLET, ABI_ERRORS, BRIDGE_TYPE } from "@/constants";
 import { POOL_KEY } from "@/api/pool";
@@ -67,19 +67,20 @@ function handleErrors(error: any) {
 // returns a receipt in a format ethers can't parse — even though the transaction
 // actually succeeded on-chain. In that case, we re-fetch the receipt directly
 // via JsonRpcProvider bypassing the wallet provider. All other errors pass through.
+const waitLogger = createLogger('waitForTransaction');
 async function waitForTransaction(tx: any, rpcUrl: string) {
     try {
         return await tx.wait();
     } catch (waitError: any) {
         if (waitError?.message?.includes('could not coalesce error')) {
-            devLog('[waitForTransaction] coalesce error, fetching receipt directly from RPC for', tx.hash);
+            waitLogger.log('coalesce error, fetching receipt directly from RPC for', tx.hash);
             try {
                 const rpcProvider = new ethers.JsonRpcProvider(rpcUrl);
                 const receipt = await rpcProvider.waitForTransaction(tx.hash, 1, 10000);
-                devLog('[waitForTransaction] rpc receipt status:', receipt?.status);
+                waitLogger.log('rpc receipt status:', receipt?.status);
                 if (receipt?.status === 1) return receipt;
             } catch (rpcError) {
-                devError('[waitForTransaction] rpc fallback failed:', rpcError);
+                waitLogger.error('rpc fallback failed:', rpcError);
             }
         }
         throw waitError;
@@ -117,10 +118,11 @@ export function useReserveCollateral() {
         ) => {
             if (!provider) return;
 
+            const log = createLogger('RESERVE_COLLATERAL');
             try {
                 const signer = await provider?.getSigner();
                 const contract = new ethers.Contract(assetManagerAddress ?? '', AssetManagerAbi, signer);
-                devLog('[RESERVE_COLLATERAL] params:', { agentVaultAddress, lots, maxMintingFeeBIPS, executorAddress, userAddress, totalNatFee });
+                log.log('params:', { agentVaultAddress, lots, maxMintingFeeBIPS, executorAddress, userAddress, totalNatFee });
 
                 const tx = await contract.reserveCollateral(
                     agentVaultAddress,
@@ -133,9 +135,9 @@ export function useReserveCollateral() {
                     }
                 );
 
-                devLog('[RESERVE_COLLATERAL] tx hash:', tx.hash);
+                log.log('tx hash:', tx.hash);
                 const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
-                devLog('[RESERVE_COLLATERAL] receipt status:', receipt.status, 'blockNumber:', receipt.blockNumber);
+                log.log('receipt status:', receipt.status, 'blockNumber:', receipt.blockNumber);
                 if (receipt.status === 0) {
                     throw new Error(i18next.t('errors.transaction_failed_label'));
                 }
@@ -172,11 +174,12 @@ export function useRedeem() {
         }) => {
             if (!provider) return;
 
+            const log = createLogger('REDEEM');
             try {
                 const signer = await provider.getSigner();
                 const contract = new ethers.Contract(assetManagerAddress ?? '', AssetManagerAbi, signer);
                 destinationTag = destinationTag?.trim();
-                devLog('[REDEEM] params:', { assetManagerAddress, userAddress, amountUBA, userUnderlyingAddress, executorAddress, executorFee, destinationTag });
+                log.log('params:', { assetManagerAddress, userAddress, amountUBA, userUnderlyingAddress, executorAddress, executorFee, destinationTag });
 
                 const tx = destinationTag
                     ? await contract.redeemWithTag(
@@ -199,9 +202,9 @@ export function useRedeem() {
                         }
                     );
 
-                devLog('[REDEEM] tx hash:', tx.hash);
+                log.log('tx hash:', tx.hash);
                 const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
-                devLog('[REDEEM] receipt status:', receipt.status, 'blockNumber:', receipt.blockNumber);
+                log.log('receipt status:', receipt.status, 'blockNumber:', receipt.blockNumber);
                 if (receipt.status === 0) {
                     throw new Error(i18next.t('errors.transaction_failed_label'));
                 }
@@ -260,6 +263,7 @@ export function useSignTransaction(address: string) {
         ) => {
             if (!provider) return;
 
+            const log = createLogger('MINT:signTransaction');
             try {
                 const method = network.namespace === XRP_NAMESPACE
                     ? 'xrpl_signTransaction'
@@ -299,7 +303,7 @@ export function useSignTransaction(address: string) {
                     params.expirationMinutes = expirationMinutes;
                 }
 
-                devLog('[MINT] useSignTransaction request:', {
+                log.log('request:', {
                     chainId: `${network.namespace}:${network.chainId}`,
                     method,
                     params,
@@ -311,7 +315,7 @@ export function useSignTransaction(address: string) {
                     params: params
                 });
 
-                devLog('[MINT] useSignTransaction response:', JSON.stringify(result, null, 2));
+                log.log('response:', JSON.stringify(result, null, 2));
                 return result;
             } catch (error: any) {
                 handleErrors(error);
@@ -338,6 +342,7 @@ export function useEnterCollateralPool() {
         }) => {
             if (!provider) return;
 
+            const log = createLogger('POOL_ENTER');
             try {
                 const signer = await provider.getSigner();
                 const contract = new ethers.Contract(poolAddress, CollateralPoolAbi, signer);
@@ -357,6 +362,7 @@ export function useEnterCollateralPool() {
                         : undefined;
                 }
 
+                log.log('params:', { poolAddress, userAddress, value });
                 const tx = await contract.enter({
                     from: userAddress,
                     value: value,
@@ -365,7 +371,9 @@ export function useEnterCollateralPool() {
                     maxPriorityFeePerGas: feeData.maxPriorityFeePerGas!
                 });
 
+                log.log('tx hash:', tx.hash);
                 const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
+                log.log('receipt status:', receipt.status, 'blockNumber:', receipt.blockNumber);
                 if (receipt.status === 0) {
                     throw new Error(i18next.t('errors.transaction_failed_label'));
                 }
@@ -397,6 +405,7 @@ export function useExitCollateralPool() {
        }) => {
            if (!provider) return;
 
+           const log = createLogger('POOL_EXIT');
            try {
                const signer = await provider.getSigner();
                const contract = new ethers.Contract(poolAddress, CollateralPoolAbi, signer);
@@ -415,6 +424,7 @@ export function useExitCollateralPool() {
                        : undefined;
                }
 
+               log.log('params:', { poolAddress, userAddress, tokenShare });
                const tx = await contract.exit(tokenShare, {
                    from: userAddress,
                    gasLimit: gasLimit,
@@ -422,7 +432,9 @@ export function useExitCollateralPool() {
                    maxPriorityFeePerGas: feeData.maxPriorityFeePerGas!
                });
 
+               log.log('tx hash:', tx.hash);
                const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
+               log.log('receipt status:', receipt.status, 'blockNumber:', receipt.blockNumber);
                if (receipt.status === 0) {
                    throw new Error(i18next.t('errors.transaction_failed_label'));
                }
@@ -644,12 +656,16 @@ export function useCancelCollateralReservation() {
         mutationFn: async ({ assetManagerAddress, crtId }: { assetManagerAddress: string, crtId: number }) => {
             if (!provider) return;
 
+            const log = createLogger('CANCEL_RESERVATION');
             try {
                 const signer = await provider.getSigner();
                 const contract = new ethers.Contract(assetManagerAddress!, AssetManagerAbi, signer);
 
+                log.log('params:', { assetManagerAddress, crtId });
                 const tx = await contract.cancelCollateralReservation(crtId, { from: mainToken?.address! });
+                log.log('tx hash:', tx.hash);
                 const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
+                log.log('receipt status:', receipt.status, 'blockNumber:', receipt.blockNumber);
 
                 if (receipt.status === 0) {
                     throw new Error(i18next.t('errors.transaction_failed_label'));
@@ -681,8 +697,10 @@ export function useSignPsbt(address: string) {
             }) => {
             if (!provider) return;
 
+            const log = createLogger('SIGN_PSBT');
             try {
-                return provider.request({
+                log.log('params:', { chainId: `${network.namespace}:${network.chainId}`, userAddress, utxoCount: utxos.length });
+                const result = await provider.request({
                     chainId: `${network.namespace}:${network.chainId}`,
                     method: 'signPsbt',
                     params: {
@@ -696,6 +714,8 @@ export function useSignPsbt(address: string) {
                         broadcast: true
                     }
                 });
+                log.log('response:', JSON.stringify(result, null, 2));
+                return result;
             } catch (error: any) {
                 handleErrors(error);
             }
@@ -814,14 +834,15 @@ export function useBridgeApprove() {
         mutationFn: async (amount: string) => {
             if (!provider) return;
 
+            const log = createLogger('BRIDGE_APPROVE');
             try {
                 const signer = await provider.getSigner();
                 const contract = new ethers.Contract(process.env.BRIDGE_FXRP_ADDRESS!, IIFAssetAbi, signer);
-                devLog('[BRIDGE_APPROVE] amount:', amount, 'spender:', process.env.BRIDGE_FXRP_OFT_ADAPTER_ADDRESS);
+                log.log('amount:', amount, 'spender:', process.env.BRIDGE_FXRP_OFT_ADAPTER_ADDRESS);
                 const tx = await contract.approve(process.env.BRIDGE_FXRP_OFT_ADAPTER_ADDRESS!, amount);
-                devLog('[BRIDGE_APPROVE] tx hash:', tx.hash);
+                log.log('tx hash:', tx.hash);
                 const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
-                devLog('[BRIDGE_APPROVE] receipt status:', receipt.status);
+                log.log('receipt status:', receipt.status);
 
                 if (receipt.status === 0) {
                     throw new Error(i18next.t('errors.transaction_failed_label'));
@@ -849,6 +870,7 @@ export function useBridgeSend() {
         }) => {
             if (!provider) return;
 
+            const log = createLogger('BRIDGE_SEND');
             try {
                 const abiCoder = AbiCoder.defaultAbiCoder();
                 const signer = await provider.getSigner(
@@ -869,12 +891,13 @@ export function useBridgeSend() {
                     to = ethers.zeroPadValue(process.env.HYPERLIQUID_COMPOSER_ADDRESS!, 32);
                     options.addExecutorComposeOption(0, 200_000, '0');
                 } else if (bridgeType === BRIDGE_TYPE.XRPL) {
+                    const xrplLog = log.child('XRPL');
                     // Gross-up: user enters net amount, total = net / (1 - composerFeePPM/1M)
                     const feePPM = BigInt(composerFeePPM ?? '0');
                     const amountBig = BigInt(amount);
                     amountToSend = ((amountBig * PPM_DENOMINATOR) / (PPM_DENOMINATOR - feePPM)).toString();
                     const tag = destinationTag ?? 0;
-                    devLog('[BRIDGE_SEND][XRPL] compose params:', {
+                    xrplLog.log('compose params:', {
                         redeemer: signerAddress,
                         underlyingAddress: destinationAddress ?? '',
                         redeemWithTag: tag !== 0,
@@ -894,7 +917,7 @@ export function useBridgeSend() {
                             BigInt(executorFee ?? '0'),
                         ]]
                     );
-                    devLog('[BRIDGE_SEND][XRPL] composeMsg encoded:', composeMsg);
+                    xrplLog.log('composeMsg encoded:', composeMsg);
                     to = ethers.zeroPadValue(process.env.FXRP_COMPOSER_ADDRESS!, 32);
                     // executorFee from /api/oft/redemptionFees — required for executor to process the redemption
                     options = Options.newOptions().addExecutorLzReceiveOption(400_000, 0).addExecutorComposeOption(0, 5_000_000, executorFee ?? '0');
@@ -927,7 +950,7 @@ export function useBridgeSend() {
                 }
 
                 const contract = new ethers.Contract(address!, abi, signer);
-                devLog('[BRIDGE_SEND] params:', { bridgeType, dstEid, to, amountToSend, composeMsg, fee: fee?.toString(), signerAddress });
+                log.log('params:', { bridgeType, dstEid, to, amountToSend, composeMsg, fee: fee?.toString(), signerAddress });
 
                 const tx = await contract.send(
                     {
@@ -946,9 +969,9 @@ export function useBridgeSend() {
                     }
                 );
 
-                devLog('[BRIDGE_SEND] tx hash:', tx.hash);
+                log.log('tx hash:', tx.hash);
                 const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
-                devLog('[BRIDGE_SEND] receipt status:', receipt.status, 'blockNumber:', receipt.blockNumber);
+                log.log('receipt status:', receipt.status, 'blockNumber:', receipt.blockNumber);
                 if (receipt.status === 0) {
                     throw new Error(i18next.t('errors.transaction_failed_label'));
                 }
@@ -1047,6 +1070,7 @@ export function useReserveTag() {
         mutationFn: async ({ reservationFee }: { reservationFee: bigint }) => {
             if (!provider) throw new Error('No provider');
 
+            const log = createLogger('TAG_RESERVE');
             try {
                 const signer = await provider.getSigner();
                 const contract = new ethers.Contract(
@@ -1055,23 +1079,23 @@ export function useReserveTag() {
                     signer
                 );
 
-                devLog('[TAG_RESERVE] reservationFee:', reservationFee.toString());
+                log.log('reservationFee:', reservationFee.toString());
                 const tx = await contract.reserve({ value: reservationFee });
-                devLog('[TAG_RESERVE] tx hash:', tx.hash);
+                log.log('tx hash:', tx.hash);
                 const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
-                devLog('[TAG_RESERVE] receipt status:', receipt.status);
+                log.log('receipt status:', receipt.status);
 
                 const event = receipt.logs
-                    .map((log: any) => {
-                        try { return contract.interface.parseLog(log); } catch { return null; }
+                    .map((entry: any) => {
+                        try { return contract.interface.parseLog(entry); } catch { return null; }
                     })
                     .find((e: any) => e?.name === 'MintingTagReserved');
 
                 if (!event) throw new Error('MintingTagReserved event not found');
-                devLog('[TAG_RESERVE] success - tag:', Number(event.args.tag), 'owner:', event.args.owner);
+                log.log('success - tag:', Number(event.args.tag), 'owner:', event.args.owner);
                 return { tag: Number(event.args.tag), owner: event.args.owner as string };
             } catch (error) {
-                devError('[TAG_RESERVE] error:', error);
+                log.error('error:', error);
                 handleErrors(error);
             }
         }
@@ -1086,6 +1110,7 @@ export function useTransferTag() {
         mutationFn: async ({ tagId, to }: { tagId: number; to: string }) => {
             if (!provider) throw new Error('No provider');
 
+            const log = createLogger('TAG_TRANSFER');
             try {
                 const signer = await provider.getSigner();
                 const contract = new ethers.Contract(
@@ -1094,14 +1119,14 @@ export function useTransferTag() {
                     signer
                 );
 
-                devLog('[TAG_TRANSFER] tagId:', tagId, 'to:', to);
+                log.log('tagId:', tagId, 'to:', to);
                 const tx = await contract.transfer(to, tagId);
-                devLog('[TAG_TRANSFER] tx hash:', tx.hash);
+                log.log('tx hash:', tx.hash);
                 const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
-                devLog('[TAG_TRANSFER] receipt status:', receipt?.status);
+                log.log('receipt status:', receipt?.status);
                 return receipt;
             } catch (error) {
-                devError('[TAG_TRANSFER] error:', error);
+                log.error('error:', error);
                 handleErrors(error);
             }
         }
@@ -1116,6 +1141,7 @@ export function useSetMintingRecipient() {
         mutationFn: async ({ tagId, mintingRecipient }: { tagId: number; mintingRecipient: string }) => {
             if (!provider) throw new Error('No provider');
 
+            const log = createLogger('TAG_SET_RECIPIENT');
             try {
                 const signer = await provider.getSigner();
                 const contract = new ethers.Contract(
@@ -1124,14 +1150,14 @@ export function useSetMintingRecipient() {
                     signer
                 );
 
-                devLog('[TAG_SET_RECIPIENT] tagId:', tagId, 'mintingRecipient:', mintingRecipient);
+                log.log('tagId:', tagId, 'mintingRecipient:', mintingRecipient);
                 const tx = await contract.setMintingRecipient(tagId, mintingRecipient);
-                devLog('[TAG_SET_RECIPIENT] tx hash:', tx.hash);
+                log.log('tx hash:', tx.hash);
                 const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
-                devLog('[TAG_SET_RECIPIENT] receipt status:', receipt.status);
+                log.log('receipt status:', receipt.status);
                 return receipt;
             } catch (error) {
-                devError('[TAG_SET_RECIPIENT] error:', error);
+                log.error('error:', error);
                 handleErrors(error);
             }
         }
@@ -1146,6 +1172,7 @@ export function useSetAllowedExecutor() {
         mutationFn: async ({ tagId, executor }: { tagId: number; executor: string }) => {
             if (!provider) throw new Error('No provider');
 
+            const log = createLogger('TAG_SET_EXECUTOR');
             try {
                 const signer = await provider.getSigner();
                 const contract = new ethers.Contract(
@@ -1154,14 +1181,14 @@ export function useSetAllowedExecutor() {
                     signer
                 );
 
-                devLog('[TAG_SET_EXECUTOR] tagId:', tagId, 'executor:', executor);
+                log.log('tagId:', tagId, 'executor:', executor);
                 const tx = await contract.setAllowedExecutor(tagId, executor);
-                devLog('[TAG_SET_EXECUTOR] tx hash:', tx.hash);
+                log.log('tx hash:', tx.hash);
                 const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
-                devLog('[TAG_SET_EXECUTOR] receipt status:', receipt.status);
+                log.log('receipt status:', receipt.status);
                 return receipt;
             } catch (error) {
-                devError('[TAG_SET_EXECUTOR] error:', error);
+                log.error('error:', error);
                 handleErrors(error);
             }
         }

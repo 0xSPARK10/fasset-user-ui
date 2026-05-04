@@ -34,7 +34,7 @@ interface IBridgeUnderlyingBalanceCard {
 export default function BridgeUnderlyingBalanceCard({
 	className,
 }: IBridgeUnderlyingBalanceCard) {
-	const { mainToken, connectedCoins } = useWeb3();
+	const { mainToken, getConnectedCoin } = useWeb3();
 	const { isMainnet } = useNetworks();
 	const [isBridgeFlareModalActive, setIsBridgeFlareModalActive] =
 		useState<boolean>(false);
@@ -51,9 +51,7 @@ export default function BridgeUnderlyingBalanceCard({
 		isMainnet ? FXRP_HYPE : FTEST_XRP_HYPE,
 	);
 
-	const connectedXrpCoin = connectedCoins.find(
-		(coin) => coin.type === bridgeToken.type,
-	);
+	const connectedXrpCoin = getConnectedCoin(bridgeToken.type);
 	const underlyingBalance = useUnderlyingBalance(
 		connectedXrpCoin?.address ?? "",
 		bridgeToken.type,

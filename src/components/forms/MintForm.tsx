@@ -25,7 +25,9 @@ import {
 } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
 import { toNumber, isZeroAddress } from "@/utils";
-import { devLog } from "@/utils/debug";
+import { createLogger } from "@/utils/debug";
+
+const log = createLogger('MINT:FORM');
 import { formatInputAmount, formatFeeAmount } from "@/core/fees/format";
 import { IFAssetCoin } from "@/types";
 import { IAlertMessage } from "@/components/elements/FormAlert";
@@ -73,9 +75,10 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 		const hasXamanInsufficientFunds = useRef(false);
 		const hasMinAmountError = useRef(false);
 		const hasMintCapError = useRef(false);
+		const skipTagLookup = useRef(false);
 		const [tagForLookup, setTagForLookup] = useState("");
 
-		const { walletConnectConnector, connectedCoins, mainToken } = useWeb3();
+		const { walletConnectConnector, getConnectedCoin, mainToken } = useWeb3();
 		const addressForTagLookup = mainToken?.address ?? "";
 		const transferLabelSize = useElementSize();
 		const mintingFeeLabelSize = useElementSize();
@@ -86,9 +89,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 		const mintingCapInfo = useMintingCapInfo(fAssetCoin.type);
 		const fAssetPrice = useFassetPrice(fAssetCoin.type, false);
 
-		const connectedCoin = connectedCoins.find(
-			(coin) => coin.type == fAssetCoin.type,
-		);
+		const connectedCoin = getConnectedCoin(fAssetCoin.type);
 		const underlyingBalance = useUnderlyingBalance(
 			connectedCoin &&
 				connectedCoin.connectedWallet === WALLET.LEDGER &&
@@ -150,7 +151,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 			},
 		});
 
-		const [debouncedTag] = useDebouncedValue(tagForLookup, 500);
+		const [debouncedTag] = useDebouncedValue(tagForLookup, 1000);
 		const hasValidTransfer =
 			typeof transfer === "number" && !Number.isNaN(transfer);
 
@@ -213,11 +214,23 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 		}, [tagsByAddressQuery.isFetching]); // eslint-disable-line react-hooks/exhaustive-deps
 
 		form.watch("destinationTag", ({ value }) => {
+			if (skipTagLookup.current) {
+				skipTagLookup.current = false;
+				return;
+			}
 			setTagForLookup(value as string);
 			form.setFieldValue("resolvedAddress", "");
 			form.clearFieldError("resolvedAddress");
 			if (isFormDisabled) isFormDisabled(true);
 		});
+
+		const handleTagSelect = (tagId: string, mintingRecipient: string) => {
+			skipTagLookup.current = true;
+			form.setFieldValue("destinationTag", tagId);
+			form.setFieldValue("resolvedAddress", mintingRecipient);
+			form.clearFieldError("resolvedAddress");
+			if (isFormDisabled) isFormDisabled(!hasValidAmount());
+		};
 
 		form.watch("destinationMode", ({ value }) => {
 			setDestinationMode(value as "address" | "tag");
@@ -324,7 +337,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 			if (!hasMintCap) return effectiveMax;
 			const capped = Math.min(effectiveMax, Math.max(mintCapRemaining, 0));
 			if (capped < effectiveMax) {
-				devLog(`[MintCap] Max reduced for ${fAssetCoin.type}: ${effectiveMax} → ${capped} (cap remaining: ${mintCapRemaining})`);
+				log.log(`Max reduced for ${fAssetCoin.type}: ${effectiveMax} → ${capped} (cap remaining: ${mintCapRemaining})`);
 			}
 			return capped;
 		})();
@@ -347,7 +360,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 		useEffect(() => {
 			if (mintingCapInfo.isLoading) return;
 			if (isMintCapReached) {
-				devLog(`[MintCap] Cap reached for ${fAssetCoin.type} — minting disabled`);
+				log.log(`Cap reached for ${fAssetCoin.type} — minting disabled`);
 				hasMintCapError.current = true;
 				setTransfer(undefined);
 				onError({ msg: t("mint_modal.form.mint_cap_reached"), type: 'info' });
@@ -574,7 +587,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 						},
 					}}
 				/>
-				<MintDestinationEditor form={form} isAddressTagLoading={tagsByAddressQuery.isFetching} />
+				<MintDestinationEditor form={form} isAddressTagLoading={tagsByAddressQuery.isFetching} userTags={tagsByAddressQuery.data ?? []} onTagSelect={handleTagSelect} />
 				<Divider
 					className="my-8"
 					styles={{

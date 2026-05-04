@@ -7,7 +7,6 @@ import {
     rem,
     Table,
     Text,
-    Badge,
     Menu,
     Button,
     Drawer,
@@ -16,6 +15,7 @@ import {
     Divider,
     Chip
 } from "@mantine/core";
+import Badge from "@/components/elements/Badge";
 import {
     IconFilterFilled,
     IconFilter,
@@ -248,42 +248,19 @@ export default function PoolsTable({ pools, className, style, type, showAll }: I
         return (
             <div>
                 <div className="flex items-center flex-wrap">
-                    <Badge
-                        variant="outline"
-                        color={badgeColor}
-                        radius="xs"
-                        className="mr-1 font-normal mb-1"
-                    >
-                        <div className="flex items-center">
-                            <span className="status-dot mr-1 shrink-0" style={{ backgroundColor: textColor }}></span>
-                            <span style={{ color: textColor }}>{status[pool.health]}</span>
-                        </div>
+                    <Badge variant="status" dotColor={textColor} bgColor={badgeColor} className="mr-1 font-normal mb-1">
+                        {status[pool.health]}
                     </Badge>
                     <Badge
-                        variant="outline"
-                        color={pool.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
-                        radius="xs"
+                        variant="status"
+                        dotColor={textColorStatus}
+                        bgColor={pool.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
                         className="font-normal mb-1"
                     >
-                        <div className="flex items-center">
-                            <span className="status-dot mr-1 shrink-0" style={{ backgroundColor: textColorStatus }}></span>
-                            <span style={{ color: textColorStatus }}>
-                                {t(`agents.table.status_${pool.status ? 'live' : 'offline'}_label`)}
-                            </span>
-                        </div>
+                        {t(`agents.table.status_${pool.status ? 'live' : 'offline'}_label`)}
                     </Badge>
                 </div>
-                <Badge
-                    variant="outline"
-                    color="var(--flr-black)"
-                    radius="xs"
-                    className="mr-1 font-normal"
-                    styles={{
-                        root: {
-                            borderColor: '#eee'
-                        }
-                    }}
-                >
+                <Badge variant="count" className="mr-1 font-normal">
                     {pool.numLiquidations} {t('agents.table.past_liq_label')}
                 </Badge>
             </div>

@@ -27,6 +27,7 @@ export function useUserTags(fasset: string, address: string, enabled: boolean = 
             return response.data as ITagsByAddress[];
         },
         enabled: enabled && !!address,
+        staleTime: 10_000,
     });
 }
 

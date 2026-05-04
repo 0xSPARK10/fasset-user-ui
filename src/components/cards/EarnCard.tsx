@@ -1,4 +1,5 @@
-import { Text, Title, SimpleGrid, Badge, Button, Table } from "@mantine/core";
+import { Text, Title, SimpleGrid, Button, Table } from "@mantine/core";
+import Badge from "@/components/elements/Badge";
 import Link from "next/link";
 import BlazeSwapAltIcon from "@/components/icons/BlazeSwapAltIcon";
 import EnosysAltIcon from "@/components/icons/EnosysAltIcon";
@@ -161,14 +162,7 @@ export default function EarnCard({ earn }: IEarnCard) {
                                 >
                                     {properties.description}
                                 </Text>
-                                <Badge
-                                    variant="outline"
-                                    color="var(--flr-gray)"
-                                    size="lg"
-                                    radius="xs"
-                                    fw={400}
-                                    className="ml-5 shrink-0"
-                                >
+                                <Badge variant="label" className="ml-5 shrink-0">
                                     {t(`earn_card.${properties.type}_label`)}
                                 </Badge>
                             </div>
@@ -230,14 +224,7 @@ export default function EarnCard({ earn }: IEarnCard) {
                                                 {properties.description}
                                             </Text>
                                         </div>
-                                        <Badge
-                                            variant="outline"
-                                            color="var(--flr-gray)"
-                                            size="lg"
-                                            radius="xs"
-                                            fw={400}
-                                            className="shrink-0"
-                                        >
+                                        <Badge variant="label" className="shrink-0">
                                             {t(`earn_card.${properties.type}_label`)}
                                         </Badge>
                                     </div>

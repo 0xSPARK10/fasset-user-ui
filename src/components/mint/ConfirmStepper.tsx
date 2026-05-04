@@ -26,7 +26,9 @@ import { useSignTransaction } from "@/hooks/useContracts";
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { useDirectMintingInfo } from "@/api/minting";
 import { XRP_NAMESPACE } from "@/config/networks";
-import { devLog } from "@/utils/debug";
+import { createLogger } from "@/utils/debug";
+
+const log = createLogger('MINT');
 import { useNativeBalance, useUnderlyingBalance } from "@/api/balance";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { isMobile } from "react-device-detect";
@@ -146,13 +148,13 @@ export default function ConfirmStepper({
                 ? encodeDirectMintingMemo(formValues.destinationAddress)
                 : undefined;
 
-            devLog('[MINT] tag resolution:', {
+            log.log('tag resolution:', {
                 mode: isTagMode ? 'tag-mode (user entered)' : (tagToSend ? 'address-mode (auto addressTag)' : 'address-mode (memo fallback)'),
                 tagToSend: tagToSend || '(none)',
                 useTag,
                 paymentReference: paymentReference ?? '(none)',
             });
-            devLog('[MINT] submitDirectMintPayment params:', {
+            log.log('submitDirectMintPayment params:', {
                 network: fAssetCoin.network.namespace,
                 destination: directMintingResponse.paymentAddress,
                 amount: paymentAmount,
@@ -172,13 +174,13 @@ export default function ConfirmStepper({
                 userAddress: fAssetCoin.address!,
             });
 
-            devLog('[MINT] signTransaction raw response:', JSON.stringify(signTransactionResponse, null, 2));
+            log.log('signTransaction raw response:', JSON.stringify(signTransactionResponse, null, 2));
 
             const txId = fAssetCoin.network.namespace === XRP_NAMESPACE
                 ? signTransactionResponse?.tx_json?.hash
                 : signTransactionResponse.txid;
 
-            devLog('[MINT] extracted txId:', txId, '| namespace:', fAssetCoin.network.namespace);
+            log.log('extracted txId:', txId, '| namespace:', fAssetCoin.network.namespace);
 
             setCurrentStep(STEP_WALLET_COMPLETED);
             setIsMintWaitingModalActive(true);

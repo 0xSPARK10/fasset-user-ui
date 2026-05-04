@@ -66,8 +66,7 @@ src/                    ← Next.js root, all commands run from here
 Key non-obvious files:
 - `utils.ts` — `toLots()` / `fromLots()` convert between human amounts and lots (1 lot = lotSize tokens, e.g. 10 FXRP). Always use these; never manually divide.
 - `constants.ts` — `ABI_ERRORS` maps 4-byte selectors to readable error names. Used by `ethers-decode-error` for user-facing error messages.
-- `dev-docs/HELP.md` — contract function signatures, event parameters, and flow steps. Read before touching mint/redeem logic.
-- `dev-docs/DOMAIN.md` — domain knowledge (collateral ratios, lots, minting flow). Read before implementing anything protocol-related.
+- `docs/DEV_SPEC.md` — contract function signatures, event parameters, flow steps, domain knowledge. Read before touching mint/redeem/bridge logic.
 
 ---
 
@@ -163,8 +162,7 @@ npm (uses `package-lock.json`). The Dockerfile runs `npm ci` — keep the lockfi
 
 - Coston2 app (testnet - COSTON2): https://fasset-coston2.matheo.si/
 - API Swagger (testnet - COSTON2): https://fasset-coston2.matheo.si/api-doc
-- FAsset protocol docs: `dev-docs/HELP.md` (contract functions, events, flows)
-- Domain overview: `dev-docs/DOMAIN.md`
-- Product spec: `docs/PRODUCT.md`
-- Technical spec: `docs/DEV_SPEC.md`
+- Technical spec: `docs/DEV_SPEC.md` (contract functions, events, flows, domain knowledge)
+- Business rules: `docs/BUSINESS_RULES.md`
+- Product spec: `docs/PRODUCT_OWNER.md`
 - WalletConnect dashboard: https://cloud.walletconnect.com/app

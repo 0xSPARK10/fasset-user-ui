@@ -1,6 +1,12 @@
 .lotsInput {
     border-radius: 0.125rem;
 }
+.comboboxOption {
+    &[data-combobox-selected] {
+        background-color: var(--flr-border-color);
+        color: inherit;
+    }
+}
 .agentRow {
     &:hover {
         background: linear-gradient(90deg, #FFFFFF 1.02%, #FFD8E1 96.26%);

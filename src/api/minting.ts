@@ -17,6 +17,7 @@ import {
     IDirectMintingInfo,
     IMintingRecipient,
     IMintingCapInfo,
+    CoinEnum,
 } from "@/types";
 import { useWeb3 } from "@/hooks/useWeb3";
 
@@ -202,8 +203,8 @@ export function useReturnAddresses(
     amount: number,
     enabled: boolean = true
 ) {
-    const { connectedCoins } = useWeb3();
-    const connectedCoin = connectedCoins.find(coin => coin.type.toLowerCase() === fAsset.toLowerCase());
+    const { getConnectedCoin } = useWeb3();
+    const connectedCoin = getConnectedCoin(fAsset as CoinEnum);
     let config: any = {};
     if (connectedCoin) {
         config = {

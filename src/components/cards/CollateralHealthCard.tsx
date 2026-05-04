@@ -5,13 +5,12 @@ import {
     Text,
     Progress,
     Divider,
-    Badge,
     SimpleGrid,
     Tooltip
 } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "@mantine/hooks";
-import { IconCaretUpFilled, IconCaretDownFilled } from "@tabler/icons-react";
+import Badge from "@/components/elements/Badge";
 import { formatNumberWithSuffix, toNumber } from "@/utils";
 import { IEcosystemInfo, ITimeData } from "@/types";
 import { COINS } from "@/config/coin";
@@ -211,23 +210,8 @@ export default function CollateralHealthCard({ ecoSystemInfo, timeData }: IColla
                                             >
                                                 ${formatNumberWithSuffix(token.minted)}
                                             </Text>
-                                            <Badge
-                                                variant="outline"
-                                                color={token?.timeData?.isPositive ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
-                                                radius="xs"
-                                                leftSection={token?.timeData?.isPositive
-                                                    ? <IconCaretUpFilled size={15} color="var(--flr-green)" />
-                                                    : <IconCaretDownFilled size={15} color="var(--flr-red)" />
-                                                }
-                                                className="px-1"
-                                            >
-                                                <Text
-                                                    className="text-14"
-                                                    fw={400}
-                                                    c={token?.timeData?.isPositive ? 'var(--flr-green)' : 'var(--flr-red)'}
-                                                >
-                                                    {token?.timeData?.diff}%
-                                                </Text>
+                                            <Badge variant="trend" isPositive={!!token?.timeData?.isPositive}>
+                                                {token?.timeData?.diff}%
                                             </Badge>
                                         </div>
                                     </div>
@@ -259,23 +243,8 @@ export default function CollateralHealthCard({ ecoSystemInfo, timeData }: IColla
                             >
                                 ${formatNumberWithSuffix(ecoSystemInfo?.totalCollateral ?? 0)}
                             </Text>
-                            <Badge
-                                variant="outline"
-                                color={timeData?.isPositiveCollateralDiff ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
-                                radius="xs"
-                                leftSection={timeData?.isPositiveCollateralDiff
-                                    ? <IconCaretUpFilled size={15} color="var(--flr-green)" />
-                                    : <IconCaretDownFilled size={15} color="var(--flr-red)" />
-                                }
-                                className="px-1"
-                            >
-                                <Text
-                                    className="text-14"
-                                    fw={400}
-                                    c={timeData?.isPositiveCollateralDiff ? 'var(--flr-green)' : 'var(--flr-red)'}
-                                >
-                                    {timeData?.totalCollateralDiff}%
-                                </Text>
+                            <Badge variant="trend" isPositive={!!timeData?.isPositiveCollateralDiff}>
+                                {timeData?.totalCollateralDiff}%
                             </Badge>
                         </div>
                         <Progress.Root

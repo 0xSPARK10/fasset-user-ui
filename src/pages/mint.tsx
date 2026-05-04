@@ -26,7 +26,7 @@ import { useNetworks } from "@/hooks/useNetworks";
 export default function Mint() {
     const [fAssetCoins, setFAssetCoins] = useState<IFAssetCoin[]>([]);
     const { t } = useTranslation();
-    const { connectedCoins, mainToken } = useWeb3();
+    const { connectedCoins, mainToken, getConnectedCoin } = useWeb3();
     const { isMainnet } = useNetworks();
     const { scrollIntoView, targetRef } = useScrollIntoView<HTMLDivElement>({
         offset: 60,
@@ -41,7 +41,7 @@ export default function Mint() {
         COINS
             .filter(coin => coin.enabled && coin.isFAssetCoin)
             .forEach(coin => {
-                const connectedCoin = connectedCoins.find(connectedCoin => connectedCoin.type === coin.type);
+                const connectedCoin = getConnectedCoin(coin.type);
                 coins.push({ ...coin, address: connectedCoin?.address, connectedWallet: connectedCoin?.connectedWallet } as IFAssetCoin);
             });
         setFAssetCoins(coins);

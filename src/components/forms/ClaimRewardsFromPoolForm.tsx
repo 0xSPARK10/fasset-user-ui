@@ -23,7 +23,7 @@ import { formatNumber, truncateString } from "@/utils";
 import CopyIcon from "@/components/icons/CopyIcon";
 import * as yup from "yup";
 import { useTranslation, Trans } from "react-i18next";
-import { IPool } from "@/types";
+import { CoinEnum, IPool } from "@/types";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useWithdrawFeesCollateralPool } from "@/hooks/useContracts";
 import { parseUnits, formatUnit, toNumber } from "@/utils";
@@ -45,14 +45,14 @@ const ClaimRewardsFromPoolForm = forwardRef<FormRef, IClaimRewardsFromPoolForm>(
     const [maxWithdrawal, setMaxWithdrawal] = useState<number>();
     const { t } = useTranslation();
     const mediaQueryMatches = useMediaQuery('(max-width: 40em)');
-    const { mainToken, connectedCoins } = useWeb3();
+    const { mainToken, getConnectedCoin } = useWeb3();
     const claimRewardsCollateralPool = useWithdrawFeesCollateralPool();
 
     const withdrawLabelSize = useElementSize();
     const feeLabelSize = useElementSize();
     const labelWidth = Math.max(withdrawLabelSize.width, feeLabelSize.width);
 
-    const fAssetCoin = connectedCoins.find(coin => coin.type === collateralPool.vaultType);
+    const fAssetCoin = getConnectedCoin(collateralPool.vaultType as CoinEnum);
     const inputStep = collateralPool.vaultType.toLowerCase().includes('btc') || collateralPool.vaultType.toLowerCase().includes('doge')
         ? 0.00000001
         : 0.001;

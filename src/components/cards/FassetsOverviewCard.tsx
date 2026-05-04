@@ -1,9 +1,10 @@
 import { useTranslation } from "react-i18next";
-import { Title, Text, Badge, Grid, SimpleGrid, rem, Divider, Button } from "@mantine/core";
+import { Title, Text, Grid, SimpleGrid, rem, Divider, Button } from "@mantine/core";
 import { IEcosystemInfo, ITimeData } from "@/types";
 import { formatNumberWithSuffix } from "@/utils";
 import { COINS } from "@/config/coin";
-import { IconCaretDownFilled, IconCaretUpFilled, IconInfoHexagon } from "@tabler/icons-react";
+import { IconInfoHexagon } from "@tabler/icons-react";
+import Badge from "@/components/elements/Badge";
 import Link from "next/link";
 import React from "react";
 import { modals } from "@mantine/modals";
@@ -150,23 +151,8 @@ export default function FassetsOverviewCard({ ecoSystemInfo, timeData } : IFasse
                                 >
                                     ${formatNumberWithSuffix(xrpFasset?.minted ?? 0, xrpFasset?.token?.type.toLowerCase().includes('btc') ? 6 : 2)}
                                 </Text>
-                                <Badge
-                                    variant="outline"
-                                    color={xrpFasset?.timeData?.isPositive ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
-                                    radius="xs"
-                                    leftSection={xrpFasset?.timeData?.isPositive
-                                        ? <IconCaretUpFilled size={15} color="var(--flr-green)" />
-                                        : <IconCaretDownFilled size={15} color="var(--flr-red)" />
-                                    }
-                                    className="px-1 shrink-0"
-                                >
-                                    <Text
-                                        className="text-14"
-                                        fw={400}
-                                        c={xrpFasset?.timeData?.isPositive ? 'var(--flr-green)' : 'var(--flr-red)'}
-                                    >
-                                        {xrpFasset?.timeData?.diff}%
-                                    </Text>
+                                <Badge variant="trend" isPositive={!!xrpFasset?.timeData?.isPositive} className="px-1 shrink-0">
+                                    {xrpFasset?.timeData?.diff}%
                                 </Badge>
                             </div>
                         </div>

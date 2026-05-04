@@ -1434,15 +1434,15 @@ https://docs.google.com/document/d/1akgeN5hW3mfTvn82pG9aELIQLahre10AW3CkC4lQ9O8/
 
 ## HYPE FXRP → XRPL Bridge: Compose Message Encoding (FAssetRedeemComposer)
 
-### Pogodba
+### Contract
 
 `FXRP_COMPOSER_ADDRESS = 0xa10569DFb38FE7Be211aCe4E4A566Cea387023b0`
 
-### Ozadje
+### Background
 
-Nova pogodba `FAssetRedeemComposer` dekodira bogatejši `RedeemComposeMessage` struct v `lzCompose`. Stara 2-polja enkodiranja `(["address", "string"])` **ni več veljavna** in bo povzročila revert na `require(redeemComposeMessage.redeemer != address(0))`.
+The new `FAssetRedeemComposer` contract decodes a richer `RedeemComposeMessage` struct in `lzCompose`. The old 2-field encoding `(["address", "string"])` **is no longer valid** and will cause a revert at `require(redeemComposeMessage.redeemer != address(0))`.
 
-### Enkodiranje — tuple s 6 polji
+### Encoding — 6-field tuple
 
 ```typescript
 import { AbiCoder, ethers } from "ethers";
@@ -1454,33 +1454,33 @@ const tag = destinationTag && destinationTag.trim() !== '' ? destinationTag.trim
 const composeMsg = abiCoder.encode(
     ['tuple(address, string, bool, uint256, address, uint256)'],
     [[
-        signerAddress,       // redeemer — EVM naslov uporabnika na Flare
-        destinationAddress ?? '',  // redeemerUnderlyingAddress — XRP naslov
-        tag !== '0',         // redeemWithTag — true če tag podan
-        BigInt(tag),         // destinationTag — uint256; 0 če ne rabimo taga
+        signerAddress,       // redeemer — user's EVM address on Flare
+        destinationAddress ?? '',  // redeemerUnderlyingAddress — XRP address
+        tag !== '0',         // redeemWithTag — true if tag provided
+        BigInt(tag),         // destinationTag — uint256; 0 if tag not needed
         ethers.ZeroAddress,  // executor — ZeroAddress = defaultExecutor()
-        BigInt(executorFee ?? '0'),  // executorFee — iz GET /api/oft/redemptionFees/:srcEid
+        BigInt(executorFee ?? '0'),  // executorFee — from GET /api/oft/redemptionFees/:srcEid
     ]]
 );
 ```
 
-### Semantika polj (on-chain struct `RedeemComposeMessage`)
+### Field semantics (on-chain struct `RedeemComposeMessage`)
 
-| Polje | Tip | Opis |
-|-------|-----|------|
-| `redeemer` | `address` | EVM naslov uporabnika na Flare. Ne sme biti zero — kontrakt revert z `InvalidAddress()`. |
-| `redeemerUnderlyingAddress` | `string` | XRP naslov prejemnika. |
-| `redeemWithTag` | `bool` | `true` → kontrakt uporabi tag-variant pot; `destinationTag` se upošteva. `false` → plain redemption; tag se ignorira on-chain. |
-| `destinationTag` | `uint256` | XRP destination tag. **Mora biti vedno prisoten v encodingu** — tudi ko se ne uporablja, pošlji `0`. |
-| `executor` | `address` | Override za LZ executor. `ZeroAddress` uporabi `defaultExecutor()` pogodbe. |
-| `executorFee` | `uint256` | Fee za executorja. Pride iz `GET /api/oft/redemptionFees/:srcEid` → polje `executorFee`. Trenutno `0`. |
+| Field | Type | Description |
+|-------|------|-------------|
+| `redeemer` | `address` | User's EVM address on Flare. Must not be zero — contract reverts with `InvalidAddress()`. |
+| `redeemerUnderlyingAddress` | `string` | XRP recipient address. |
+| `redeemWithTag` | `bool` | `true` → contract uses the tag-variant path; `destinationTag` is enforced. `false` → plain redemption; tag is ignored on-chain. |
+| `destinationTag` | `uint256` | XRP destination tag. **Must always be present in the encoding** — when not used, send `0`. |
+| `executor` | `address` | Override for the LZ executor. `ZeroAddress` uses the contract's `defaultExecutor()`. |
+| `executorFee` | `uint256` | Executor fee. Comes from `GET /api/oft/redemptionFees/:srcEid` → field `executorFee`. Currently `0`. |
 
-### Pravilo za `redeemWithTag`
+### Rule for `redeemWithTag`
 
-- `destinationTag` prazen string ali `undefined` → `tag = '0'` → `redeemWithTag = false`
-- `destinationTag` podan (npr. `"12345"`) → `tag = '12345'` → `redeemWithTag = true`
+- `destinationTag` is empty string or `undefined` → `tag = '0'` → `redeemWithTag = false`
+- `destinationTag` is provided (e.g. `"12345"`) → `tag = '12345'` → `redeemWithTag = true`
 
-### LayerZero opcije (ostanejo enake)
+### LayerZero options (unchanged)
 
 ```typescript
 options = Options.newOptions()
@@ -1488,4 +1488,4 @@ options = Options.newOptions()
     .addExecutorComposeOption(0, 5_000_000, executorFee ?? '0');
 ```
 
-`executorFee` pride iz `GET /api/oft/redemptionFees/:srcEid` → polje `executorFee`.
+`executorFee` comes from `GET /api/oft/redemptionFees/:srcEid` → field `executorFee`.

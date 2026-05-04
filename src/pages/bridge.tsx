@@ -17,7 +17,7 @@ import { IS_MAINNET } from "@/constants";
 
 export default function Bridge() {
     const { t } = useTranslation();
-    const { connectedCoins } = useWeb3();
+    const { connectedCoins, getConnectedCoin } = useWeb3();
     const { isMainnet } = useNetworks();
     const [latestTransactionCardKey, setLatestTransactionCardKey] = useState<number>(0);
 
@@ -25,9 +25,7 @@ export default function Bridge() {
         return COINS
             .filter(coin => coin.enabled && coin.isFAssetCoin)
             .map(coin => {
-                const connectedCoin = connectedCoins.find(
-                    connectedCoin => connectedCoin.type === coin.type
-                );
+                const connectedCoin = getConnectedCoin(coin.type);
 
                 return {
                     ...coin,

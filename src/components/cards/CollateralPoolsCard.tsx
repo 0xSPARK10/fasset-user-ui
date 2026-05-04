@@ -3,12 +3,12 @@ import {
     Button,
     Text,
     Table,
-    Badge,
     Avatar, rem, Divider, Popover
 } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "@mantine/hooks";
-import { IconCaretUpFilled, IconCaretDownFilled, IconInfoHexagon } from "@tabler/icons-react";
+import { IconInfoHexagon } from "@tabler/icons-react";
+import Badge from "@/components/elements/Badge";
 import Link from "next/link";
 import LogoIcon from "@/components/icons/LogoIcon";
 import { usePools } from "@/api/pool";
@@ -242,23 +242,8 @@ export default function CollateralPoolsCard({ ecoSystemInfo, timeData }: ICollat
                                     >
                                         ${formatNumberWithSuffix(pool.tvl)}
                                     </Text>
-                                    <Badge
-                                        variant="outline"
-                                        color={pool?.tvlDiffPositive ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
-                                        radius="xs"
-                                        leftSection={pool?.tvlDiffPositive
-                                            ? <IconCaretUpFilled size={15} color="var(--flr-green)" />
-                                            : <IconCaretDownFilled size={15} color="var(--flr-red)" />
-                                        }
-                                        className="px-1 ml-2 min-[403px]:mt-1 min-[403px]:ml-0 shrink-0"
-                                    >
-                                        <Text
-                                            className="text-12"
-                                            fw={400}
-                                            c={pool?.tvlDiffPositive ? 'var(--flr-green)' : 'var(--flr-red)'}
-                                        >
-                                            {pool?.tvlDiff}%
-                                        </Text>
+                                    <Badge variant="trend" isPositive={!!pool?.tvlDiffPositive} className="px-1 ml-2 min-[403px]:mt-1 min-[403px]:ml-0 shrink-0">
+                                        {pool?.tvlDiff}%
                                     </Badge>
                                 </div>
                             </Table.Td>
@@ -270,26 +255,8 @@ export default function CollateralPoolsCard({ ecoSystemInfo, timeData }: ICollat
                                 >
                                     ${formatNumberWithSuffix(pool.rewardsPaid)}
                                 </Text>
-                                <Badge
-                                    variant="outline"
-                                    color={pool?.rewardsDiffPositive ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
-                                    radius="xs"
-                                    leftSection={pool?.rewardsDiffPositive
-                                        ? <IconCaretUpFilled size={15} color="var(--flr-green)" />
-                                        : <IconCaretDownFilled size={15} color="var(--flr-red)" />
-                                    }
-                                    className="px-1 mt-1"
-                                    classNames={{
-                                        label: 'overflow-visible'
-                                    }}
-                                >
-                                    <Text
-                                        className="text-12"
-                                        fw={400}
-                                        c={pool?.rewardsDiffPositive ? 'var(--flr-green)' : 'var(--flr-red)'}
-                                    >
-                                        {pool?.rewardsDiff}%
-                                    </Text>
+                                <Badge variant="trend" isPositive={!!pool?.rewardsDiffPositive} className="px-1 mt-1" classNames={{ label: 'overflow-visible' }}>
+                                    {pool?.rewardsDiff}%
                                 </Badge>
                             </Table.Td>
                         </Table.Tr>

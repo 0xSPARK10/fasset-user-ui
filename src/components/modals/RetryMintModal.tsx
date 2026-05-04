@@ -10,7 +10,7 @@ import { useUnderlyingStatus, useUserProgress } from "@/api/user";
 import XrpIcon from "@/components/icons/XrpIcon";
 import { formatNumber, toNumber } from "@/utils";
 import { XRP_NAMESPACE } from "@/config/networks";
-import { INetwork, IUtxo } from "@/types";
+import { CoinEnum, INetwork, IUtxo } from "@/types";
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { useSignTransaction } from "@/hooks/useContracts";
 import { isError } from "ethers";
@@ -42,14 +42,14 @@ const FINISHED_MODAL = 'finished_modal';
 
 export default function RetryMintModal({ opened, onClose, underlyingTransaction }: IRetryMintModal) {
     const { t } = useTranslation();
-    const { mainToken, connectedCoins } = useWeb3();
+    const { mainToken, getConnectedCoin } = useWeb3();
     const isMintRequestActive = useRef<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
     const [signedTransactionTxHash, setSignedTransactionTxHash] = useState<string>();
     const [isMintWaitingModalActive, setIsMintWaitingModalActive] = useState<boolean>(false);
     const [errorMessage, setErrorMessage] = useState<string>();
-    const fAssetCoin = connectedCoins.find(coin => coin.type === underlyingTransaction.fAsset);
+    const fAssetCoin = getConnectedCoin(underlyingTransaction.fAsset as CoinEnum);
 
     const nativeBalances = useNativeBalance(mainToken?.address ?? '', false);
     const underlyingBalance = useUnderlyingBalance(mainToken?.address!, underlyingTransaction.fAsset, false);

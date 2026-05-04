@@ -93,7 +93,7 @@ const BridgeXrplForm = forwardRef<FormRef, IBridgeXrplForm>(
 	) => {
 		const { t } = useTranslation();
 		const mediaQueryMatches = useMediaQuery("(max-width: 40em)");
-		const { mainToken, bridgeToken, connectedCoins } = useWeb3();
+		const { mainToken, bridgeToken, getConnectedCoin } = useWeb3();
 
 		const qouteSend = useBridgeQouteSend();
 		const hypeBalance = useHypeBalance(true);
@@ -110,9 +110,7 @@ const BridgeXrplForm = forwardRef<FormRef, IBridgeXrplForm>(
 		const hasMinAmountError = useRef(false);
 		const hasInsufficientBalance = useRef(false);
 
-		const connectedXrplCoin = connectedCoins.find(
-			(coin) => coin.type === token.type,
-		);
+		const connectedXrplCoin = getConnectedCoin(token.type);
 		const hasXrplAddress = !!connectedXrplCoin?.address;
 		const [editAddress, setEditAddress] = useState<boolean>(!hasXrplAddress);
 

@@ -15,7 +15,9 @@ import { IconCheck, IconCircleCheck, IconFilePlus, IconSettings } from "@tabler/
 import { useInterval, useMediaQuery, useMounted } from "@mantine/hooks";
 import { CONTRACT_KEY, useBridgeApprove, useBridgeSend } from "@/hooks/useContracts";
 import { parseUnits } from "@/utils";
-import { devLog } from "@/utils/debug";
+import { createLogger } from "@/utils/debug";
+
+const log = createLogger('BRIDGE');
 import { isError } from "ethers";
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { ErrorDecoder } from "ethers-decode-error";
@@ -65,7 +67,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
 
     const checkStatusInterval = useInterval(async () => {
         const response = await getMessage.refetch();
-        devLog('[BRIDGE] LayerZero status poll:', { txHash, status: response.data?.[0]?.status?.name, data: response.data?.[0] });
+        log.log('LayerZero status poll:', { txHash, status: response.data?.[0]?.status?.name, data: response.data?.[0] });
         if (response.isSuccess) {
             const data = response.data?.[0];
             if (data?.status?.name === LAYER_ZERO_STATUS.DELIVERED) {
@@ -136,9 +138,9 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
         try {
             setIsLoading(true);
             setIsLedgerButtonDisabled(true);
-            devLog('[BRIDGE] approve amount:', parseUnits(formValues.amount, 6).toString());
+            log.log('approve amount:', parseUnits(formValues.amount, 6).toString());
             await bridgeApprove.mutateAsync(parseUnits(formValues.amount, 6).toString());
-            devLog('[BRIDGE] approve done, proceeding to send');
+            log.log('approve done, proceeding to send');
             setCurrentStep(STEP_BRIDGE);
 
             if (mainToken?.connectedWallet !== WALLET.LEDGER) {
@@ -171,7 +173,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
             const grossAmount = composerFeePPM > BigInt(0)
                 ? (netAmount * PPM_DENOMINATOR) / (PPM_DENOMINATOR - composerFeePPM)
                 : netAmount;
-            devLog('[BRIDGE] send params:', {
+            log.log('send params:', {
                 netAmount: netAmount.toString(),
                 grossAmount: grossAmount.toString(),
                 fee: formValues.fee?.toString(),
@@ -192,7 +194,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                 destinationTag: formValues.destinationTag || undefined,
             });
 
-            devLog('[BRIDGE] send tx hash:', hash);
+            log.log('send tx hash:', hash);
             setTxHash(hash);
         } catch (error: any) {
             if (isError(error, 'ACTION_REJECTED')) {

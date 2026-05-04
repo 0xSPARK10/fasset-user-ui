@@ -1,7 +1,8 @@
 import { IEcosystemInfo, ITimeData } from "@/types";
 import { useTranslation } from "react-i18next";
-import { Badge, Button, Divider, rem, SimpleGrid, Text, Title } from "@mantine/core";
-import { IconCaretDownFilled, IconCaretUpFilled, IconInfoHexagon } from "@tabler/icons-react";
+import { Button, Divider, rem, SimpleGrid, Text, Title } from "@mantine/core";
+import { IconInfoHexagon } from "@tabler/icons-react";
+import Badge from "@/components/elements/Badge";
 import XrpIcon from "@/components/icons/XrpIcon";
 import { formatNumberWithSuffix } from "@/utils";
 import { modals } from "@mantine/modals";
@@ -123,23 +124,8 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
                         >
                             ${formatNumberWithSuffix(ecoSystemInfo?.coreVaultSupplyUSD ?? 0)}
                         </Text>
-                        <Badge
-                            variant="outline"
-                            color={timeData?.coreVaultData?.isPositiveSupplyDiff ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
-                            radius="xs"
-                            leftSection={timeData?.coreVaultData?.isPositiveSupplyDiff
-                                ? <IconCaretUpFilled size={15} color="var(--flr-green)" />
-                                : <IconCaretDownFilled size={15} color="var(--flr-red)" />
-                            }
-                            className="px-1"
-                        >
-                            <Text
-                                className="text-14"
-                                fw={400}
-                                c={timeData?.coreVaultData?.isPositiveSupplyDiff ? 'var(--flr-green)' : 'var(--flr-red)'}
-                            >
-                                {timeData?.coreVaultData?.supplyDiff}%
-                            </Text>
+                        <Badge variant="trend" isPositive={!!timeData?.coreVaultData?.isPositiveSupplyDiff}>
+                            {timeData?.coreVaultData?.supplyDiff}%
                         </Badge>
                     </div>
                 </div>
@@ -179,23 +165,8 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
                             >
                                 ${formatNumberWithSuffix(ecoSystemInfo?.coreVaultInflowsUSD ?? 0)}
                             </Text>
-                            <Badge
-                                variant="outline"
-                                color={timeData?.coreVaultData?.isPositiveInflowDiff ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
-                                radius="xs"
-                                leftSection={timeData?.coreVaultData?.isPositiveInflowDiff
-                                    ? <IconCaretUpFilled size={15} color="var(--flr-green)" />
-                                    : <IconCaretDownFilled size={15} color="var(--flr-red)" />
-                                }
-                                className="px-1 shrink-0"
-                            >
-                                <Text
-                                    className="text-14"
-                                    fw={400}
-                                    c={timeData?.coreVaultData?.isPositiveInflowDiff ? 'var(--flr-green)' : 'var(--flr-red)'}
-                                >
-                                    {timeData?.coreVaultData?.inflowDiff}%
-                                </Text>
+                            <Badge variant="trend" isPositive={!!timeData?.coreVaultData?.isPositiveInflowDiff} className="px-1 shrink-0">
+                                {timeData?.coreVaultData?.inflowDiff}%
                             </Badge>
                         </div>
                     </div>
@@ -225,23 +196,8 @@ export default function CoreVaultCard({ ecoSystemInfo, timeData }: ICoreVaultCar
                             >
                                 ${formatNumberWithSuffix(ecoSystemInfo?.coreVaultOutflowsUSD ?? 0)}
                             </Text>
-                            <Badge
-                                variant="outline"
-                                color={timeData?.coreVaultData?.isPositiveOutflowDiff ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
-                                radius="xs"
-                                leftSection={timeData?.coreVaultData?.isPositiveOutflowDiff
-                                    ? <IconCaretUpFilled size={15} color="var(--flr-green)" />
-                                    : <IconCaretDownFilled size={15} color="var(--flr-red)" />
-                                }
-                                className="px-1 shrink-0"
-                            >
-                                <Text
-                                    className="text-14"
-                                    fw={400}
-                                    c={timeData?.coreVaultData?.isPositiveOutflowDiff ? 'var(--flr-green)' : 'var(--flr-red)'}
-                                >
-                                    {timeData?.coreVaultData?.outflowDiff}%
-                                </Text>
+                            <Badge variant="trend" isPositive={!!timeData?.coreVaultData?.isPositiveOutflowDiff} className="px-1 shrink-0">
+                                {timeData?.coreVaultData?.outflowDiff}%
                             </Badge>
                         </div>
                     </div>

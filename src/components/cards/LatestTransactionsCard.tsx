@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { IconArrowNarrowRight, IconArrowUpRight, IconInfoHexagon } from "@tabler/icons-react";
 import Link from "next/link";
-import { Text, Badge, Table, rem, Popover, lighten, Button, Tooltip, Anchor, Stack } from "@mantine/core";
+import { Text, Table, rem, Popover, lighten, Button, Tooltip, Anchor, Stack } from "@mantine/core";
+import Badge from "@/components/elements/Badge";
 import { useInterval, useMediaQuery } from "@mantine/hooks";
 import { Trans, useTranslation } from "react-i18next";
 import moment from "moment";
 import FAssetTable, { IFAssetColumn } from "@/components/elements/FAssetTable";
 import { useUserProgress } from "@/api/user";
-import { IUserProgress, IOFTHistory, IFAssetCoin } from "@/types";
+import { CoinEnum, IUserProgress, IOFTHistory, IFAssetCoin } from "@/types";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { COINS } from "@/config/coin";
 import CopyIcon from "@/components/icons/CopyIcon";
@@ -70,7 +71,7 @@ export default function LatestTransactionsCard({ className, refreshKey, type, fA
     const [mintingTransaction, setMintingTransaction] = useState<{[id: string]: boolean}>({});
     const [isRetryMintModalActive, setIsRetryMintModalActive] = useState<boolean>(false);
     const { t } = useTranslation();
-    const { mainToken, connectedCoins } = useWeb3();
+    const { mainToken, connectedCoins, getConnectedCoin } = useWeb3();
     const isMint = type === 'mint';
 
     const underlyingTransaction = useRef<IUnderlyingTransaction>();
@@ -194,7 +195,7 @@ export default function LatestTransactionsCard({ className, refreshKey, type, fA
             ? `${fAssetCoin?.network.explorerTxUrl}/${progress.txhash}`
             : `${FASSETS_EXPLORER_URL}/tx/${progress.evm_txhash}?network=${mainToken?.nativeName?.toLowerCase()?.includes('sgb') ? 'sgb' : 'flr'}`;
             
-            const isTryAgainDisabled = connectedCoins.find(coin => coin.type.toLowerCase() === progress.fasset.toLowerCase()) === undefined;
+            const isTryAgainDisabled = getConnectedCoin(progress.fasset as CoinEnum) === undefined;
             const showTryAgainButton = isHash && progress.missingUnderlying &&
                 progress?.underlyingTransactionData?.paymentReference &&
                 (!mintingTransaction[progress.underlyingTransactionData.paymentReference] ||
@@ -522,80 +523,28 @@ export default function LatestTransactionsCard({ className, refreshKey, type, fA
 
     const renderStatus = (progress: ITransaction) => {
         if (progress.directMinting && progress.directMintingStatus === 'DELAYED') {
-            return <Badge
-                color="var(--flr-sky)"
-                variant="outline"
-                radius="xs"
-                size="md"
-                className="font-normal"
-            >
-                <div className="flex items-center">
-                    <span className="status-dot mr-1 shrink-0" style={{ backgroundColor: 'var(--flr-sky)' }} />
-                    <Text className="text-10 shrink-0" fw={400} c="var(--flr-sky)">
-                        {t('latest_transactions_card.delayed_label')}
-                    </Text>
-                </div>
+            return <Badge variant="status" dotColor="var(--flr-sky)" bgColor="var(--flr-sky)" size="md" className="font-normal">
+                {t('latest_transactions_card.delayed_label')}
             </Badge>
         }
 
         if (progress.action.toLowerCase() === ACTION_TYPE_MINT) {
-            return <Badge
-                color={progress.defaulted
-                    ? 'rgba(230, 30, 87, 0.13)'
-                    : (progress.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)')
-                }
-                variant="outline"
-                radius="xs"
-                size="md"
-                className="font-normal"
-            >
-                <div className="flex items-center">
-                    <span
-                        className="status-dot mr-1 shrink-0"
-                        style={{ backgroundColor: progress.defaulted
-                            ? 'var(--flr-pink)'
-                            : (progress.status ? 'var(--flr-green)' : 'var(--flr-warning)') }}
-                    />
-                    <Text
-                        className="text-10 shrink-0"
-                        fw={400}
-                        c={progress.defaulted
-                            ? 'var(--flr-pink)'
-                            : (progress.status ? 'var(--flr-green)' : 'var(--flr-warning)')
-                        }
-                    >
-                        {t(`latest_transactions_card.${progress.defaulted ? 'defaulted_label' : (progress.status ? 'finished_label' : 'in_progress_label')}`)}
-                    </Text>
-                </div>
+            const dotColor = progress.defaulted ? 'var(--flr-pink)' : (progress.status ? 'var(--flr-green)' : 'var(--flr-warning)')
+            const bgColor = progress.defaulted ? 'rgba(230, 30, 87, 0.13)' : (progress.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)')
+            return <Badge variant="status" dotColor={dotColor} bgColor={bgColor} size="md" className="font-normal">
+                {t(`latest_transactions_card.${progress.defaulted ? 'defaulted_label' : (progress.status ? 'finished_label' : 'in_progress_label')}`)}
             </Badge>
         } else if ([ACTION_TYPE_SEND, ACTION_TYPE_RECEIVE, ACTION_TYPE_REDEEM_FAIL].includes(progress.action.toLowerCase())
             || (progress.action.toLowerCase() === ACTION_TYPE_REDEEM && !progress.tickets?.length)) {
             return <div className="flex items-center h-[26px]">
                 <Badge
-                    color={progress.defaulted
-                        ? 'rgba(230, 30, 87, 0.13)'
-                        : (progress.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)')
-                    }
-                    variant="outline"
-                    radius="xs"
+                    variant="status"
+                    dotColor={progress.status ? 'var(--flr-green)' : 'var(--flr-warning)'}
+                    bgColor={progress.defaulted ? 'rgba(230, 30, 87, 0.13)' : (progress.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)')}
                     size="md"
                     className="font-normal"
                 >
-                    <div className="flex items-center">
-                        <span
-                            className="status-dot mr-1 shrink-0"
-                            style={{
-                                backgroundColor: progress.status ? 'var(--flr-green)' : 'var(--flr-warning)'
-                            }}
-                        />
-                        <Text
-                            className="text-10 shrink-0"
-                            fw={400}
-                            c={progress.status ? 'var(--flr-green)' : 'var(--flr-warning)'}
-                        >
-                            {t(`latest_transactions_card.${progress.status ? 'finished_label' : 'in_progress_label'}`)}
-                        </Text>
-                    </div>
+                    {t(`latest_transactions_card.${progress.status ? 'finished_label' : 'in_progress_label'}`)}
                 </Badge>
             </div>
         }
@@ -606,26 +555,14 @@ export default function LatestTransactionsCard({ className, refreshKey, type, fA
                     <div className="h-[26px]" />
                     {progress.tickets.map((ticket, index) => (
                         <Badge
-                            color={ticket.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
-                            variant="outline"
-                            radius="xs"
+                            variant="status"
+                            dotColor={ticket.status ? 'var(--flr-green)' : 'var(--flr-warning)'}
+                            bgColor={ticket.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
                             size="md"
                             key={`${ticket.ticketId}-${index}`}
                             className="flex"
                         >
-                            <div className="flex items-center">
-                    <span
-                        className="status-dot mr-1 shrink-0"
-                        style={{ backgroundColor: ticket.status ? 'var(--flr-green)' : 'var(--flr-warning)' }}
-                    />
-                                <Text
-                                    className="text-10 shrink-0"
-                                    fw={400}
-                                    c={ticket.status ? 'var(--flr-green)' : 'var(--flr-warning)'}
-                                >
-                                    {t(`latest_transactions_card.${ticket.status ? 'finished_label' : 'in_progress_label'}`)}
-                                </Text>
-                            </div>
+                            {t(`latest_transactions_card.${ticket.status ? 'finished_label' : 'in_progress_label'}`)}
                         </Badge>
                     ))}
                 </>
@@ -807,25 +744,13 @@ export default function LatestTransactionsCard({ className, refreshKey, type, fA
                             </Table.Td>
                             <Table.Td>
                                 <Badge
-                                    color={item.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
-                                    variant="outline"
-                                    radius="xs"
+                                    variant="status"
+                                    dotColor={item.status ? 'var(--flr-green)' : 'var(--flr-warning)'}
+                                    bgColor={item.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
                                     size="md"
                                     className="font-normal"
                                 >
-                                    <div className="flex items-center">
-                                    <span
-                                        className="status-dot mr-1"
-                                        style={{ backgroundColor: item.status ? 'var(--flr-green)' : 'var(--flr-warning)' }}
-                                    />
-                                        <Text
-                                            className="text-10"
-                                            fw={400}
-                                            c={item.status ? 'var(--flr-green)' : 'var(--flr-warning)'}
-                                        >
-                                            {t(`latest_transactions_card.${item.status ? 'finished_label' : 'in_progress_label'}`)}
-                                        </Text>
-                                    </div>
+                                    {t(`latest_transactions_card.${item.status ? 'finished_label' : 'in_progress_label'}`)}
                                 </Badge>
                             </Table.Td>
                         </Table.Tr>;
@@ -847,25 +772,13 @@ export default function LatestTransactionsCard({ className, refreshKey, type, fA
                                 <div className="flex items-center justify-between">
                                     <Text className="text-14" fw={400}>{ticket.ticketId}</Text>
                                     <Badge
-                                        color={ticket.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
-                                        variant="outline"
-                                        radius="xs"
+                                        variant="status"
+                                        dotColor={ticket.status ? 'var(--flr-green)' : 'var(--flr-warning)'}
+                                        bgColor={ticket.status ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
                                         size="md"
                                         className="font-normal"
                                     >
-                                        <div className="flex items-center">
-                                        <span
-                                            className="status-dot mr-1"
-                                            style={{ backgroundColor: ticket.status ? 'var(--flr-green)' : 'var(--flr-warning)' }}
-                                        />
-                                            <Text
-                                                className="text-10"
-                                                fw={400}
-                                                c={ticket.status ? 'var(--flr-green)' : 'var(--flr-warning)'}
-                                            >
-                                                {t(`latest_transactions_card.${ticket.status ? 'finished_label' : 'in_progress_label'}`)}
-                                            </Text>
-                                        </div>
+                                        {t(`latest_transactions_card.${ticket.status ? 'finished_label' : 'in_progress_label'}`)}
                                     </Badge>
                                 </div>
                                 <div className="flex items-center mt-1">

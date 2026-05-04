@@ -14,7 +14,9 @@ import FAssetModal from "@/components/modals/FAssetModal";
 import { AxiosError } from "axios";
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { ICoin, ISelectedAgent } from "@/types";
-import { devLog } from "@/utils/debug";
+import { createLogger } from "@/utils/debug";
+
+const log = createLogger('MINT:waiting');
 import { formatNumber } from "@/utils";
 import { BTC_NAMESPACE } from "@/config/networks";
 import { WALLET } from "@/constants";
@@ -45,22 +47,22 @@ export default function MintWaitingModal({ opened, onClose, onDelayed, txHash, t
         4: 'https://dev.flare.network/fassets/overview'
     };
 
-    const { connectedCoins, mainToken } = useWeb3();
-    const connectedCoin = connectedCoins.find(coin => coin.type == fAssetCoin?.type);
+    const { mainToken, getConnectedCoin } = useWeb3();
+    const connectedCoin = fAssetCoin ? getConnectedCoin(fAssetCoin.type) : undefined;
 
     useEffect(() => {
         if (!opened || !txHash) return;
 
-        devLog('[MINT] MintWaitingModal opened, polling txHash:', txHash);
+        log.log('modal opened, polling txHash:', txHash);
 
         try {
             const interval = setInterval(async () => {
                 const response = await mintingStatus.refetch();
 
-                devLog('[MINT] mintingStatus poll response:', { txHash, data: response?.data, error: response?.error });
+                log.log('mintingStatus poll response:', { txHash, data: response?.data, error: response?.error });
 
                 if (response?.data?.delayed && response.data.delayTimestamp) {
-                    devLog('[MINT] minting delayed, timestamp:', response.data.delayTimestamp);
+                    log.log('minting delayed, timestamp:', response.data.delayTimestamp);
                     clearInterval(interval);
                     setCurrentStep(1);
                     onDelayed?.(response.data.delayTimestamp);
@@ -72,7 +74,7 @@ export default function MintWaitingModal({ opened, onClose, onDelayed, txHash, t
                 }
 
                 if (response?.data?.step === 4) {
-                    devLog('[MINT] minting completed (step 4)');
+                    log.log('minting completed (step 4)');
                     setTimeout(() => {
                         closeModal(true);
                     }, 1000);

@@ -1,9 +1,9 @@
-import { Badge, Progress, SimpleGrid, Text, Tooltip } from "@mantine/core";
+import { Progress, SimpleGrid, Text, Tooltip } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 import { formatNumberWithSuffix, toNumber } from "@/utils";
 import { COINS } from "@/config/coin";
 import { IEcosystemInfo, ITimeData } from "@/types";
-import { IconCaretDownFilled, IconCaretUpFilled } from "@tabler/icons-react";
+import Badge from "@/components/elements/Badge";
 
 interface ICollateralCard {
     ecoSystemInfo: IEcosystemInfo | undefined;
@@ -83,23 +83,8 @@ export default function CollateralCard({ ecoSystemInfo, timeData }: ICollateralC
                             ${formatNumberWithSuffix(ecoSystemInfo?.totalCollateral ?? 0)}
                         </Text>
                     </div>
-                    <Badge
-                        variant="outline"
-                        color={timeData?.isPositiveCollateralDiff ? 'var(--flr-lightest-green)' : 'var(--flr-lightest-red)'}
-                        radius="xs"
-                        leftSection={timeData?.isPositiveCollateralDiff
-                            ? <IconCaretUpFilled size={15} color="var(--flr-green)" />
-                            : <IconCaretDownFilled size={15} color="var(--flr-red)" />
-                        }
-                        className="px-1 mt-2"
-                    >
-                        <Text
-                            className="text-14"
-                            fw={400}
-                            c={timeData?.isPositiveCollateralDiff ? 'var(--flr-green)' : 'var(--flr-red)'}
-                        >
-                            {timeData?.totalCollateralDiff}%
-                        </Text>
+                    <Badge variant="trend" isPositive={!!timeData?.isPositiveCollateralDiff} className="px-1 mt-2">
+                        {timeData?.totalCollateralDiff}%
                     </Badge>
                 </div>
                 <div className="flex flex-col justify-center basis-1/2 px-[15px] lg:px-6 py-3">

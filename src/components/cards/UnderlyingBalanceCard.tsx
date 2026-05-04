@@ -22,8 +22,8 @@ interface IUnderlyingBalanceCard {
 
 export default function UnderlyingBalanceCard({ className, fAssetCoin }: IUnderlyingBalanceCard) {
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const { connectedCoins } = useWeb3();
-    const connectedCoin = connectedCoins.find(coin => coin.type == fAssetCoin.type);
+    const { getConnectedCoin } = useWeb3();
+    const connectedCoin = getConnectedCoin(fAssetCoin.type);
     const underlyingBalance = useUnderlyingBalance(
         connectedCoin && connectedCoin.connectedWallet === WALLET.LEDGER && connectedCoin.xpub !== undefined
             ? CryptoJS.AES.decrypt(connectedCoin.xpub!, process.env.XPUB_SECRET!).toString(CryptoJS.enc.Utf8)

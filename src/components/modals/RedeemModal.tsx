@@ -35,7 +35,9 @@ import { AssetManagerAbi } from "@/abi";
 import { IFAssetCoin } from "@/types";
 import { BTC_NAMESPACE } from "@/config/networks";
 import { formatNumber, toNumber } from "@/utils";
-import { devLog } from "@/utils/debug";
+import { createLogger } from "@/utils/debug";
+
+const log = createLogger('REDEEM');
 import { COOKIE_WINDDOWN, WALLET } from "@/constants";
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { Cookies } from "react-cookie";
@@ -84,8 +86,8 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
     const queryClient = useQueryClient();
 
     const mediaQueryMatches = useMediaQuery('(max-width: 640px)');
-    const { connectedCoins, mainToken } = useWeb3();
-    const connectedCoin = connectedCoins.find(coin => coin.type == fAssetCoin?.type);
+    const { mainToken, getConnectedCoin } = useWeb3();
+    const connectedCoin = fAssetCoin ? getConnectedCoin(fAssetCoin.type) : undefined;
     const cookies = new Cookies();
     const assetManagerAddress = useAssetManagerAddress(fAssetCoin?.type ?? '', fAssetCoin !== undefined && opened);
     const redeemWithTagSupported = useRedeemWithTagSupported(
@@ -141,7 +143,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
 
     const redemptionStatusFetchInterval = useInterval(async () => {
         const response = await redemptionStatus.refetch();
-        devLog('[REDEEM] redemptionStatus poll:', { txHash, status: response?.data?.status, data: response?.data });
+        log.log('redemptionStatus poll:', { txHash, status: response?.data?.status, data: response?.data });
         if (response?.data?.status === 'SUCCESS') {
             closeModal.current = false;
             modals.close(WAITING_MODAL);
@@ -202,7 +204,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
             ).toString();
             setRequestedAmount(amount);
 
-            devLog('[REDEEM] requestRedeem params:', {
+            log.log('requestRedeem params:', {
                 assetManagerAddress: assetManagerAddress?.data?.address,
                 userAddress: mainToken?.address,
                 amountUBA,
@@ -222,7 +224,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
                 destinationTag,
             });
 
-            devLog('[REDEEM] redeem tx hash:', response.hash);
+            log.log('redeem tx hash:', response.hash);
 
             const redeemResponse = await requestRedemptionDefault.mutateAsync({
                 txHash: response.hash,
@@ -231,7 +233,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
                 userAddress: mainToken?.address!
             });
 
-            devLog('[REDEEM] redemptionDefault response:', redeemResponse);
+            log.log('redemptionDefault response:', redeemResponse);
 
             const resolvedRedeemedAmount = redeemResponse.incomplete
                 ? calculateRedeemedAmount(amount, {
@@ -521,7 +523,6 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
                                         onDestinationAddressChange={(address) => setXrplDestAddress(address)}
                                         onDestinationTagChange={(tag) => setDestinationTag(tag)}
                                         onFormAlert={(alert) => setFormAlert(alert)}
-                                        supportsDestinationTag={!!redeemWithTagSupported.data}
                                         isFormDisabled={(status) => setHasValidAmount(!status)}
                                     />
                                 }

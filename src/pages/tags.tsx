@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
 	Accordion,
 	ActionIcon,
-	Badge,
 	Button,
 	Card,
 	Container,
@@ -16,14 +15,26 @@ import {
 	Title,
 	Tooltip,
 } from "@mantine/core";
-import { IconCheck, IconCircleCheck, IconCopy, IconMinus, IconPlus } from "@tabler/icons-react";
+import Badge from "@/components/elements/Badge";
+import {
+	IconCheck,
+	IconCircleCheck,
+	IconCopy,
+	IconMinus,
+	IconPlus,
+} from "@tabler/icons-react";
 import { Trans, useTranslation } from "react-i18next";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useConnectWalletModal } from "@/hooks/useWeb3Modal";
 import { useTagReservationFee, useUserTags } from "@/api/tags";
 import { useDirectMintingInfo } from "@/api/minting";
 import { FASSET_COIN } from "@/config/coin";
-import { truncateString, formatNumber, formatUnit, formatTimestamp } from "@/utils";
+import {
+	truncateString,
+	formatNumber,
+	formatUnit,
+	formatTimestamp,
+} from "@/utils";
 import BlingIcon from "@/components/icons/BlingIcon";
 import FormAlert from "@/components/elements/FormAlert";
 import ReserveMintingTagModal from "@/components/modals/ReserveMintingTagModal";
@@ -34,12 +45,16 @@ import CopyIcon from "@/components/icons/CopyIcon";
 import RecipientTagModal from "@/components/modals/RecipientTagModal";
 import TimerIcon from "@/components/icons/TimerIcon";
 
+const HOW_TO_ACCORDION = "how_to";
+
 export default function Tags() {
 	const { t } = useTranslation();
 	const { isConnected, mainToken } = useWeb3();
 	const { openConnectWalletModal } = useConnectWalletModal();
 	const [isModalOpen, setIsModalOpen] = useState(false);
-	const [isHowToOpened, setIsHowToOpened] = useState(false);
+	const [accordionValue, setAccordionValue] = useState<string | null>(
+		HOW_TO_ACCORDION,
+	);
 	const [editingTag, setEditingTag] = useState<ITagsByAddress | null>(null);
 	const [editingExecutorTag, setEditingExecutorTag] =
 		useState<ITagsByAddress | null>(null);
@@ -55,18 +70,19 @@ export default function Tags() {
 		refetch,
 	} = useUserTags(FASSET_COIN?.type, connectedAddress, isConnected);
 
-	const hasPendingTags = tags.some(tag => tag.executorChangePending);
+	const hasPendingTags = tags.some((tag) => tag.executorChangePending);
 	useEffect(() => {
 		if (!isConnected) return;
-		const interval = setInterval(() => refetch(), hasPendingTags ? 30_000 : 60_000);
+		const interval = setInterval(
+			() => refetch(),
+			hasPendingTags ? 30_000 : 60_000,
+		);
 		return () => clearInterval(interval);
 	}, [hasPendingTags, isConnected, refetch]);
 
 	const reservationFee = useTagReservationFee(FASSET_COIN?.type, isConnected);
-	const {
-		data: directMintingInfo,
-		isPending: isDirectMintingPending,
-	} = useDirectMintingInfo(FASSET_COIN?.type, isConnected);
+	const { data: directMintingInfo, isPending: isDirectMintingPending } =
+		useDirectMintingInfo(FASSET_COIN?.type, isConnected);
 	const coreVaultAddress = directMintingInfo?.paymentAddress ?? "";
 
 	const handleReserveTag = () => {
@@ -97,7 +113,9 @@ export default function Tags() {
 							{t("my_tags.no_tags_title")}
 						</Title>
 						<Text c="var(--flr-gray)" className="mt-2 text-16 max-w-xs">
-							{t("my_tags.no_tags_description", { networkName: mainToken?.network.brandName ?? "Flare" })}
+							{t("my_tags.no_tags_description", {
+								networkName: mainToken?.network.brandName ?? "Flare",
+							})}
 						</Text>
 						<Text c="var(--flr-gray)" className="mt-3 text-14">
 							{t("my_tags.reservation_fee_label")}
@@ -152,11 +170,16 @@ export default function Tags() {
 		<Container fluid className="mt-8 w-full max-w-[800px] mx-auto px-4">
 			{/* How to mint with your tag — accordion */}
 			<Accordion
+				defaultValue={HOW_TO_ACCORDION}
+				value={accordionValue}
+				onChange={setAccordionValue}
 				w="100%"
-				radius="xs"
-				chevron={isHowToOpened ? <IconMinus /> : <IconPlus />}
+				radius="sm"
+				bd={"1px solid #C0C0C0"}
+				chevron={
+					accordionValue === HOW_TO_ACCORDION ? <IconMinus /> : <IconPlus />
+				}
 				disableChevronRotation
-				onChange={() => setIsHowToOpened(!isHowToOpened)}
 				mb="48px"
 				classNames={{
 					control: "px-6 bg-white hover:bg-white",
@@ -169,7 +192,7 @@ export default function Tags() {
 					},
 				}}
 			>
-				<Accordion.Item value="HOW_TO">
+				<Accordion.Item value={HOW_TO_ACCORDION}>
 					<Accordion.Control>
 						<Text className="text-15" c="var(--flr-black)" fw={500}>
 							{t("my_tags.how_to_title")}
@@ -196,9 +219,9 @@ export default function Tags() {
 											components={{
 												addr: (
 													<Group display="inline-flex" gap="0" component="span">
-														<Text inherit component="span">
-															{coreVaultAddress}
-														</Text>
+														<Badge variant="info">
+																{coreVaultAddress}
+														</Badge>
 														<CopyIcon text={coreVaultAddress} />
 													</Group>
 												),
@@ -217,13 +240,12 @@ export default function Tags() {
 									{t("my_tags.how_to_step_4")}
 								</Text>
 							</List.Item>
-							<List.Item className="mt-1">
-								<Text className="text-14 inline" c="var(--flr-black)" fw={400}>
-									{t("my_tags.how_to_step_5")}
-								</Text>
-							</List.Item>
 						</List>
-						<Text className="mt-3 text-14" c="var(--flr-gray)" fw={400}>
+						<Text
+							className="mt-3 text-12 ml-[-10px]"
+							c="var(--flr-black)"
+							fw={400}
+						>
 							{t("my_tags.how_to_note")}
 						</Text>
 					</Accordion.Panel>
@@ -326,8 +348,10 @@ function TagCard({
 			? truncateString(tag.mintingRecipient, 6)
 			: tag.mintingRecipient;
 	const isZeroAddress = (addr: string) => /^0x0+$/i.test(addr);
-	const displayExecutor = !tag.pendingNewExecutor &&
-		tag.allowedExecutor && !isZeroAddress(tag.allowedExecutor)
+	const displayExecutor =
+		!tag.pendingNewExecutor &&
+		tag.allowedExecutor &&
+		!isZeroAddress(tag.allowedExecutor)
 			? tag.allowedExecutor.length > 20
 				? truncateString(tag.allowedExecutor, 6)
 				: tag.allowedExecutor
@@ -335,10 +359,17 @@ function TagCard({
 
 	return (
 		<Stack gap={0} mb={isLast ? 0 : "20px"}>
-			<Text fw={300} className="text-24 mb-3" c="var(--flr-black)">
-				{t("my_tags.tag_number_label", { number: tag.tagId })}
-			</Text>
+			<Group gap={"10px"} align="center">
+				<Text fw={300} className="text-24 mb-3" c="var(--flr-black)">
+					{t("my_tags.tag")}
+				</Text>
 
+				<div className="px-2 py-[2px] mb-3  border rounded-sm border-[#C0C0C0] bg-[#F6F6F6]">
+					<Text fw={400} className="text-24" c="var(--flr-shark)">
+						{tag.tagId}
+					</Text>
+				</div>
+			</Group>
 			{/* Minting Recipient row */}
 			<Group justify="space-between" align="center" mb="xs">
 				<Text className="text-14" fw={400} c="var(--flr-gray)">
@@ -370,17 +401,8 @@ function TagCard({
 						</CopyButton>
 					</Group>
 					{isConnectedAddress && (
-						<Badge
-							color="var(--flr-sky)"
-							bd={"1px solid var(--flr-sky-lighter)"}
-							variant="outline"
-							size="md"
-							radius="xs"
-							className="font-normal"
-						>
-							<Text className="text-10" fw={400} c="var(--flr-sky)">
-								{t("my_tags.connected_badge")}
-							</Text>
+						<Badge variant="info">
+							{t("my_tags.connected_badge")}
 						</Badge>
 					)}
 				</Group>
@@ -417,24 +439,25 @@ function TagCard({
 						</CopyButton>
 					</Group>
 				) : tag.pendingNewExecutor ? (
-					<Tooltip label={t(
-									"edit_executor_modal.success_description",
-									formatTimestamp(tag?.executorChangeActiveAfterTs ?? 0),
-								)}>
-
-					<Group gap={"6"}>
-						<TimerIcon size={12} color="var(--flr-gray)"/>
-						<Text className="text-14" fw={400} c="var(--flr-gray)">
-							{t("my_tags.pending_update")}
-						</Text>
-					</Group>
+					<Tooltip
+						label={t(
+							"edit_executor_modal.success_description",
+							formatTimestamp(tag?.executorChangeActiveAfterTs ?? 0),
+						)}
+					>
+						<Group gap={"6"}>
+							<TimerIcon size={12} color="var(--flr-gray)" />
+							<Text className="text-14" fw={400} c="var(--flr-gray)">
+								{t("my_tags.pending_update")}
+							</Text>
+						</Group>
 					</Tooltip>
 				) : (
 					<Group gap={"6"}>
-					<IconCircleCheck stroke={1} size={15} color="var(--flr-gray)"/>
-					<Text className="text-14" fw={400} c="var(--flr-gray)">
-						{t("my_tags.anyone_default_label")}
-					</Text>
+						<IconCircleCheck stroke={1} size={15} color="var(--flr-gray)" />
+						<Text className="text-14" fw={400} c="var(--flr-gray)">
+							{t("my_tags.anyone_default_label")}
+						</Text>
 					</Group>
 				)}
 			</Group>

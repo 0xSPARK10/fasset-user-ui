@@ -23,7 +23,7 @@ import { formatFeeAmount, formatInputAmount } from "@/core/fees/format";
 import { IFAssetCoin } from "@/types";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { isValidClassicAddress } from "xrpl";
-import DestinationAddressField from "@/components/elements/DestinationAddressField";
+import RedeemDestinationEditor from "@/components/elements/RedeemDestinationEditor";
 import AmountInput from "@/components/elements/AmountInput";
 import { IAlertMessage } from "@/components/elements/FormAlert";
 
@@ -33,7 +33,6 @@ interface IRedeemForm {
 	onFormAlert?: (alert?: IAlertMessage) => void;
 	onDestinationAddressChange?: (address: string) => void;
 	onDestinationTagChange?: (tag: string) => void;
-	supportsDestinationTag?: boolean;
 	isFormDisabled?: (status: boolean) => void;
 }
 
@@ -49,7 +48,6 @@ const RedeemForm = forwardRef<FormRef, IRedeemForm>(
 			onFormAlert,
 			onDestinationAddressChange,
 			onDestinationTagChange,
-			supportsDestinationTag = false,
 			isFormDisabled,
 		}: IRedeemForm,
 		ref,
@@ -377,7 +375,7 @@ const RedeemForm = forwardRef<FormRef, IRedeemForm>(
 						},
 					}}
 				/>
-				<DestinationAddressField
+				<RedeemDestinationEditor
 					label={t("redeem_modal.form.destination_address_label")}
 					editAddress={editAddress}
 					editButtonLabel={t("redeem_modal.form.edit_button")}
@@ -385,30 +383,15 @@ const RedeemForm = forwardRef<FormRef, IRedeemForm>(
 					inputProps={form.getInputProps("destinationAddress")}
 					inputKey={form.key("destinationAddress")}
 					readOnlyValue={fAssetCoin?.address}
-					onPaste={(text) => form.setFieldValue("destinationAddress", text)}
-					containerClassName="flex items-center mt-5"
+					onPaste={(text: string) => form.setFieldValue("destinationAddress", text)}
+					containerClassName="mt-5"
 					labelClassName="text-12 uppercase"
 					inputClassName="mt-1"
 					valueClassName="text-14 mt-1"
 					editButtonClassName="ml-5 md:ml-8"
-					destinationTagLabel={
-						supportsDestinationTag
-							? t("redeem_modal.form.destination_tag_label")
-							: undefined
-					}
-					destinationTagInputProps={
-						supportsDestinationTag
-							? form.getInputProps("destinationTag")
-							: undefined
-					}
-					destinationTagInputKey={
-						supportsDestinationTag ? form.key("destinationTag") : undefined
-					}
-					destinationTagReadOnlyValue={
-						supportsDestinationTag
-							? (form.getValues().destinationTag as string)
-							: undefined
-					}
+					destinationTagLabel={t("redeem_modal.form.destination_tag_label")}
+					destinationTagInputProps={form.getInputProps("destinationTag")}
+					destinationTagInputKey={form.key("destinationTag")}
 					maxTagLength={10}
 				/>
 				<Divider

@@ -1,35 +1,43 @@
 import React, { useState } from "react";
 import {
 	Button,
+	Combobox,
 	Grid,
 	Loader,
 	SegmentedControl,
 	Text,
 	TextInput,
+	useCombobox,
 } from "@mantine/core";
 import { UseFormReturnType } from "@mantine/form";
 import { useTranslation } from "react-i18next";
 import CopyIcon from "@/components/icons/CopyIcon";
 import { truncateString } from "@/utils";
-import classes from "@/styles/components/elements/DestinationAddressField.module.scss";
+import elementClasses from "@/styles/components/elements/DestinationAddressField.module.scss";
+import formClasses from "@/styles/components/forms/MintForm.module.scss";
 import DiscountCheckIcon from "../icons/DiscountCheckIcon";
 import { useRouter } from "next/router";
+import { ITagsByAddress } from "@/types";
 
 interface IMintDestinationEditor {
 	form: UseFormReturnType<any>;
 	isAddressTagLoading?: boolean;
+	userTags?: ITagsByAddress[];
+	onTagSelect?: (tagId: string, mintingRecipient: string) => void;
 }
 
 const LABEL_CLASSNAMES = { label: "uppercase text-12" };
 const ERROR_CLASSNAMES = {
 	label: "uppercase text-12",
-	input: classes.inputError,
-	error: classes.inputErrorText,
+	input: elementClasses.inputError,
+	error: elementClasses.inputErrorText,
 };
 
 export default function MintDestinationEditor({
 	form,
 	isAddressTagLoading = false,
+	userTags = [],
+	onTagSelect,
 }: IMintDestinationEditor) {
 	const { t } = useTranslation();
 	const router = useRouter();
@@ -61,9 +69,9 @@ export default function MintDestinationEditor({
 					</div>
 				</Grid.Col>
 
-				<Grid.Col span={{ base: 12, xs: 1.5 }}>
+				<Grid.Col span={{ base: 12, xs: 2 }}>
 					<Text c="var(--flr-gray)" className="text-12 uppercase">
-						{t("mint_modal.form.tag_label")}
+						{t("mint_modal.form.minting_tag_label")}
 					</Text>
 
 					{isAddressTagLoading ? (
@@ -133,7 +141,13 @@ export default function MintDestinationEditor({
 			</div>
 
 			<div style={{ display: editTab === "tag" ? "block" : "none" }}>
-				<MemoTagPanel form={form} />
+				<MemoTagPanel
+					form={form}
+					userTags={userTags}
+					onTagSelect={onTagSelect}
+					resolvedAddress={form.getValues().resolvedAddress}
+					addressError={form.errors.resolvedAddress as string | undefined}
+				/>
 			</div>
 		</div>
 	);
@@ -167,26 +181,89 @@ const MemoAddressPanel = React.memo(function AddressPanel({
 
 const MemoTagPanel = React.memo(function TagPanel({
 	form,
+	userTags = [],
+	onTagSelect,
+	resolvedAddress: rawResolvedAddress = "",
+	addressError,
 }: {
 	form: UseFormReturnType<any>;
+	userTags?: ITagsByAddress[];
+	onTagSelect?: (tagId: string, mintingRecipient: string) => void;
+	resolvedAddress?: string;
+	addressError?: string;
 }) {
 	const { t } = useTranslation();
 
-	const { destinationTag: tag, resolvedAddress: rawResolvedAddress } = form.getValues();
+	const tag = form.getValues().destinationTag;
 	const resolvedAddress = tag ? rawResolvedAddress : "";
-	const addressError = form.errors.resolvedAddress as string | undefined;
-
 	const isLoading = tag && !resolvedAddress && !addressError;
+
+	const combobox = useCombobox({
+		onDropdownClose: () => combobox.resetSelectedOption(),
+	});
+	const [search, setSearch] = useState(tag ?? "");
+
+	const filteredTags = userTags.filter((item) =>
+		item.tagId.startsWith(search)
+	);
+
+	const handleSelect = (tagId: string) => {
+		const item = userTags.find((entry) => entry.tagId === tagId);
+		if (item && onTagSelect) {
+			onTagSelect(tagId, item.mintingRecipient);
+		}
+		setSearch(tagId);
+		combobox.closeDropdown();
+	};
+
+	const handleSearchChange = (value: string) => {
+		if (!/^\d*$/.test(value)) return;
+		setSearch(value);
+		form.setFieldValue("destinationTag", value);
+		combobox.openDropdown();
+		combobox.updateSelectedOptionIndex();
+	};
 
 	return (
 		<Grid>
 			<Grid.Col span={{ base: 12, xs: 3 }}>
-				<TextInput
-					{...form.getInputProps("destinationTag")}
-					key={form.key("destinationTag")}
-					label={t("mint_modal.form.tag_label")}
-					classNames={LABEL_CLASSNAMES}
-				/>
+				<Combobox
+					store={combobox}
+					onOptionSubmit={handleSelect}
+					width="max-content"
+					position="bottom-start"
+					middlewares={{ flip: false }}
+				>
+					<Combobox.Target>
+						<TextInput
+							label={t("mint_modal.form.minting_tag_label")}
+							classNames={LABEL_CLASSNAMES}
+							value={search}
+							onChange={(e) => handleSearchChange(e.currentTarget.value)}
+							onClick={() => combobox.openDropdown()}
+							onFocus={() => combobox.openDropdown()}
+							onBlur={() => combobox.closeDropdown()}
+						/>
+					</Combobox.Target>
+
+					{filteredTags.length > 0 && (
+						<Combobox.Dropdown
+							onMouseDown={(e) => e.preventDefault()}
+							style={{ maxHeight: 220, overflowY: "auto" }}
+						>
+							<Combobox.Options>
+								{filteredTags.map((item) => (
+									<Combobox.Option key={item.tagId} value={item.tagId} className={formClasses.comboboxOption}>
+										<span className="font-medium mr-2">{item.tagId}</span>
+										<span className="text-12" style={{ color: "var(--flr-gray)" }}>
+											{item.mintingRecipient}
+										</span>
+									</Combobox.Option>
+								))}
+							</Combobox.Options>
+						</Combobox.Dropdown>
+					)}
+				</Combobox>
 			</Grid.Col>
 
 			<Grid.Col span={{ base: 12, xs: 9 }}>
@@ -197,8 +274,8 @@ const MemoTagPanel = React.memo(function TagPanel({
 					error={addressError}
 					classNames={{
 						...LABEL_CLASSNAMES,
-						input: addressError ? classes.inputError : classes.inputReadOnly,
-						error: classes.inputErrorText,
+						input: addressError ? elementClasses.inputError : elementClasses.inputReadOnly,
+						error: elementClasses.inputErrorText,
 					}}
 					rightSection={
 						isLoading ? (

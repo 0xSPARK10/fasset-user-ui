@@ -23,7 +23,7 @@ import RedeemModal from "@/components/modals/RedeemModal";
 import CopyIcon from "@/components/icons/CopyIcon";
 import { useFassetState, useUserProgress } from "@/api/user";
 import { useModalState } from "@/hooks/useModalState";
-import { ICoin, IFAssetCoin } from "@/types";
+import { CoinEnum, ICoin, IFAssetCoin } from "@/types";
 import { COINS } from "@/config/coin";
 import { toNumber, truncateString } from "@/utils";
 import { NETWORK_FLARE, NETWORK_FLARE_COSTON2_TESTNET } from "@/config/networks";
@@ -38,10 +38,10 @@ interface IBalanceCard {
 }
 
 export default function BalanceCard({ className, onViewPendingTransactionsClick, disabledFassets }: IBalanceCard) {
-    const [fAssetCoins, setfAssetCoins] = useState<(IFAssetCoin & { cantRedeem?: boolean, redeemDisabled?: boolean })[]>([]);
+    const [fAssetCoins, setfAssetCoins] = useState<(IFAssetCoin & { redeemDisabled?: boolean })[]>([]);
     const [isMintModalActive, setIsMintModalActive] = useState<boolean>(false);
     const [isRedeemModalActive, setIsRedeemModalActive] = useState<boolean>(false);
-    const { connectedCoins, mainToken } = useWeb3();
+    const { connectedCoins, mainToken, getConnectedCoin } = useWeb3();
     const { isMainnet } = useNetworks();
     const { t } = useTranslation();
     const [localMainToken, setLocalMainToken] = useState<ICoin>();
@@ -95,18 +95,18 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
         const fAssetCoins: IFAssetCoin[] = [];
         const stableCoins: ICoin[] = [];
         nativeBalance?.data?.forEach(balance => {
-            const connectedCoin = connectedCoins.find(connectedCoin => connectedCoin.type === balance.symbol);
+            const connectedCoin = getConnectedCoin(balance.symbol as CoinEnum);
             const coin = COINS.find(coin => coin.enabled && coin.type === balance.symbol);
             if (!coin) return;
 
             if ('lots' in balance) {
-               let fAssetCoin: IFAssetCoin & { cantRedeem?: boolean, redeemDisabled?: boolean };
+               let fAssetCoin: IFAssetCoin & { redeemDisabled?: boolean };
 
                if (connectedCoin) {
-                   fAssetCoin = { ...connectedCoin, cantRedeem: false, redeemDisabled: false } as IFAssetCoin & { cantRedeem?: boolean, redeemDisabled?: boolean };
+                   fAssetCoin = { ...connectedCoin, redeemDisabled: false } as IFAssetCoin & { redeemDisabled?: boolean };
                    fAssetCoin.balance = balance?.balance || "0";
                } else {
-                   fAssetCoin = { ...coin, cantRedeem: false, redeemDisabled: false } as IFAssetCoin & { cantRedeem?: boolean, redeemDisabled?: boolean };
+                   fAssetCoin = { ...coin, redeemDisabled: false } as IFAssetCoin & { redeemDisabled?: boolean };
                    fAssetCoin.balance = balance?.balance || "0";
                    fAssetCoin.enabled = false;
                }
@@ -114,10 +114,6 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                if (pausedTokens.includes(fAssetCoin.type)) {
                    fAssetCoin.enabled = false;
                }
-               if (toNumber(balance?.balance || "0") > 0 && toNumber(balance?.balance || "0") < 10) {
-                   fAssetCoin.cantRedeem = true;
-               }
-
                const fAssetUnderlyingBalance = underlyingBalances.data.find(underlyingBalance => underlyingBalance?.fAsset === fAssetCoin.type);
                if (fAssetUnderlyingBalance?.accountInfo?.depositAuth || fAssetUnderlyingBalance?.accountInfo?.requireDestTag) {
                    fAssetCoin.redeemDisabled = true;
