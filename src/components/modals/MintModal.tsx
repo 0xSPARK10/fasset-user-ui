@@ -179,6 +179,7 @@ export default function MintModal({ opened, onClose, fAssetCoin }: IMintModal) {
                             withIcon={false}
                         >
                             <ConfirmStepper
+                                opened={opened && !isMintWaitingModalActive}
                                 fAssetCoin={fAssetCoin}
                                 formValues={formValues}
                                 onError={(alert) => { stepperErrorRef.current = alert; setErrorMessage(alert); setCurrentStep(STEP_AMOUNT); }}

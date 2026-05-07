@@ -1,7 +1,7 @@
 ---
-doc_version: "1.6"
+doc_version: "1.7"
 app_version: "v1.3"
-last_updated: "2026-04-24"
+last_updated: "2026-05-06"
 ---
 
 # FAsset User UI — Developer Specification
@@ -10,7 +10,7 @@ last_updated: "2026-04-24"
 > Covers: domain concepts, data types, flows, APIs, fees, wallets, code patterns.
 > For product/roadmap context see `docs/PRODUCT.md`.
 
-**Version:** 1.1 — 2026-04-13 (updated: agent-backed minting removed, direct minting is the only path)
+**Version:** 1.7 — 2026-05-06
 
 ---
 
@@ -917,6 +917,76 @@ import AlertBox from '@/components/elements/AlertBox';
 Props: `title: string`, `type?: "info" | "error"` (default: `"info"`, orange), `children: React.ReactNode`, `className?: string`
 
 Both components live in `src/components/elements/`.
+
+### Modal Async Guard (`useModalGuard`)
+
+**Problem:** async callbacks (contract calls, polling intervals) don't know when the modal has been closed. Without guarding, state updates fire on a closed modal → React warnings, stale UI on next open.
+
+**Solution:** `useModalGuard(opened)` in `src/hooks/useModalGuard.ts` creates an `AbortController` tied to the modal's `opened` state. When the modal closes, the controller aborts. Async functions check this via `assertOpen()`.
+
+```ts
+const { run, cancel } = useModalGuard(opened);
+```
+
+**`run(fn)`** — wraps the entire async operation. Passes `assertOpen` as a parameter to the callback; captures the session controller at call time so the check is always tied to the correct session. `AbortError` from `assertOpen()` is swallowed silently; real errors are re-thrown to `.catch()`:
+
+```ts
+const handleRequest = async () => {
+    isRequestActive.current = true;
+    setCurrentStep(STEP_CONFIRM);
+
+    await run(async (assertOpen) => {
+        await mutation.mutateAsync({...});
+        assertOpen();           // throws if modal closed during the above await
+        setIsTransactionDone(true);
+        await new Promise(r => setTimeout(r, 1000));
+        assertOpen();
+        setCurrentStep(STEP_SUCCESS);
+    }).catch((error: any) => {
+        setErrorMessage(error.message);
+        setCurrentStep(STEP_FORM);
+    });
+
+    isRequestActive.current = false; // always runs: success, error, or abort
+};
+```
+
+**`cancel()`** — call in the modal's `useEffect` cleanup (when `!opened`) to immediately abort the current session:
+
+```ts
+useEffect(() => {
+    if (!opened) {
+        cancel();
+        isRequestActive.current = false;
+        setCurrentStep(STEP_FORM);
+    }
+}, [cancel, opened]);
+```
+
+**Rules:**
+- Place globally-relevant side effects (cookies, query invalidation, toasts) **before** `assertOpen()` — they run regardless of modal state
+- `isRequestActive.current = false` goes **after** `await run(...)` — never in a `finally` block, because `run()` always resolves
+- For interval callbacks (`useInterval`), wrap with `run` and call `assertOpen()` after the `await`:
+  ```ts
+  useInterval(() => run(async (assertOpen) => {
+      const response = await someQuery.refetch();
+      assertOpen();
+      if (response.data?.status === 'SUCCESS') { ... }
+  }), INTERVAL_MS);
+  ```
+- `isAbortError(e)` is exported for nested `try/catch` blocks where an inner catch would otherwise swallow the `AbortError`:
+  ```ts
+  await run(async (assertOpen) => {
+      try {
+          const r = await apiClient.get(...);
+          assertOpen();
+          setData(r.data);
+      } catch (e) {
+          if (isAbortError(e)) throw e; // re-throw so outer run() catches it
+          // otherwise non-critical, swallow
+      }
+  });
+  ```
 
 ---
 

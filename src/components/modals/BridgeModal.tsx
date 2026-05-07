@@ -154,7 +154,6 @@ export default function BridgeModal({ opened, onClose, token, type }: IBridgeMod
     }, [accountError, type, underlyingBalance.data, destinationTag]);
 
     const closeModal = (refetch: boolean = false) => {
-        setCurrentStep(STEP_AMOUNT);
         setErrorMessage(undefined);
         setCoreVaultErrorMessage("");
         setShowDestTagWarning(false);
@@ -171,6 +170,7 @@ export default function BridgeModal({ opened, onClose, token, type }: IBridgeMod
         }
 
         onClose();
+        setTimeout(() => setCurrentStep(STEP_AMOUNT), 300);
     }
 
     return (

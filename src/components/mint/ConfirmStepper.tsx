@@ -8,7 +8,6 @@ import {
     lighten
 } from "@mantine/core";
 import { modals } from "@mantine/modals";
-import { useMounted } from "@mantine/hooks";
 import {
     IconCheck,
     IconCircleCheck,
@@ -33,6 +32,7 @@ import { useNativeBalance, useUnderlyingBalance } from "@/api/balance";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { isMobile } from "react-device-detect";
 import MintLimitReachedModal from "../modals/MintLimitReachedModal";
+import { useModalGuard } from "@/hooks/useModalGuard";
 
 const FINISHED_MODAL = "finished_modal";
 const STEP_WALLET_PAYMENT = 0;
@@ -40,6 +40,7 @@ const STEP_WALLET_COMPLETED = 1;
 const DIRECT_MINTING_PREFIX = "4642505266410018";
 
 interface IConfirmStepper {
+    opened: boolean;
     fAssetCoin: IFAssetCoin;
     formValues: any;
     onError: (alert?: IAlertMessage) => void;
@@ -76,6 +77,7 @@ function calculateDirectMintPaymentAmount(
 }
 
 export default function ConfirmStepper({
+    opened,
     fAssetCoin,
     formValues,
     onError,
@@ -87,12 +89,11 @@ export default function ConfirmStepper({
     const [signedTransactionTxHash, setSignedTransactionTxHash] = useState<string>();
     const [transferredAssetAmount, setTransferredAssetAmount] = useState<number>();
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
     const isMintRequestActive = useRef<boolean>(false);
 
     const { t } = useTranslation();
     const { mainToken } = useWeb3();
-    const isMounted = useMounted();
+    const { run } = useModalGuard(opened);
 
     const nativeBalances = useNativeBalance(mainToken?.address ?? "", false);
     const underlyingBalance = useUnderlyingBalance(fAssetCoin.address!, fAssetCoin.type, false);
@@ -113,15 +114,26 @@ export default function ConfirmStepper({
 
     useEffect(() => {
         if (
-            !isMounted ||
-            mainToken?.connectedWallet === WALLET.LEDGER ||
+            fAssetCoin.connectedWallet === WALLET.LEDGER ||
             (fAssetCoin.connectedWallet === WALLET.XAMAN && isMobile)
         ) {
             return;
         }
 
         void submitDirectMintPayment();
-    }, [isMounted]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const handleFinish = async (txId: string) => {
+        setCurrentStep(STEP_WALLET_COMPLETED);
+        setSignedTransactionTxHash(txId);
+
+        await run(async (assertOpen) => {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            assertOpen();
+            setIsMintWaitingModalActive(true);
+            onClose(true);
+        });
+    };
 
     const submitDirectMintPayment = async () => {
         if (isMintRequestActive.current) return;
@@ -129,7 +141,6 @@ export default function ConfirmStepper({
         try {
             isMintRequestActive.current = true;
             setIsLoading(true);
-            setIsLedgerButtonDisabled(true);
             setTransferredAssetAmount(Number(formValues.amount));
 
             const directMintingResponse =
@@ -173,19 +184,15 @@ export default function ConfirmStepper({
                 destinationTag: useTag ? tagToSend : undefined,
                 userAddress: fAssetCoin.address!,
             });
-
             log.log('signTransaction raw response:', JSON.stringify(signTransactionResponse, null, 2));
 
             const txId = fAssetCoin.network.namespace === XRP_NAMESPACE
                 ? signTransactionResponse?.tx_json?.hash
                 : signTransactionResponse.txid;
-
             log.log('extracted txId:', txId, '| namespace:', fAssetCoin.network.namespace);
 
-            setCurrentStep(STEP_WALLET_COMPLETED);
-            setIsMintWaitingModalActive(true);
-            onClose(true);
-            setSignedTransactionTxHash(txId);
+            await handleFinish(txId);
+
         } catch (error: any) {
             if (error.code === 4001) {
                 onError({ msg: t("notifications.request_rejected_by_user_label") });
@@ -197,7 +204,6 @@ export default function ConfirmStepper({
         } finally {
             isMintRequestActive.current = false;
             setIsLoading(false);
-            setIsLedgerButtonDisabled(false);
         }
     };
 
@@ -320,7 +326,7 @@ export default function ConfirmStepper({
                     loading={currentStep === STEP_WALLET_PAYMENT}
                 />
             </Stepper>
-            {currentStep === STEP_WALLET_PAYMENT && mainToken?.connectedWallet === WALLET.LEDGER &&
+            {currentStep === STEP_WALLET_PAYMENT && fAssetCoin?.connectedWallet === WALLET.LEDGER &&
                 <>
                     <Divider
                         className="my-8"
@@ -332,7 +338,7 @@ export default function ConfirmStepper({
                         appName={fAssetCoin?.network?.ledgerApp!}
                         onClick={submitDirectMintPayment}
                         isLoading={isLoading}
-                        isDisabled={isLedgerButtonDisabled}
+                        isDisabled={isLoading}
                     />
                 </>
             }

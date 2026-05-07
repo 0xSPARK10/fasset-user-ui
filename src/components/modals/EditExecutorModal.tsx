@@ -12,6 +12,7 @@ import FormAlert from "@/components/elements/FormAlert";
 import AlertBox from "@/components/elements/AlertBox";
 import { ITagsByAddress } from "@/types";
 import { useWeb3 } from "@/hooks/useWeb3";
+import { useModalGuard, isAbortError } from "@/hooks/useModalGuard";
 import { useSetAllowedExecutor } from "@/hooks/useContracts";
 import { formatTimestamp } from "@/utils";
 import apiClient from "@/api/apiClient";
@@ -41,6 +42,7 @@ export default function EditExecutorModal({
 	onSuccess,
 }: IEditExecutorModal) {
 	const [currentStep, setCurrentStep] = useState(STEP_FORM);
+	const [isTransactionDone, setIsTransactionDone] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | undefined>(
 		undefined,
 	);
@@ -51,6 +53,7 @@ export default function EditExecutorModal({
 	const { mainToken, displayWalletName } = useWeb3();
 	const setAllowedExecutor = useSetAllowedExecutor();
 	const isRequestActive = useRef<boolean>(false);
+	const { run, cancel } = useModalGuard(opened);
 
 	const schema = yup.object().shape({
 		executor: yup
@@ -75,11 +78,17 @@ export default function EditExecutorModal({
 
 	useEffect(() => {
 		if (!opened) {
+			cancel();
+			isRequestActive.current = false;
 			setCurrentStep(STEP_FORM);
+			setIsTransactionDone(false);
 			setErrorMessage(undefined);
 			setExecutorData(undefined);
+			form.setValues({
+				executor: normalizeExecutor(tag?.allowedExecutor),
+			});
 		}
-	}, [opened]);
+	}, [cancel, opened]);
 
 	useEffect(() => {
 		if (tag) {
@@ -111,32 +120,38 @@ export default function EditExecutorModal({
 		setErrorMessage(undefined);
 		isRequestActive.current = true;
 		setCurrentStep(STEP_CONFIRM);
-		try {
+
+		await run(async (assertOpen) => {
 			const executor = form.getValues().executor;
 			await setAllowedExecutor.mutateAsync({
 				tagId: Number(tag.tagId),
 				executor: executor || ZERO,
 			});
+			assertOpen();
 			try {
 				const response = await apiClient.get(
 					`tag/${FASSET_COIN.type}/${tag.tagId}`,
 				);
+				assertOpen();
 				setExecutorData(response.data);
-			} catch {
-				// non-critical, but if this fails executorData stays undefined:
-				// executorChangePending will be falsy and a pending change will show as immediate
+			} catch (e) {
+				if (isAbortError(e)) throw e;
+				// non-critical: executorChangePending will be falsy, pending change shows as immediate
 			}
+			setIsTransactionDone(true);
+			await new Promise(resolve => setTimeout(resolve, 1000));
+			assertOpen();
 			setCurrentStep(STEP_SUCCESS);
-		} catch (error: any) {
+		}).catch((error: any) => {
 			if (isError(error, "ACTION_REJECTED")) {
 				setErrorMessage(t("notifications.request_rejected_by_user_label"));
 			} else {
 				setErrorMessage(error?.message ?? t("edit_executor_modal.error_label"));
 			}
 			setCurrentStep(STEP_FORM);
-		} finally {
-			isRequestActive.current = false;
-		}
+		});
+
+		isRequestActive.current = false;
 	};
 
 	const handleDone = () => {
@@ -201,8 +216,8 @@ export default function EditExecutorModal({
 							walletInfoLabel={t("edit_executor_modal.wallet_info_label", {
 								wallet: displayWalletName,
 							})}
-							isPending={setAllowedExecutor.isPending}
-							isSuccess={setAllowedExecutor.isSuccess}
+							isPending={!isTransactionDone}
+							isSuccess={isTransactionDone}
 						/>
 						{currentStep === STEP_CONFIRM &&
 							mainToken?.connectedWallet === WALLET.LEDGER && (
@@ -215,10 +230,7 @@ export default function EditExecutorModal({
 										appName={mainToken?.network?.ledgerApp!}
 										onClick={() => editExecutorRequest()}
 										isLoading={setAllowedExecutor.isPending}
-										isDisabled={
-											setAllowedExecutor.isPending ||
-											setAllowedExecutor.isSuccess
-										}
+										isDisabled={!isTransactionDone ? setAllowedExecutor.isPending : true}
 									/>
 								</>
 							)}

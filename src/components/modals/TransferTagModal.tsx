@@ -13,6 +13,7 @@ import AlertBox from "@/components/elements/AlertBox";
 import { ITagsByAddress } from "@/types";
 import { useTransferTag } from "@/hooks/useContracts";
 import { useWeb3 } from "@/hooks/useWeb3";
+import { useModalGuard } from "@/hooks/useModalGuard";
 import { WALLET } from "@/constants";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
 import { isMobile } from "react-device-detect";
@@ -36,6 +37,7 @@ export default function TransferTagModal({
 	onSuccess,
 }: ITransferTagModal) {
 	const [currentStep, setCurrentStep] = useState(STEP_FORM);
+	const [isTransactionDone, setIsTransactionDone] = useState(false);
 	const [newOwner, setNewOwner] = useState("");
 	const [errorMessage, setErrorMessage] = useState<string | undefined>(
 		undefined,
@@ -43,6 +45,7 @@ export default function TransferTagModal({
 	const { t } = useTranslation();
 	const transferTag = useTransferTag();
 	const isTransferRequestActive = useRef<boolean>(false);
+	const { run, cancel } = useModalGuard(opened);
 	const { mainToken, displayWalletName } = useWeb3();
 
 
@@ -71,12 +74,15 @@ export default function TransferTagModal({
 
 	useEffect(() => {
 		if (!opened) {
+			cancel();
+			isTransferRequestActive.current = false;
 			setCurrentStep(STEP_FORM);
+			setIsTransactionDone(false);
 			setNewOwner("");
 			setErrorMessage(undefined);
 			form.reset();
 		}
-	}, [opened]);
+	}, [cancel, opened]);
 
 	const handleTransferButton = () => {
 		if (isTransferRequestActive.current || !tag) return;
@@ -100,19 +106,24 @@ export default function TransferTagModal({
 		setErrorMessage(undefined);
 		isTransferRequestActive.current = true;
 		setCurrentStep(STEP_CONFIRM);
-		try {
+
+		await run(async (assertOpen) => {
 			await transferTag.mutateAsync({ tagId: Number(tag.tagId), to });
+			assertOpen();
+			setIsTransactionDone(true);
+			await new Promise(resolve => setTimeout(resolve, 1000));
+			assertOpen();
 			setCurrentStep(STEP_SUCCESS);
-		} catch (error: any) {
+		}).catch((error: any) => {
 			if (isError(error, "ACTION_REJECTED")) {
 				setErrorMessage(t("notifications.request_rejected_by_user_label"));
 			} else {
 				setErrorMessage(error?.message ?? t("transfer_tag_modal.error_label"));
 			}
 			setCurrentStep(STEP_FORM);
-		} finally {
-			isTransferRequestActive.current = false;
-		}
+		});
+
+		isTransferRequestActive.current = false;
 	};
 
 	const handleDone = () => {
@@ -186,8 +197,8 @@ export default function TransferTagModal({
 							walletInfoLabel={t("edit_tag_modal.wallet_info_label", {
 								wallet: displayWalletName,
 							})}
-							isPending={transferTag.isPending}
-							isSuccess={transferTag.isSuccess}
+							isPending={!isTransactionDone}
+							isSuccess={isTransactionDone}
 						/>
 						{currentStep === STEP_CONFIRM && mainToken?.connectedWallet === WALLET.LEDGER &&
 							<>
@@ -199,7 +210,7 @@ export default function TransferTagModal({
 									appName={mainToken?.network?.ledgerApp!}
 									onClick={() => transferTagRequest()}
 									isLoading={transferTag.isPending}
-									isDisabled={transferTag.isPending || transferTag.isSuccess}
+									isDisabled={!isTransactionDone ? transferTag.isPending : true}
 								/>
 							</>
 						}

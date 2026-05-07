@@ -42,6 +42,7 @@ import { COOKIE_WINDDOWN, WALLET } from "@/constants";
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { Cookies } from "react-cookie";
 import { useWeb3 } from "@/hooks/useWeb3";
+import { useModalGuard } from "@/hooks/useModalGuard";
 import FormAlert, { IAlertMessage } from "@/components/elements/FormAlert";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -85,6 +86,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
     const [hasValidAmount, setHasValidAmount] = useState<boolean>(false);
     const queryClient = useQueryClient();
 
+    const { run, cancel } = useModalGuard(opened);
     const mediaQueryMatches = useMediaQuery('(max-width: 640px)');
     const { mainToken, getConnectedCoin } = useWeb3();
     const connectedCoin = fAssetCoin ? getConnectedCoin(fAssetCoin.type) : undefined;
@@ -102,7 +104,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
     const underlyingBalance = useUnderlyingBalance(
         xrplDestAddress,
         fAssetCoin?.type ?? '',
-        xrplDestAddress.length > 0,
+        opened && xrplDestAddress.length > 0,
         connectedCoin && connectedCoin.connectedWallet === WALLET.LEDGER
     );
 
@@ -141,8 +143,9 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
         return totalAmount;
     }, [fAssetCoin, parseAmountFromUBA]);
 
-    const redemptionStatusFetchInterval = useInterval(async () => {
+    const redemptionStatusFetchInterval = useInterval(() => run(async (assertOpen) => {
         const response = await redemptionStatus.refetch();
+        assertOpen();
         log.log('redemptionStatus poll:', { txHash, status: response?.data?.status, data: response?.data });
         if (response?.data?.status === 'SUCCESS') {
             closeModal.current = false;
@@ -151,11 +154,11 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
                 requestedAmount ?? 0,
                 response?.data?.incomplete ? response.data.incompleteData : null,
             );
-             queryClient.invalidateQueries({
+            queryClient.invalidateQueries({
                 queryKey: [USER_KEY.USER_PROGRESS, mainToken?.address, connectedCoin?.address],
                 exact: true,
                 refetchType: "all"
-            })
+            });
             setRedeemedAmount(resolvedRedeemedAmount);
             setIsFinishedModalActive(true);
         } else if (response?.data?.status === 'DEFAULT') {
@@ -165,27 +168,28 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
                 requestedAmount ?? 0,
                 response?.data?.incomplete ? response.data.incompleteData : null,
             );
-
             setRedeemedAmount(resolvedRedeemedAmount);
             setTimeout(() => {
                 openUnresponsiveAgentModal();
             }, 300);
         }
-    }, REDEMPTION_STATUS_FETCH_INTERVAL);
+    }), REDEMPTION_STATUS_FETCH_INTERVAL);
 
-    const redemptionDefaultStatusFetchInterval = useInterval(async () => {
+    const redemptionDefaultStatusFetchInterval = useInterval(() => run(async (assertOpen) => {
         const response = await redemptionDefaultStatus.refetch();
+        assertOpen();
         if (response?.data?.status) {
             redemptionDefaultStatusFetchInterval.stop();
             closeModal.current = false;
             modals.close(UNRESPONSIVE_AGENT_MODAL);
             setIsFinishedModalActive(true);
         }
-    }, REDEMPTION_DEFAULT_FETCH_INTERVAL);
+    }), REDEMPTION_DEFAULT_FETCH_INTERVAL);
 
     const requestRedeem = async (values?: any) => {
-        try {
-            setIsLedgerButtonDisabled(true);
+        setIsLedgerButtonDisabled(true);
+
+        await run(async (assertOpen) => {
             const amount = values?.amount || formValues.amount;
             const destinationTag =
                 String(values?.destinationTag ?? '').trim() ||
@@ -223,6 +227,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
                 executorFee: values?.executorFee || formValues.executorFee,
                 destinationTag,
             });
+            assertOpen();
 
             log.log('redeem tx hash:', response.hash);
 
@@ -232,6 +237,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
                 amount: amountUBA,
                 userAddress: mainToken?.address!
             });
+            assertOpen();
 
             log.log('redemptionDefault response:', redeemResponse);
 
@@ -243,7 +249,6 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
                 : amount;
 
             setCurrentWalletStep(STEP_WALLET_COMPLETED);
-            openWaitingModal(resolvedRedeemedAmount, amount, redeemResponse.incomplete);
             setTxHash(response.hash);
 
             const balanceResponse = await nativeBalance.refetch();
@@ -253,12 +258,15 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
             if (balance?.balance && toNumber(balance.balance) > 0 && cookieFassets.includes(fAssetCoin?.type!)) {
                 const setCookies = cookies.get(COOKIE_WINDDOWN);
                 delete setCookies[fAssetCoin?.type!];
-
                 cookies.set(COOKIE_WINDDOWN, setCookies, {
                     maxAge: 24 * 60 * 60 * 365
                 });
             }
-        } catch (error: any) {
+
+            assertOpen();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            openWaitingModal(resolvedRedeemedAmount, amount, redeemResponse.incomplete);
+        }).catch(async (error: any) => {
             if (error.cause === 'ledger') {
                 showErrorNotification(error.message);
                 return;
@@ -273,9 +281,9 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
                 setErrorMessage(error?.error?.message || decodedError.reason as string);
             }
             modals.closeAll();
-        } finally {
-            setIsLedgerButtonDisabled(false);
-        }
+        });
+
+        setIsLedgerButtonDisabled(false);
     }
 
     const onNextStepClick = useCallback(async () => {
@@ -428,6 +436,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
     }, [redemptionDefaultStatus, t, redemptionStatusFetchInterval, redemptionDefaultStatusFetchInterval, mediaQueryMatches]);
 
     const onCloseModal = (fetchProgress: boolean) => {
+        cancel();
         if (redemptionStatusFetchInterval.active) {
             redemptionStatusFetchInterval.stop();
         }
@@ -445,6 +454,7 @@ export default function RedeemModal({ opened, onClose, fAssetCoin }: IRedeemModa
         setDestinationTag('');
         setXrplDestAddress(fAssetCoin?.address ?? '');
         setRequestedAmount(undefined);
+        setTxHash(undefined);
         setRedeemedAmount(undefined);
         setIsWaitingModalActive(false);
         setIsUnresponsiveAgentModalActive(false);

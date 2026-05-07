@@ -12,7 +12,7 @@ import { ICoin } from "@/types";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IconCheck, IconCircleCheck, IconFilePlus, IconSettings } from "@tabler/icons-react";
-import { useInterval, useMediaQuery, useMounted } from "@mantine/hooks";
+import { useInterval, useMediaQuery } from "@mantine/hooks";
 import { CONTRACT_KEY, useBridgeApprove, useBridgeSend } from "@/hooks/useContracts";
 import { parseUnits } from "@/utils";
 import { createLogger } from "@/utils/debug";
@@ -47,10 +47,10 @@ const WAITING_MODAL = 'waiting_modal';
 
 const STEP_APPROVE = 0;
 const STEP_BRIDGE = 1;
+const STEP_COMPLETED = 2;
 
 export default function ConfirmStepper({ token, formValues, onError, onClose, bridgeConfig }: IConfirmStepper) {
     const { t } = useTranslation();
-    const isMounted = useMounted();
     const { mainToken, bridgeToken } = useWeb3();
     const queryClient = useQueryClient();
     const mediaQueryMatches = useMediaQuery('(max-width: 640px)');
@@ -117,22 +117,27 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
     }, CHECK_STATUS_INTERVAL);
 
     useEffect(() => {
-        if (!isMounted || mainToken?.connectedWallet === WALLET.LEDGER) return;
+        if (mainToken?.connectedWallet === WALLET.LEDGER) return;
 
         if (bridgeConfig.needsApproval) {
             approve();
         } else {
             send();
         }
-
-    }, [isMounted]);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         if (!txHash) return;
+        setCurrentStep(STEP_COMPLETED);
         checkStatusInterval.start();
-        onClose(true);
-        openWaitingModal();
-    }, [txHash]);
+
+        const timer = setTimeout(() => {
+            openWaitingModal();
+            onClose(true);
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, [txHash]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const approve = async () => {
         try {

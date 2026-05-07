@@ -1,7 +1,7 @@
 ---
-doc_version: "1.1"
+doc_version: "1.2"
 app_version: "v1.3"
-last_updated: "2026-04-24"
+last_updated: "2026-05-06"
 ---
 
 # FAsset User UI — Product Owner Reference
@@ -224,9 +224,9 @@ The executor can be changed, but the change does not take effect immediately —
 
 Registering a tag requires paying a reservation fee in NAT tokens. The tag is then yours.
 
-### Current Workaround
+### How the Memo is Constructed
 
-The memo for tag-based direct minting is currently hardcoded in the UI. This is a temporary workaround waiting for a fix in the FDC verifier. Until then, tag-mode memo cannot be dynamically constructed per-tag.
+Tag mode sends the actual `destinationTag` (numeric, user-entered or auto-fetched). Memo encoding (`encodeDirectMintingMemo`) is only used as a fallback when no tag is available — it encodes the Flare address into the XRP transaction memo field using the `4642505266410018` prefix. This is not a workaround; both paths are fully implemented.
 
 ---
 
@@ -262,7 +262,7 @@ XRPL only. Not available on BTC/DOGE networks. UI must check `redeemWithTagSuppo
 | **Xaman fee tiers** | Xaman charges 0.1% ($50k–$100k) or 0.07% (>$100k) as a wallet-level fee. App pre-deducts it from available balance. If XRP price moves between entry and signing, Xaman may still reject the transaction. |
 | **XRP account reserve** | Every XRPL account must maintain a minimum reserve (~3 XRP currently) that can never be spent. The app always subtracts this from the available minting amount. |
 | **Ledger UTXO wallets (BTC/DOGE)** | For BTC/DOGE Ledger wallets, all UTXO addresses (receive + change) must be fetched before the actual balance is known. There is a brief loading state on first form open. |
-| **Tag memo workaround** | The memo for tag-based direct minting is hardcoded. Waiting for FDC verifier fix. |
+| **Tag mode vs memo fallback** | Tag mode sends `DestinationTag`. Memo encoding is the fallback for address-mode without a registered tag. Both paths are implemented. |
 | **BTC testnet — 6 confirmations** | Bitcoin testnet requires 6 confirmations before minting continues. The app notifies the user during the wait. |
 | **Incomplete redemption** | The system has per-request redemption limits. The excess is returned as FXRP. The app shows "incomplete" status with the remaining lot count. |
 | **Minting delay (not rejection)** | When rate limits are hit, minting is not rejected — it is delayed. The backend resumes automatically when the delay expires. The user waits. |
@@ -283,7 +283,6 @@ XRPL only. Not available on BTC/DOGE networks. UI must check `redeemWithTagSuppo
 | How often does incomplete redemption occur in practice? Is it a user pain point? | Open |
 | Executor change delay — how long? Is it configurable? | Open |
 | Tag reservation fee — how much? Can it be changed? | Open |
-| Tag memo workaround — when will FDC verifier be fixed? | Open |
 | Free CPT program — when was it introduced and why? | Open |
 
 ---
@@ -294,7 +293,7 @@ XRPL only. Not available on BTC/DOGE networks. UI must check `redeemWithTagSuppo
 |---------|--------|-------|
 | BTC/DOGE direct minting | Not implemented | Requires agent-backed flow |
 | Minimum minting amount from API | Not implemented | Currently hardcoded to 10 lots; must come from API |
-| Tag memo workaround | Active workaround | Waiting for FDC verifier fix |
+| Tag memo workaround | Resolved | Both tag and memo paths implemented; no FDC dependency |
 | Countdown timer for delayed minting | Not implemented | App shows status text, not a countdown |
 
 ---

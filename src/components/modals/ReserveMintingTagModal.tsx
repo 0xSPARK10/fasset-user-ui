@@ -12,6 +12,7 @@ import FAssetModal from "@/components/modals/FAssetModal";
 import ModalConfirmStep from "@/components/elements/ModalConfirmStep";
 import ModalSuccessStep from "@/components/elements/ModalSuccessStep";
 import { useWeb3 } from "@/hooks/useWeb3";
+import { useModalGuard } from "@/hooks/useModalGuard";
 import { useTagReservationFee } from "@/api/tags";
 import { useNativeBalance } from "@/api/balance";
 import { useReserveTag } from "@/hooks/useContracts";
@@ -38,6 +39,7 @@ export default function ReserveMintingTagModal({
 	onSuccess,
 }: IReserveMintingTagModal) {
 	const [currentStep, setCurrentStep] = useState(STEP_INFO);
+	const [isTransactionDone, setIsTransactionDone] = useState(false);
 	const [reservedTagNumber, setReservedTagNumber] = useState<number | null>(
 		null,
 	);
@@ -54,6 +56,7 @@ export default function ReserveMintingTagModal({
 	);
 	const reserveTag = useReserveTag();
 	const isReserveRequestActive = useRef<boolean>(false);
+	const { run, cancel } = useModalGuard(opened);
 
 	const nativeBalanceEntry = findBalanceBySymbol(nativeBalance.data, mainToken?.type ?? '');
 	const hasInsufficientBalance =
@@ -61,14 +64,18 @@ export default function ReserveMintingTagModal({
     reservationFee.data?.reservationFee !== undefined &&
     toNumber(nativeBalanceEntry.balance) <
     parseFloat(formatUnit(BigInt(reservationFee.data.reservationFee), 18));
+
 	useEffect(() => {
 		if (!opened) {
+			cancel();
+			isReserveRequestActive.current = false;
 			setCurrentStep(STEP_INFO);
+			setIsTransactionDone(false);
 			setReservedTagNumber(null);
 			setReservedRecipient("");
 			setErrorMessage(undefined);
 		}
-	}, [opened]);
+	}, [cancel, opened]);
 
 	const handleNextButton = () => {
 		if (mainToken?.connectedWallet === WALLET.LEDGER) {
@@ -86,15 +93,24 @@ export default function ReserveMintingTagModal({
 		setErrorMessage(undefined);
 		isReserveRequestActive.current = true;
 		setCurrentStep(STEP_CONFIRM);
-		try {
+
+		await run(async (assertOpen) => {
 			const result = await reserveTag.mutateAsync({
 				reservationFee: BigInt(fee),
 			});
-			if (!result) return;
+			assertOpen();
+			if (!result) {
+				setErrorMessage(t("reserve_minting_tag_modal.error_label"));
+				setCurrentStep(STEP_INFO);
+				return;
+			}
 			setReservedTagNumber(result.tag);
 			setReservedRecipient(result.owner);
-			setTimeout(() => setCurrentStep(STEP_SUCCESS), 2000);
-		} catch (error: any) {
+			setIsTransactionDone(true);
+			await new Promise(resolve => setTimeout(resolve, 1000));
+			assertOpen();
+			setCurrentStep(STEP_SUCCESS);
+		}).catch((error: any) => {
 			if (isError(error, "ACTION_REJECTED")) {
 				setErrorMessage(t("notifications.request_rejected_by_user_label"));
 			} else {
@@ -103,9 +119,9 @@ export default function ReserveMintingTagModal({
 				);
 			}
 			setCurrentStep(STEP_INFO);
-		} finally {
-			isReserveRequestActive.current = false;
-		}
+		});
+
+		isReserveRequestActive.current = false;
 	};
 
 	const handleDone = () => {
@@ -187,8 +203,8 @@ export default function ReserveMintingTagModal({
 							stepLabel={t("reserve_minting_tag_modal.confirm_step_label")}
 							stepDescription={t("reserve_minting_tag_modal.confirm_step_description")}
 							walletInfoLabel={t('edit_tag_modal.wallet_info_label', {wallet: displayWalletName})}
-							isPending={reserveTag.isPending}
-							isSuccess={reserveTag.isSuccess}
+							isPending={!isTransactionDone}
+							isSuccess={isTransactionDone}
 						/>
 						{currentStep === STEP_CONFIRM && mainToken?.connectedWallet === WALLET.LEDGER &&
 							<>
@@ -200,7 +216,7 @@ export default function ReserveMintingTagModal({
 									appName={mainToken?.network?.ledgerApp!}
 									onClick={() => reserveTagRequest()}
 									isLoading={reserveTag.isPending}
-									isDisabled={reserveTag.isPending || reserveTag.isSuccess}
+									isDisabled={!isTransactionDone ? reserveTag.isPending : true}
 								/>
 							</>
 						}

@@ -29,12 +29,12 @@ export default function ModalConfirmStep({
             </Text>
             <Stepper
                 active={isSuccess ? 1 : 0}
-                completedIcon={<IconCheck size={14} />}
                 size="sm"
                 orientation="vertical"
             >
                 <Stepper.Step
                     loading={isPending}
+                    completedIcon={<IconCheck size={14} color="var(--flr-black)" />}
                     label={
                         <Text className="text-14" fw={500} c="var(--flr-black)">
                             {stepLabel}

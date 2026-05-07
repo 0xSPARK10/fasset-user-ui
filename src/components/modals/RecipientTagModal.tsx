@@ -19,6 +19,7 @@ import ModalSuccessStep from "@/components/elements/ModalSuccessStep";
 import FormAlert from "@/components/elements/FormAlert";
 import { ITagsByAddress } from "@/types";
 import { useWeb3 } from "@/hooks/useWeb3";
+import { useModalGuard } from "@/hooks/useModalGuard";
 import { useSetMintingRecipient } from "@/hooks/useContracts";
 import { WALLET } from "@/constants";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
@@ -37,11 +38,13 @@ const STEP_SUCCESS = 2;
 
 export default function RecipientTagModal({ opened, tag, onClose, onSuccess }: IRecipientTagModal) {
     const [currentStep, setCurrentStep] = useState(STEP_FORM);
+    const [isTransactionDone, setIsTransactionDone] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
     const { t } = useTranslation();
     const { mainToken, displayWalletName } = useWeb3();
     const setMintingRecipient = useSetMintingRecipient();
     const isRequestActive = useRef<boolean>(false);
+    const { run, cancel } = useModalGuard(opened);
 
     const schema = yup.object().shape({
         mintingRecipient: yup
@@ -64,10 +67,16 @@ export default function RecipientTagModal({ opened, tag, onClose, onSuccess }: I
 
     useEffect(() => {
         if (!opened) {
+            cancel();
+            isRequestActive.current = false;
             setCurrentStep(STEP_FORM);
+            setIsTransactionDone(false);
             setErrorMessage(undefined);
+            form.setValues({
+                mintingRecipient: tag?.mintingRecipient ?? "",
+            });
         }
-    }, [opened]);
+    }, [cancel, opened]);
 
     useEffect(() => {
         if (tag) {
@@ -99,22 +108,27 @@ export default function RecipientTagModal({ opened, tag, onClose, onSuccess }: I
         setErrorMessage(undefined);
         isRequestActive.current = true;
         setCurrentStep(STEP_CONFIRM);
-        try {
+
+        await run(async (assertOpen) => {
             await setMintingRecipient.mutateAsync({
                 tagId: Number(tag.tagId),
                 mintingRecipient: form.getValues().mintingRecipient,
             });
+            assertOpen();
+            setIsTransactionDone(true);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            assertOpen();
             setCurrentStep(STEP_SUCCESS);
-        } catch (error: any) {
+        }).catch((error: any) => {
             if (isError(error, "ACTION_REJECTED")) {
                 setErrorMessage(t("notifications.request_rejected_by_user_label"));
             } else {
                 setErrorMessage(error?.message ?? t("edit_tag_modal.error_label"));
             }
             setCurrentStep(STEP_FORM);
-        } finally {
-            isRequestActive.current = false;
-        }
+        });
+
+        isRequestActive.current = false;
     };
 
     const handleDone = () => {
@@ -178,8 +192,8 @@ export default function RecipientTagModal({ opened, tag, onClose, onSuccess }: I
                             stepLabel={t('edit_tag_modal.confirm_step_label')}
                             stepDescription={t('edit_tag_modal.confirm_step_description')}
                             walletInfoLabel={t('edit_tag_modal.wallet_info_label', { wallet: displayWalletName })}
-                            isPending={setMintingRecipient.isPending}
-                            isSuccess={setMintingRecipient.isSuccess}
+                            isPending={!isTransactionDone}
+                            isSuccess={isTransactionDone}
                         />
                         {currentStep === STEP_CONFIRM && mainToken?.connectedWallet === WALLET.LEDGER &&
                             <>
@@ -191,7 +205,7 @@ export default function RecipientTagModal({ opened, tag, onClose, onSuccess }: I
                                     appName={mainToken?.network?.ledgerApp!}
                                     onClick={() => editTagRequest()}
                                     isLoading={setMintingRecipient.isPending}
-                                    isDisabled={setMintingRecipient.isPending || setMintingRecipient.isSuccess}
+                                    isDisabled={!isTransactionDone ? setMintingRecipient.isPending : true}
                                 />
                             </>
                         }
