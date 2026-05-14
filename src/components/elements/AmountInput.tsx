@@ -3,6 +3,7 @@ import { Button, NumberInput, Text } from "@mantine/core";
 import { UseFormReturnType } from "@mantine/form";
 import { useTranslation } from "react-i18next";
 import { ICoin } from "@/types";
+import { ALLOWED_DECIMAL_SEPARATORS, parseLocaleFloat } from "@/utils";
 
 interface IAmountInput {
 	form: UseFormReturnType<any>;
@@ -53,19 +54,19 @@ const AmountInput = forwardRef<HTMLInputElement, IAmountInput>(
 				description={description}
 				inputWrapperOrder={["label", "input", "error", "description"]}
 				size="sm"
-				inputMode="numeric"
-				type="tel"
+				inputMode={allowDecimal ? "decimal" : "numeric"}
 				autoComplete="off"
 				step={1}
 				min={1}
 				max={maxAmount}
 				allowDecimal={allowDecimal}
+				allowedDecimalSeparators={ALLOWED_DECIMAL_SEPARATORS}
 				decimalScale={decimalScale ?? fAssetCoin.contractDecimals ?? 6}
 				disabled={disabled}
 				readOnly={readOnly}
 				clampBehavior="strict"
 				onBlur={(e) => {
-					if (onBlur) onBlur(parseFloat(e.target.value));
+					if (onBlur) onBlur(parseLocaleFloat(e.target.value));
 				}}
 				className={className}
 				classNames={{

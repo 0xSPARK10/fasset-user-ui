@@ -100,7 +100,10 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(
 			if (!fee) return;
 
 			if (bridgeConfig.feeTokenKey === "native") {
-				if (!nativeBalance.data) return;
+				if (!nativeBalance.data) {
+					if (isFormDisabled) isFormDisabled(true);
+					return;
+				}
 
 				const balance = nativeBalance.data.find(
 					(balance) =>
@@ -114,7 +117,10 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(
 					);
 				}
 			} else {
-				if (!hypeBalance.data) return;
+				if (hypeBalance.data === undefined) {
+					if (isFormDisabled) isFormDisabled(true);
+					return;
+				}
 				const balance = formatUnit(hypeBalance.data, 18);
 				if (toNumber(balance) < toNumber(fee)) {
 					onError(
@@ -157,7 +163,8 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(
 				if (isFormDisabled) isFormDisabled(true);
 				return;
 			}
-			if (isFormDisabled) isFormDisabled(false);
+
+			if (isFormDisabled) isFormDisabled(true);
 
 			try {
 				const fee = await qouteSend.mutateAsync({
@@ -167,10 +174,11 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(
 
 				setFee(formatUnit(fee, 18));
 				form.setFieldValue("fee", fee);
-			} catch (error) {
+				if (isFormDisabled) isFormDisabled(false);
+			} catch (error: any) {
 				const errorDecoder = ErrorDecoder.create([FAssetOFTAdapterAbi]);
 				const decodedError = await errorDecoder.decode(error);
-				showErrorNotification(decodedError.reason as string);
+				showErrorNotification(error?.error?.message || decodedError.reason || (error as Error)?.message);
 			}
 		}, 500);
 

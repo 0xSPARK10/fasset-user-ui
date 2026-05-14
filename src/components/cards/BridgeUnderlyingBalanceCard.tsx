@@ -96,6 +96,8 @@ export default function BridgeUnderlyingBalanceCard({
 
 	const bridgeBalanceFetchInterval = useInterval(() => {
 		hyperEVMBalance.refetch();
+		hyperliquidBalance.refetch();
+		hypeBalance.refetch();
 	}, BALANCE_FETCH_INTERVAL);
 
 	return (

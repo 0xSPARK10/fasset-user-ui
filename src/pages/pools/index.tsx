@@ -7,6 +7,7 @@ import {
     Text
 } from "@mantine/core";
 import { useTranslation } from "react-i18next";
+import { useInterval } from "@mantine/hooks";
 import { useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { orderBy } from "lodash-es";
@@ -41,6 +42,19 @@ export default function Agents() {
         if (walletConnectConnector.isInitializing || !walletConnectConnector.hasCheckedPersistedSession) return;
         fetchPools();
     }, [walletConnectConnector, isConnected]);
+
+    const poolsRefetchInterval = useInterval(() => {
+        if (isConnected) {
+            userPools.refetch();
+        } else {
+            pools.refetch();
+        }
+    }, 45_000);
+
+    useEffect(() => {
+        poolsRefetchInterval.start();
+        return poolsRefetchInterval.stop;
+    }, [isConnected]);
 
     useEffect(() => {
         if (isConnected) {

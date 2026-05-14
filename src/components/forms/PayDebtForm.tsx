@@ -19,7 +19,7 @@ import { parseUnits, formatUnit } from "@/utils";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useNativeBalance } from "@/api/balance";
 import { COINS } from "@/config/coin";
-import { formatNumber, toNumber, truncateString } from "@/utils";
+import { formatNumber, toNumber, truncateString, ALLOWED_DECIMAL_SEPARATORS } from "@/utils";
 
 interface IPayDebtForm {
     collateralPool: IPool;
@@ -109,12 +109,12 @@ const PayDebtForm = forwardRef<FormRef, IPayDebtForm>(({ collateralPool }: IPayD
 	            <NumberInput
 	                {...form.getInputProps('debtAmount')}
 	                size="sm"
-                inputMode="numeric"
-                type="tel"
+                inputMode="decimal"
                 allowNegative={false}
                 max={maxTransferableTokens ?? 0}
                 step={inputStep}
                 decimalScale={decimalScale}
+                allowedDecimalSeparators={ALLOWED_DECIMAL_SEPARATORS}
                 clampBehavior="strict"
                 label={
                     <Text

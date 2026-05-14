@@ -10,7 +10,7 @@ import { useForm, UseFormReturnType } from "@mantine/form";
 import React, { Dispatch, forwardRef, SetStateAction, useEffect, useImperativeHandle, useState } from "react";
 import { useDebouncedCallback, useMediaQuery } from "@mantine/hooks";
 import { yupResolver } from "mantine-form-yup-resolver";
-import { formatNumber, toNumber, truncateString } from "@/utils";
+import { formatNumber, toNumber, truncateString, ALLOWED_DECIMAL_SEPARATORS } from "@/utils";
 import CopyIcon from "@/components/icons/CopyIcon";
 import * as yup from "yup";
 import { useTranslation, Trans } from "react-i18next";
@@ -111,12 +111,13 @@ const DepositToPoolForm = forwardRef<FormRef, IDepositToPoolForm>(({ collateralP
         <>
 	            <NumberInput
 	                {...form.getInputProps('amount')}
+	                key={form.key('amount')}
 	                min={1}
                 size="sm"
-                inputMode="numeric"
-                type="tel"
+                inputMode="decimal"
                 allowNegative={false}
                 decimalScale={2}
+                allowedDecimalSeparators={ALLOWED_DECIMAL_SEPARATORS}
                 max={maxDeposit ?? 0}
                 disabled={nativeBalances.isPending}
                 clampBehavior="strict"

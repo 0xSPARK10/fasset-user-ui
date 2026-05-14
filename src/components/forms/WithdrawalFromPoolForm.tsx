@@ -15,7 +15,7 @@ import React, {
 } from "react";
 import { useDebouncedCallback, useMediaQuery } from "@mantine/hooks";
 import { yupResolver } from "mantine-form-yup-resolver";
-import { formatNumber, formatUnit, parseUnits, truncateString } from "@/utils";
+import { formatNumber, formatUnit, parseUnits, truncateString, ALLOWED_DECIMAL_SEPARATORS } from "@/utils";
 import CopyIcon from "@/components/icons/CopyIcon";
 import * as yup from "yup";
 import { useTranslation, Trans } from "react-i18next";
@@ -149,10 +149,10 @@ const WithdrawalFromPoolForm = forwardRef<FormRef, IWithdrawalFromPoolForm>(({ c
 	                {...form.getInputProps('amount')}
 	                min={maxWithdrawal ? (maxWithdrawal < 1 ? maxWithdrawal : 1) : 0}
                 size="sm"
-                inputMode="numeric"
-                type="tel"
+                inputMode="decimal"
                 allowNegative={false}
                 decimalScale={3}
+                allowedDecimalSeparators={ALLOWED_DECIMAL_SEPARATORS}
                 max={maxWithdrawal ?? 0}
                 clampBehavior="strict"
                 label={

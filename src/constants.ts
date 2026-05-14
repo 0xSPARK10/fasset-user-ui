@@ -102,7 +102,7 @@ export const FASSETS_EXPLORER_URL = IS_MAINNET
     ? 'https://flare.space/dapp/fassets-explorer'
     : 'https://flare-space-test.matheo.si/dapp/fassets-explorer';
 
-export const BALANCE_FETCH_INTERVAL = 90000;
+export const BALANCE_FETCH_INTERVAL = 45000;
 
 export const BRIDGE_TYPE = {
     HYPER_EVM: 'hyper_evm',

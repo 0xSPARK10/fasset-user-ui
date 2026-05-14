@@ -253,7 +253,11 @@ const BridgeXrplForm = forwardRef<FormRef, IBridgeXrplForm>(
 		}, [connectedXrplCoin?.address]);
 
 		useEffect(() => {
-			if (!fee || !hypeBalance.data) return;
+			if (!fee) return;
+			if (hypeBalance.data === undefined) {
+				if (isFormDisabled) isFormDisabled(true);
+				return;
+			}
 			const hypeBalanceFormatted = formatUnit(hypeBalance.data, 18);
 			if (toNumber(hypeBalanceFormatted) < toNumber(fee)) {
 				onError(
@@ -310,11 +314,11 @@ const BridgeXrplForm = forwardRef<FormRef, IBridgeXrplForm>(
 					hasMinAmountError.current = false;
 					if (!hasInsufficientBalance.current) onFormAlert(undefined);
 				}
-				if (isFormDisabled) isFormDisabled(hasInsufficientBalance.current);
 			}
 
 			if (!redemptionFees.data) return;
 
+			if (isFormDisabled) isFormDisabled(true);
 
 			try {
 				const quoteFee = await qouteSend.mutateAsync({
@@ -327,10 +331,11 @@ const BridgeXrplForm = forwardRef<FormRef, IBridgeXrplForm>(
 				});
 				setFee(formatUnit(quoteFee, 18));
 				form.setFieldValue("fee", quoteFee);
-			} catch (error) {
+				if (isFormDisabled) isFormDisabled(hasInsufficientBalance.current);
+			} catch (error: any) {
 				const errorDecoder = ErrorDecoder.create([FAssetOFTAdapterAbi]);
 				const decodedError = await errorDecoder.decode(error);
-				showErrorNotification(decodedError.reason as string);
+				showErrorNotification(error?.error?.message || decodedError.reason || (error as Error)?.message);
 			}
 		}, 500);
 

@@ -9,7 +9,7 @@ import {
     Title
 } from "@mantine/core";
 import { ICoin } from "@/types";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IconCheck, IconCircleCheck, IconFilePlus, IconSettings } from "@tabler/icons-react";
 import { useInterval, useMediaQuery } from "@mantine/hooks";
@@ -64,6 +64,12 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
     const [currentStep, setCurrentStep] = useState<number>(bridgeConfig.needsApproval ? STEP_APPROVE : STEP_BRIDGE);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
+    // TODO: revisit guard pattern — current ref + finally reset mirrors mint's pattern
+    // and fixes Strict Mode double-fire (two wallet popups on Bridge to Flare / XRPL).
+    // Alternatives considered: useMounted (doesn't dedupe Strict Mode), removing guard
+    // entirely (relies on isLedgerButtonDisabled, breaks in dev). Confirm this is the
+    // approach we want long-term.
+    const isBridgeRequestActive = useRef<boolean>(false);
 
     const checkStatusInterval = useInterval(async () => {
         const response = await getMessage.refetch();
@@ -140,7 +146,10 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
     }, [txHash]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const approve = async () => {
+        if (isBridgeRequestActive.current) return;
+
         try {
+            isBridgeRequestActive.current = true;
             setIsLoading(true);
             setIsLedgerButtonDisabled(true);
             log.log('approve amount:', parseUnits(formValues.amount, 6).toString());
@@ -149,12 +158,14 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
             setCurrentStep(STEP_BRIDGE);
 
             if (mainToken?.connectedWallet !== WALLET.LEDGER) {
-                await send();
+                await sendInternal();
             }
         } catch (error: any) {
             if (isError(error, 'ACTION_REJECTED')) {
                 onError(t('notifications.request_rejected_by_user_label'));
             } else if (error.cause === 'ledger') {
+                showErrorNotification(error.message);
+            } else if (error?.name === 'EthAppPleaseEnableContractData' || error?.statusCode === 0x6a80) {
                 showErrorNotification(error.message);
             } else {
                 const errorDecoder = ErrorDecoder.create([FAssetOFTAdapterAbi]);
@@ -162,12 +173,24 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                 onError(decodedError.reason as string);
             }
         } finally {
+            isBridgeRequestActive.current = false;
             setIsLoading(false);
             setIsLedgerButtonDisabled(false);
         }
     }
 
     const send = async () => {
+        if (isBridgeRequestActive.current) return;
+
+        try {
+            isBridgeRequestActive.current = true;
+            await sendInternal();
+        } finally {
+            isBridgeRequestActive.current = false;
+        }
+    }
+
+    const sendInternal = async () => {
         try {
             setIsLoading(true);
             setIsLedgerButtonDisabled(true);
@@ -205,6 +228,8 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
             if (isError(error, 'ACTION_REJECTED')) {
                 onError(t('notifications.request_rejected_by_user_label'));
             } else if (error.cause === 'ledger') {
+                showErrorNotification(error.message);
+            } else if (error?.name === 'EthAppPleaseEnableContractData' || error?.statusCode === 0x6a80) {
                 showErrorNotification(error.message);
             } else {
                 const errorDecoder = ErrorDecoder.create([FAssetOFTAdapterAbi]);

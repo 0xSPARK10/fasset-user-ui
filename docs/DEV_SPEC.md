@@ -1,7 +1,7 @@
 ---
-doc_version: "1.7"
+doc_version: "1.8"
 app_version: "v1.3"
-last_updated: "2026-05-06"
+last_updated: "2026-05-13"
 ---
 
 # FAsset User UI — Developer Specification
@@ -10,7 +10,7 @@ last_updated: "2026-05-06"
 > Covers: domain concepts, data types, flows, APIs, fees, wallets, code patterns.
 > For product/roadmap context see `docs/PRODUCT.md`.
 
-**Version:** 1.7 — 2026-05-06
+**Version:** 1.8 — 2026-05-13
 
 ---
 
@@ -831,7 +831,11 @@ default → error?.response?.data?.message ?? error.message
 | `api/oft.ts` | `OFT_KEY` | `userHistory`, `redemptionFees`, `redeemerAccount` |
 | `api/rewards.ts` | `REWARDS_KEY` | `rewards` |
 
-`BALANCE_FETCH_INTERVAL = 90000` ms (balance cards) · `LATEST_TRANSACTIONS_REFRESH_INTERVAL = 45000` ms (transactions card only)
+`BALANCE_FETCH_INTERVAL = 45000` ms (balance cards) · `LATEST_TRANSACTIONS_REFRESH_INTERVAL = 30000` ms (transactions card only)
+
+**`refetchOnWindowFocus: true`** is enabled on `useUnderlyingBalance`, `useNativeBalance`, `usePoolsBalance`, `useUserPools`, `useUserPool`. Users returning to the tab see fresh balances/pool data immediately instead of waiting for the next poll tick.
+
+**`BridgeUnderlyingBalanceCard`** interval refetches all three balances on each tick: `hyperEVMBalance`, `hyperliquidBalance`, `hypeBalance` (HYPE bridge gas fee balance).
 
 ---
 

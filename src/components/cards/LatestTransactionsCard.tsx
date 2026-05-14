@@ -17,6 +17,7 @@ import { groupBy, map, orderBy } from "lodash-es";
 import RetryMintModal from "@/components/modals/RetryMintModal";
 import classes from "@/styles/components/cards/LatestTransactionsCard.module.scss";
 import { useUserHistory } from "@/api/oft";
+import { useTransactionInvalidation } from "@/hooks/useTransactionInvalidation";
 import { EndpointId } from "@layerzerolabs/lz-definitions";
 import { XRP_NAMESPACE } from "@/config/networks";
 import FXrpHypeEVMIcon from "@/components/icons/FXrpHypeEVMIcon";
@@ -63,7 +64,7 @@ const ACTION_TYPE_REDEEM = 'redeem';
 const ACTION_TYPE_SEND = 'send';
 const ACTION_TYPE_RECEIVE = 'receive';
 const ACTION_TYPE_REDEEM_FAIL = 'redeemfail';
-const LATEST_TRANSACTIONS_REFRESH_INTERVAL = 45000;
+const LATEST_TRANSACTIONS_REFRESH_INTERVAL = 30000;
 
 export default function LatestTransactionsCard({ className, refreshKey, type, fAssetCoin }: ILatestTransactionsCard) {
     const [transactions, setTransactions] = useState<ITransaction[]>();
@@ -87,6 +88,12 @@ export default function LatestTransactionsCard({ className, refreshKey, type, fA
     const userProgress = useUserProgress(mainToken?.address ?? '', mainToken !== undefined && isMint, xrpAddress);
     const oftUserHistory = useUserHistory(mainToken?.address ?? '', mainToken !== undefined && !isMint);
     const isMobile = useMediaQuery('(max-width: 768px)');
+
+    useTransactionInvalidation({
+        type: isMint ? 'mint' : 'bridge',
+        address: mainToken?.address,
+        data: isMint ? userProgress.data : oftUserHistory.data,
+    });
 
     useEffect(() => {
         if (isMint) {
@@ -280,7 +287,7 @@ export default function LatestTransactionsCard({ className, refreshKey, type, fA
         const isMainnet = progress.eid === EndpointId.HYPERLIQUID_V2_MAINNET;
         let href: string;
         if (isRedeemAction) {
-            href = `${fAssetCoin?.network.explorerTxUrl}/${progress.txhash}`;
+            href = `${mainToken?.network.explorerTxUrl}/${progress.txhash}`;
         } else {
             href = isMainnet
                 ? `https://layerzeroscan.com/tx/${progress.txhash}`
@@ -450,7 +457,7 @@ export default function LatestTransactionsCard({ className, refreshKey, type, fA
                                 {t('latest_transactions_card.table.ticket_id_label')}
                             </Text>
                             <Link
-                                href={`${FASSETS_EXPLORER_URL}/tx/1/${bridgeProgress.txhash}?network=${mainToken?.nativeName?.toLowerCase()?.includes('sgb') ? 'sgb' : 'flr'}`}
+                                href={`${FASSETS_EXPLORER_URL}/tx/${bridgeProgress.txhash}?network=${mainToken?.nativeName?.toLowerCase()?.includes('sgb') ? 'sgb' : 'flr'}`}
                                 target="_blank"
                                 className="text-14 underline font-normal flex items-center"
                             >

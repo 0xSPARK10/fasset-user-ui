@@ -2,6 +2,14 @@ import BigNumber from 'bignumber.js';
 
 type RoundingMode = "up" | "down";
 
+// Pass to Mantine NumberInput so both "." and "," keystrokes are accepted as
+// decimal separators. iOS keypads in locales like uk-UA or ru-RU show ","
+// while EN keypads show "." — display value stays "." regardless.
+export const ALLOWED_DECIMAL_SEPARATORS = ['.', ','];
+
+export const parseLocaleFloat = (value: string): number =>
+    parseFloat(value.replace(',', '.'));
+
 export const toNumber = (value: string) => {
     return Number(value.replace(/,/g, ''));
 };

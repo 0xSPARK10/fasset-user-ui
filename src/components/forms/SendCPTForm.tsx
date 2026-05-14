@@ -21,7 +21,7 @@ import { ErrorDecoder } from "ethers-decode-error";
 import { useTranslation, Trans } from "react-i18next";
 import CopyIcon from "@/components/icons/CopyIcon";
 import { useTransferCollateralPoolToken } from "@/hooks/useContracts";
-import { parseUnits, formatUnit, toNumber } from "@/utils";
+import { parseUnits, formatUnit, toNumber, ALLOWED_DECIMAL_SEPARATORS } from "@/utils";
 import { CollateralPoolTokenAbi } from "@/abi";
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { formatNumber, truncateString } from "@/utils";
@@ -148,14 +148,14 @@ const SendCPTForm = forwardRef<FormRef, ISendCPTForm>(({ collateralPool, payDebt
             />
 	            <NumberInput
 	                {...form.getInputProps('amount')}
-	                inputMode="numeric"
-                type="tel"
+	                inputMode="decimal"
                 size="sm"
                 allowNegative={false}
                 min={maxTransferableTokens ? 0.001 : 0}
                 max={maxTransferableTokens ?? 0}
                 step={0.001}
                 decimalScale={3}
+                allowedDecimalSeparators={ALLOWED_DECIMAL_SEPARATORS}
                 clampBehavior="strict"
                 label={
                     <Text

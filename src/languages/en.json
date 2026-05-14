@@ -673,7 +673,7 @@
         "btc_confirmation_label": "Please periodically check your wallet to see if your BTC deposit transaction is in the confirmation process. In order to successfully initiate FTestBTC minting on the FAsset system side, the transaction must receive 6 confirmations within 2 hours.",
         "step_1_btc_title": "Minting takes 2 steps and approximate 1 hour and 30 minutes to complete.",
         "step_1_title": "The process takes 2 steps and 3 minutes to complete.",
-        "step_1_description_label": "This step confirms your {{amount}} XRP payment using the Flare Data Connector. Learn more about <a>the Data Connector<icon></icon></a>",
+        "step_1_description_label": "This step confirms your XRP payment using the Flare Data Connector. Learn more about <a>the Data Connector<icon></icon></a>",
         "step_2_title": "Proof of payment request was successful!",
         "step_2_description_label": "In the final step, your FXRP is transferred to your account. While you wait, learn what you can do with <a>FAssets<icon></icon></a>",
         "step_3_description_label": "In <bold>Step 3</bold> your {{coinName}}s are minted. While you wait, learn <a>how the FAssets work<icon></icon></a>",

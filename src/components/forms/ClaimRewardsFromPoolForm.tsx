@@ -19,7 +19,7 @@ import {
     useMediaQuery
 } from "@mantine/hooks";
 import { yupResolver } from "mantine-form-yup-resolver";
-import { formatNumber, truncateString } from "@/utils";
+import { formatNumber, truncateString, ALLOWED_DECIMAL_SEPARATORS } from "@/utils";
 import CopyIcon from "@/components/icons/CopyIcon";
 import * as yup from "yup";
 import { useTranslation, Trans } from "react-i18next";
@@ -120,12 +120,12 @@ const ClaimRewardsFromPoolForm = forwardRef<FormRef, IClaimRewardsFromPoolForm>(
 	                min={0}
                 max={maxWithdrawal ?? 0}
                 allowLeadingZeros={false}
-                inputMode="numeric"
-                type="tel"
+                inputMode="decimal"
                 size="sm"
                 step={inputStep}
                 allowNegative={false}
                 decimalScale={decimalScale}
+                allowedDecimalSeparators={ALLOWED_DECIMAL_SEPARATORS}
                 clampBehavior="strict"
                 label={
                     <Text
