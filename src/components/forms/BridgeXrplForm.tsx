@@ -34,11 +34,10 @@ import { ErrorDecoder } from "ethers-decode-error";
 import { FAssetOFTAdapterAbi } from "@/abi";
 import { BRIDGE_TYPE } from "@/constants";
 import { BridgeConfig } from "@/components/modals/BridgeModal";
-import XrpIcon from "@/components/icons/XrpIcon";
 import { useRedemptionFees } from "@/api/oft";
 import { useRedemptionFee, useRedemptionQueue } from "@/api/redemption";
 import { EndpointId } from "@layerzerolabs/lz-definitions";
-import { HYPE } from "@/config/coin";
+import { FASSET_COIN, HYPE } from "@/config/coin";
 import { isValidClassicAddress } from "xrpl";
 import DestinationAddressField from "@/components/elements/DestinationAddressField";
 import AmountInput from "../elements/AmountInput";
@@ -169,7 +168,13 @@ const BridgeXrplForm = forwardRef<FormRef, IBridgeXrplForm>(
 						field: t("bridge_modal.form.amount_label"),
 					}),
 				)
-				.min(1),
+				.min(
+					MIN_BRIDGE_AMOUNT,
+					t("redeem_modal.form.min_amount_error", {
+						min: MIN_BRIDGE_AMOUNT,
+						coinName: token.type,
+					}),
+				),
 			destinationAddress: yup
 				.string()
 				.trim()
@@ -331,7 +336,7 @@ const BridgeXrplForm = forwardRef<FormRef, IBridgeXrplForm>(
 				});
 				setFee(formatUnit(quoteFee, 18));
 				form.setFieldValue("fee", quoteFee);
-				if (isFormDisabled) isFormDisabled(hasInsufficientBalance.current);
+				if (isFormDisabled) isFormDisabled(hasInsufficientBalance.current || hasMinAmountError.current);
 			} catch (error: any) {
 				const errorDecoder = ErrorDecoder.create([FAssetOFTAdapterAbi]);
 				const decodedError = await errorDecoder.decode(error);
@@ -371,12 +376,13 @@ const BridgeXrplForm = forwardRef<FormRef, IBridgeXrplForm>(
 					</div>
 					<IconArrowNarrowRight size={20} />
 					<div className="flex items-center">
-						<XrpIcon width="32" height="32" />
+						{FASSET_COIN?.nativeIcon &&
+							FASSET_COIN.nativeIcon({ width: "32", height: "32" })}
 						<Text fw={500} c="var(--flr-black)" className="text-18 mx-2">
 							{formatNumber(receivedAmount ?? 0)}
 						</Text>
 						<Text fw={400} c="var(--flr-gray)" className="text-18">
-							XRP
+							{FASSET_COIN?.nativeName}
 						</Text>
 					</div>
 				</div>
@@ -449,12 +455,13 @@ const BridgeXrplForm = forwardRef<FormRef, IBridgeXrplForm>(
 						{t("bridge_modal.form.redemption_fee_label")}
 					</Text>
 					<div className="flex items-center">
-						{token?.icon && token.icon({ width: "18", height: "18" })}
+						{FASSET_COIN?.nativeIcon &&
+							FASSET_COIN.nativeIcon({ width: "18", height: "18" })}
 						<Text className="text-16 mx-2" fw={400} c="var(--flr-black)">
 							{totalFeeAmount && totalFeeAmount > 0 ? formatNumber(totalFeeAmount, 4) : <span>&mdash;</span>}
 						</Text>
 						<Text c="var(--flr-gray)" fw={400} className="text-16 w-12">
-							{token?.type}
+							{FASSET_COIN?.nativeName}
 						</Text>
 					</div>
 				</div>

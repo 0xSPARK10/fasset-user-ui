@@ -12,18 +12,20 @@ import Usdt0Icon from "@/components/icons/Usdt0Icon";
 import StXrpIcon from "@/components/icons/StXrpIcon";
 import MoreMarketsIcon from "@/components/icons/MoreMarketsIcon";
 import UpshiftIcon from "@/components/icons/UpshiftIcon";
+import MonarqIcon from "@/components/icons/MonarqIcon";
 import { useTranslation } from "react-i18next";
 import { IEarn } from "@/types";
 import { FXRP, USDT0 } from "@/config/coin";
 import MysticIcon from "@/components/icons/MysticIcon";
 import HyperliquidIcon from "@/components/icons/HyperliquidIcon";
+import { devWarn } from "@/utils/debug";
 import UsdcIcon from "@/components/icons/UsdcIcon";
 import UsdhIcon from "@/components/icons/UsdhIcon";
 import CycloIcon from "@/components/icons/CycloIcon";
 import FlamixIcon from "@/components/icons/FlamixIcon";
 import IgniteIcon from "@/components/icons/IgniteIcon";
 import SpectraIcon from "@/components/icons/SpectraIcon";
-
+import ClearstarIcon from "@/components/icons/ClearstarIcon"
 
 interface IEarnCard {
     earn: IEarn;
@@ -36,6 +38,8 @@ export default function EarnCard({ earn }: IEarnCard) {
         switch (provider.toLowerCase()) {
             case 'blazeswap':
                 return <BlazeSwapAltIcon className="rounded-lg" />;
+            case 'clearstar':
+                return <ClearstarIcon className="rounded-lg" />
             case 'enosys':
                 return <EnosysAltIcon className="rounded-lg" />;
             case 'sparkdex':
@@ -50,6 +54,8 @@ export default function EarnCard({ earn }: IEarnCard) {
                 return <MoreMarketsIcon className="rounded-lg" />;
             case 'upshift':
                 return <UpshiftIcon className="rounded-lg" />;
+            case 'monarq':
+                return <MonarqIcon className="rounded-lg" />;
             case 'mystic':
                 return <MysticIcon className="rounded-lg" />;
             case 'hyperliquid':
@@ -62,6 +68,9 @@ export default function EarnCard({ earn }: IEarnCard) {
                 return <IgniteIcon className="rounded-lg" />;
             case 'spectra':
                 return <SpectraIcon className="rounded-lg" />;
+            default:
+                devWarn(`[EarnCard] unknown provider, no icon: ${provider}`);
+                return null;
         }
     }
 
@@ -97,9 +106,9 @@ export default function EarnCard({ earn }: IEarnCard) {
     }
 
     return (
-        <div id="earn" className="flex flex-col bg-[var(--flr-lightest-gray)] relative h-full md:border-t border-l border-[var(--flr-border-color)]">
+        <div id="earn" className="flex flex-col bg-[var(--flr-lightest-gray)] relative h-full border border-[var(--flr-border-color)]">
             <Title
-                className="bg-[var(--flr-white)] text-16 uppercase px-[15px] lg:px-6 py-4 min-h-14 leading-[24px] border-r border-[var(--flr-border-color)]"
+                className="bg-[var(--flr-white)] text-16 uppercase px-[15px] lg:px-6 py-4 min-h-14 leading-[24px]"
                 fw={400}
                 c="var(--flr-dark-gray)"
             >

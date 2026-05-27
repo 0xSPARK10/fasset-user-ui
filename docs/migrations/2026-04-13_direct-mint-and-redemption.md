@@ -1,3 +1,10 @@
+---
+date: 2026-04-13
+type: contract-release
+version: 1.3
+breaking: true
+---
+
 # FAsset Developer Specification: Minting and Redemption Flows
 
 This document provides a detailed comparison of the minting and redemption flows in the FAsset system, focusing on the differences that application developers need to understand when integrating.

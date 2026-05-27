@@ -31,10 +31,6 @@ LayerZero · xrpl · i18next · Tailwind + SCSS modules
 - Translations: `t('key')` via `useTranslation()`, keys in `languages/en.json`
 - Logging: `devLog` / `devError` from `@/utils/debug` — **never `console.log` directly**
 
-## Migration Reference
-- `docs/migrations/MIGRATION_v1.3.md` — spec za v1.3 migracijo: novi contract functions, events, parameters, error codes
-- Pri razvoju novih featureov ki se tičejo contract sprememb → preveri `docs/migrations/` za relevantno verzijo
-
 ## Required Reading — Before Any Implementation
 
 **Always read these before starting a task:**

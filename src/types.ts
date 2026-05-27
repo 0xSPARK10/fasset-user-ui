@@ -423,10 +423,16 @@ export interface IEcosystemInfo {
         total: string;
         totalUSD: string;
     }
+    limits: ILimitsData;
 }
 
 export interface ISubmitTx {
     hash: string;
+}
+
+export interface IGraphPoint {
+    timestamp: number;
+    value: string;
 }
 
 export interface ITimeData {
@@ -435,14 +441,9 @@ export interface ITimeData {
         diff: string;
         isPositive: boolean;
     }[];
-    mintGraph: {
-        timestamp: number;
-        value: string;
-    }[];
-    redeemGraph: {
-        timestamp: number;
-        value: string;
-    }[];
+    mintGraph: IGraphPoint[];
+    redeemGraph: IGraphPoint[];
+    tvlGraph: IGraphPoint[];
     bestPools: {
         collateralSymbol: string;
         fasset: string;
@@ -461,28 +462,16 @@ export interface ITimeData {
     isPositiveCollateralDiff: boolean;
     coreVaultData: {
         inflowDiff: string;
-        inflowGraph: {
-            timestamp: number;
-            value: string;
-        }[];
+        inflowGraph: IGraphPoint[];
         isPositiveInflowDiff: boolean;
         isPositiveOutflowDiff: boolean;
         isPositiveSupplyDiff: boolean;
         outflowDiff: string;
-        outflowGraph: {
-            timestamp: number;
-            value: string;
-        }[];
+        outflowGraph: IGraphPoint[];
         supplyDiff: string;
-        tvlGraph: {
-            timestamp: number;
-            value: string;
-        }[];
+        tvlGraph: IGraphPoint[];
     }
-    proofOfReserve: {
-        timestamp: number;
-        value: string;
-    }[];
+    proofOfReserve: IGraphPoint[];
 }
 
 export interface ICrStatus {
@@ -737,4 +726,15 @@ export interface ITagsByAddress {
 
 export interface ITagReservationFee {
     reservationFee: string;
+}
+
+// Direct-minting throttle from default (FXRP) AssetManager. All *Drops are 256-bit
+// integers as strings; decimals is the fasset's decimals (6 for FXRP). Falls back
+// to "0" / 0 when the AssetManager has no limiter.
+export interface ILimitsData {
+    hourlyLimitDrops: string;
+    hourlyMintedDrops: string;
+    dailyLimitDrops: string;
+    dailyMintedDrops: string;
+    decimals: number;
 }

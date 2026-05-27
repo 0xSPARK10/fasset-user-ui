@@ -322,7 +322,6 @@
         "copied_label": "Copied"
     },
     "core_vault_card": {
-        "inflow_label": "Inflow",
         "modal": {
             "confirm_button": "Got it",
             "title": "Core Vault: New Functionality Addition",
@@ -330,10 +329,7 @@
             "what_is_core_vault_title": "What is a core vault? ",
             "why_core_vault_description_label": "The demand for FAssets V1 has been incredible but has also highlighted a crucial limiting factor: minting capacity.\n\nTo solve this, our team has come up with a new design that gets closer to unlimited minting by adding a new feature: The Core Vault.",
             "why_core_vault_title": "Why core vault?"
-        },
-        "outflow_label": "Outflow",
-        "title": "Core Vault",
-        "total_label": "Total"
+        }
     },
     "currency": {
         "usd_label": "USD"
@@ -413,7 +409,9 @@
         "nr_lottery_tickets_label": "No. of lottery tickets",
         "redeem_button": "Redeem",
         "rewards_earned_to_date_label": "Rewards earned to date",
-        "view_mint_page_label": "View Mint Page"
+        "view_mint_page_label": "View Mint Page",
+        "your_position_label": "Your position",
+        "mint_button": "Mint {{fasset}}"
     },
     "fasset_table": {
         "empty_label": "No items available",
@@ -433,21 +431,13 @@
         "understand_button": "I understand"
     },
     "fassets_overview_card": {
-        "available_to_mint_label": "Available to mint",
-        "available_to_mint_modal": {
-            "confirm_button": "Got it",
-            "how_description_label": "This capacity is dynamically calculated based on two factors: the value of the collateral the Agents have locked into the system, and how much of that capacity is currently reserved (e.g., tied up in open requests). Essentially, the more collateral Agents provide, the higher their minting limit becomes.",
-            "how_title": "How it works?",
-            "title": "Available to Mint",
-            "what_description_label": "This is the maximum amount of FXRP you can mint at any given time.",
-            "what_title": "What it is?"
-        },
         "cap_removed_label": "(cap removed)",
         "circulating_supply_label": "Circulating supply",
+        "core_vault_label": "Core vault",
         "lots_label": "{{lots}} lots",
         "mint_button": "Mint {{fAsset}}",
-        "overall_fxrp_cap_label": "Overall {{fAsset}} cap",
-        "title": "FAssets overview"
+        "minting_cap_label": "Minting cap",
+        "title": "Overview"
     },
     "faucet_card": {
         "get_test_coin_label": "Get your {{network}} {{coinName}}",
@@ -455,6 +445,13 @@
         "or_label": "or",
         "testnet_label": "Testnet",
         "title": "Additional assets needed?"
+    },
+    "footer": {
+        "be_version": "Backend API v{{version}}",
+        "developer_hub": "Developer Hub",
+        "explore_label": "Explore",
+        "fe_version": "Frontend v{{version}}",
+        "flare_fasset_label": "Flare FAssets"
     },
     "handshake_card": {
         "cancel_button": "Cancel",
@@ -483,15 +480,7 @@
             "last_year_label": "Last Year",
             "year_to_date_label": "Year to Date"
         },
-        "mint_fassets_button": "Mint FAssets",
-        "no_assets_label": "You have no assets. Mint FAssets or deposit into pools to view your position here.",
-        "number_of_agents_label": "No. agent vaults",
-        "number_of_mints_label": "No. of mints",
-        "number_of_redeemed_lots_label": "No. of redeemed lots",
-        "pools_position_label": "Your pools position",
-        "title": "Home",
-        "view_pools_button": "View Pools",
-        "wallets_holding_fassets_label": "Wallets holding FAssets"
+        "title": "Home"
     },
     "latest_transactions_card": {
         "completed_label": "Completed",
@@ -524,13 +513,6 @@
     },
     "layout": {
         "fasset_system_paused_label": "The FAsset System is currently paused for {{tokens}}.",
-        "footer": {
-            "be_version": "Backend API v{{version}}",
-            "become_an_fasset_agent_label": "Become an FAsset Agent",
-            "copyright_label": "Copyright Flare {{year}}",
-            "documentation_label": "Documentation",
-            "fe_version": "Frontend v{{version}}"
-        },
         "header": {
             "agents_label": "Pools",
             "beta_label": "beta",
@@ -539,7 +521,6 @@
             "home_label": "Home",
             "mint_label": "Mint",
             "my_tags_label": "My Tags",
-            "quest_label": "Quest",
             "songbird_label": "Songbird",
             "title": "FAssets"
         }
@@ -555,6 +536,14 @@
             "xrp_app_not_running_error": "Error connecting to Ledger device. Make sure XRP app is running on your Ledger device and device is unlocked."
         },
         "launch_ledger_app_label": "Please launch {{appName}} in Ledger before confirming transaction."
+    },
+    "limit_card": {
+        "title": "Minting Limits",
+        "hourly_label": "Hourly",
+        "daily_label": "Daily",
+        "remaining_label": "{{amount}} remaining",
+        "percent_free_label": "{{percent}}% free",
+        "not_available_label": "N/A"
     },
     "lottery_modal": {
         "claim_button": "Claim Now on Flare Portal",
@@ -581,15 +570,10 @@
     "mint_modal": {
         "amount_label": "Amount",
         "amount_step_title": "I want to mint",
-        "btc_network_fee_label": "The network fee on BTC Testnet is very variable. More information can be found<a>here<icon></icon></a>\nPlease make sure you have at least {{extraBtc}} extra BTC to cover the network fee. This should be enough for the Bitcoin deposit transaction to be confirmed within 2 hours, which is required by the FAsset system.",
         "confirm_label": "Confirm",
         "confirm_deposit_label": "Confirm deposit of {{tokenName}} to the Core Vault.",
-        "confirm_second_step_title": "Please confirm your 2nd transaction in wallet app",
         "confirm_step_description": "Please open your wallet app and confirm dialogue to complete the process.",
         "confirm_step_title": "Please confirm in your wallet app",
-        "deposit_step_description": "Confirm deposit of {{fAsset}} to the agent.",
-        "deposit_step_label": "{{stepIndex}}. {{fAsset}} deposit",
-        "discard_button": "Discard",
         "finished_modal": {
             "description_label": "You can now access your FAssets in your wallet.",
             "title": "Finished"
@@ -660,12 +644,14 @@
         "core_vault_label": "Core Vault",
         "core_vault_tvl_label": "Core Vault TVL",
         "inflow_label": "Inflow",
-        "mints_and_redeems_label": "Mints and Redeems",
+        "mints_and_redeems_label": "Mints & Redeems",
         "mints_label": "Mints",
         "number_of_liquidations_label": "No. liquidations",
         "outflow_label": "Outflow",
         "redeems_label": "Redeems",
-        "title": "Activity over time"
+        "title": "Activity over time",
+        "tvl_label": "TVL",
+        "tvl_title": "Total Value Locked"
     },
     "mint_waiting_modal": {
         "additional_info": "Minting {{mintAmount}} {{coinName}}.",
@@ -682,17 +668,6 @@
         "step_4_title": "{{coinName}}s are now on their way to you!",
         "step_title": "Step {{currentStep}} of 2",
         "title": "Mint {{coinName}}"
-    },
-    "my_pools_position_card": {
-        "available_rewards_label": "Available pool rewards",
-        "claim_rewards_button": "Claim Rewards",
-        "deposit_into_pools_label": "Deposit into pools to earn rewards",
-        "no_assets_label": "You have no assets deposited into pools",
-        "pools_rewards_earned_label": "Rewards earned to date",
-        "rewards_earned_to_date_label": "${{amount}} rewards earned to date",
-        "view_all_pools_label": "View All Pools",
-        "your_pools_position_label": "Your pools",
-        "your_position_label": "Your position"
     },
     "notifications": {
         "action_rejected_title": "Declined",
@@ -739,9 +714,9 @@
     },
     "proof_of_reserves_card": {
         "ratio_label": "Ratio",
-        "title": "Proof of reserves",
-        "total_label": "Total {{fasset}}",
-        "xrp_reserve_label": "XRP reserve"
+        "title": "Proof of reserve",
+        "total_label": "Total Supply",
+        "in_reserve_label": "In reserve"
     },
     "redeem_finished_modal": {
         "amount_label": "Amount",

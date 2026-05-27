@@ -84,43 +84,22 @@ export function useRequestMinting() {
     return useMutation({
         mutationFn: async (
             {
-                collateralReservationId,
-                txHash,
-                paymentAddress,
                 userUnderlyingAddress,
                 userAddress,
-                amount,
-                fAsset,
-                nativeHash,
-                vaultAddress,
+                underlyingWalletId,
                 nativeWalletId,
-                underlyingWalletId
             }: {
-                collateralReservationId: string,
-                txHash: string,
-                paymentAddress: string,
                 userUnderlyingAddress: string,
                 userAddress: string,
-                amount: string,
-                fAsset: string,
-                nativeHash: string,
-                vaultAddress: string,
+                underlyingWalletId: number,
                 nativeWalletId: number,
-                underlyingWalletId: number
             }
         ) => {
             const response = await apiClient.post('mint', {
-                fasset: fAsset,
-                collateralReservationId: collateralReservationId,
-                txhash: txHash,
-                paymentAddress: paymentAddress,
-                userUnderlyingAddress: userUnderlyingAddress,
-                userAddress: userAddress,
-                amount: amount,
-                nativeHash: nativeHash,
-                vaultAddress: vaultAddress,
-                nativeWalletId: nativeWalletId,
-                underlyingWalletId: underlyingWalletId,
+                userUnderlyingAddress,
+                userAddress,
+                underlyingWalletId,
+                nativeWalletId,
             });
             return response.data;
         }
@@ -156,7 +135,8 @@ export function useEcosystemInfo(enabled: boolean = true) {
             const response = await apiClient.get('ecosystemInfo');
             return response.data as IEcosystemInfo;
         },
-        enabled: enabled
+        enabled: enabled,
+        refetchInterval: 30_000
     });
 }
 

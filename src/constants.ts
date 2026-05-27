@@ -7,6 +7,15 @@ export const WALLET = {
     XAMAN: 'Xaman'
 }
 
+// Mirrors BE WalletType enum — sent as nativeWalletId / underlyingWalletId on POST /api/mint.
+// See dev-docs/WALLET_IDS.md before changing.
+export const WALLET_ID: Record<string, number> = {
+    [WALLET.META_MASK]: 1,
+    [WALLET.WALLET_CONNECT]: 2,
+    [WALLET.LEDGER]: 3,
+    [WALLET.XAMAN]: 4,
+}
+
 export const BIP44_PATH = {
     TESTNET: {
         BTC: "m/44'/1'/0'/0/0",

@@ -1,31 +1,17 @@
-import {
-    AppShell,
-    Burger,
-    Container,
-    Drawer, 
-    Text,
-    Title
-} from "@mantine/core";
+import { AppShell, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 import Head from "next/head";
-import Link from "next/link";
 import { useInterval } from "@mantine/hooks";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { IconAlertTriangle } from "@tabler/icons-react";
-import ConnectWalletButton from "@/components/elements/ConnectWalletButton";
-import LogoIcon from "@/components/icons/LogoIcon";
-import FlareIcon from "@/components/icons/FlareIcon";
-import SgbAltIcon from "@/components/icons/SgbAltIcon";
-import ChainSwitcher from "@/components/elements/ChainSwitcher";
+import Footer from "@/components/layouts/Footer";
+import Header from "@/components/layouts/Header";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useFassetState } from "@/api/user";
 import { usePools, useUserPools } from "@/api/pool";
 import { useModalState } from "@/hooks/useModalState";
 import { COINS } from "@/config/coin";
-import { useNetworks } from "@/hooks/useNetworks";
-import { CoinEnum } from "@/types";
-import { useVersion } from "@/api/version";
 
 export interface ILayout {
     children?: React.ReactNode;
@@ -34,16 +20,11 @@ export interface ILayout {
 const REDEMPTION_STATUS_FETCH_INTERVAL = 300000;
 
 export default function Layout({ children, ...props }: ILayout) {
-    const [isMenuOpened, setIsMenuOpened] = useState<boolean>(false);
     const [redirectBackUrl, setRedirectBackUrl] = useState<string>();
 
     const { t } = useTranslation();
-    const { walletConnectConnector, isConnected, connectedCoins, mainToken, isBridgeEnabled } = useWeb3();
-    const { isMainnet } = useNetworks();
+    const { walletConnectConnector, isConnected, connectedCoins, mainToken } = useWeb3();
     const { isMintModalActive, isRedeemModalActive } = useModalState();
-
-    const isTestnet = process.env.NETWORK === 'testnet';
-    const version = useVersion(isTestnet);
 
     const pools = usePools(COINS.filter(coin => coin.isFAssetCoin && coin.enabled).map(coin => coin.type), false);
     const userPools = useUserPools(
@@ -136,188 +117,14 @@ export default function Layout({ children, ...props }: ILayout) {
                             </Text>
                         </div>
                     }
-                    <Container
-                        fluid
-                        className="flex justify-between p-2 bg-white px-[10px] md:px-[26px] w-full items-center border-b  border-[--flr-border-color]"
-                    >
-                        <div className="flex items-center">
-                            <Link
-                                href="/"
-                            >
-                                <LogoIcon width="44" height="44" />
-                            </Link>
-                            <div className="ml-1">
-                                <Title
-                                    className="text-14"
-                                    fw={300}
-                                >
-                                    {t('layout.header.title')}
-                                </Title>
-                                <div className="flex items-center">
-                                    {mainToken?.type === CoinEnum.SGB
-                                        ? <SgbAltIcon width="18" height="18" />
-                                        : <FlareIcon width="10" height="10" />
-                                    }
-                                    <Text
-                                        className="ml-1 text-10"
-                                        fw={300}
-                                        c="var(--flr-dark-gray)"
-                                    >
-                                        {isMainnet
-                                            ? (mainToken?.type === CoinEnum.SGB
-                                                ? t('layout.header.songbird_label')
-                                                : t('layout.header.flare_label')
-                                            )
-                                            : t('layout.header.beta_label')
-                                        }
-                                    </Text>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="hidden min-[845px]:flex items-center">
-                            <Link
-                                href="/"
-                                className={`text-14 font-light mr-8 ${router.pathname === '/' ? 'underline underline-offset-4' : ''}`}
-                            >
-                                {t('layout.header.home_label')}
-                            </Link>
-                            <Link
-                                href="/mint"
-                                className={`text-14 font-light mr-8 ${router.pathname === '/mint' ? 'underline underline-offset-4' : ''}`}
-                            >
-                                {t('layout.header.mint_label')}
-                            </Link>
-                            <Link
-                                href="/tags"
-                                className={`text-14 font-light mr-8 ${router.pathname === '/tags' ? 'underline underline-offset-4' : ''}`}
-                            >
-                                {t('layout.header.my_tags_label')}
-                            </Link>
-                            <Link
-                                href="/pools"
-                                className={`text-14 font-light mr-8 ${router.pathname.includes('pools') ? 'underline underline-offset-4' : ''}`}
-                            >
-                                {t('layout.header.agents_label')}
-                            </Link>
-                            {isBridgeEnabled &&
-                                <Link
-                                    href="/bridge"
-                                    className={`text-14 font-light mr-8 ${router.pathname.includes('bridge') ? 'underline underline-offset-4' : ''}`}
-                                >
-                                    {t('layout.header.bridge_label')}
-                                </Link>
-                            }
-                        </div>
-                        <div className="flex items-center">
-                            <ChainSwitcher className="mr-2 sm:mr-5" />
-                            <ConnectWalletButton />
-                            <Burger
-                                opened={isMenuOpened}
-                                onClick={() => setIsMenuOpened(!isMenuOpened)}
-                                size={25}
-                                className="block min-[845px]:hidden ml-4"
-                            />
-                        </div>
-                    </Container>
+                    <Header />
                     <div className="flex flex-1 w-full">
                         <div className="flex flex-col w-full">
                             {children}
                         </div>
                     </div>
-                    <Container
-                        fluid
-                        className="flex flex-col md:flex-row justify-between md:items-center px-[15px] py-3 w-full mt-5 bg-[var(--flr-lightest-gray)]"
-                    >
-                        <div className="flex flex-wrap items-center pb-4 md:pb-0 md:ml-0 md:mr-5">
-                            <Link
-                                href="https://dev.flare.network/fassets/overview/"
-                                target="_blank"
-                                className="font-normal text-12 border-r pr-3 mr-3 border-[--flr-border-color]"
-                            >
-                                {t('layout.footer.documentation_label')}
-                            </Link>
-                            <Link
-                                href="https://dev.flare.network/fassets/guides/deploy-fassets-agent"
-                                target="_blank"
-                                className={`font-normal text-12 ${isTestnet ? 'pr-3 mr-3 border-r border-[--flr-border-color]' : ''}`}
-                            >
-                                {t('layout.footer.become_an_fasset_agent_label')}
-                            </Link>
-                            {isTestnet &&
-                                <div className="inline">
-                                    <p
-                                        className="inline font-normal text-12 border-r pr-3 mr-3 border-[--flr-border-color]"
-                                    >
-                                        {t('layout.footer.fe_version', { version: process.env.APP_VERSION })}
-                                    </p>
-                                    <p
-                                        className="inline font-normal text-12"
-                                    >
-                                        {t('layout.footer.be_version', { version: version.data })}
-                                    </p>
-                                </div>
-                            }
-                        </div>
-                    </Container>
+                    <Footer />
                 </AppShell.Main>
-                <Drawer
-                    opened={isMenuOpened}
-                    onClose={() => setIsMenuOpened(false)}
-                    size="100%"
-                    position="right"
-                    styles={{
-                        close: {
-                            transform: 'scale(1.5)'
-                        },
-                        content: {
-                            overflowY: 'unset',
-                            height: '100%'
-                        },
-                        body: {
-                            height: '100%'
-                        }
-                    }}
-                >
-                    <div className="flex flex-col items-center justify-center h-full">
-                        <Link
-                            href="/"
-                            className={`font-light text-32 mb-8 ${router.pathname === '/' ? 'underline underline-offset-4' : ''}`}
-                            onClick={() => setIsMenuOpened(false)}
-                        >
-                            {t('layout.header.home_label')}
-                        </Link>
-                        <Link
-                            href="/mint"
-                            className={`font-light text-32 mb-8 ${router.pathname === '/mint' ? 'underline underline-offset-4' : ''}`}
-                            onClick={() => setIsMenuOpened(false)}
-                        >
-                            {t('layout.header.mint_label')}
-                        </Link>
-                        <Link
-                            href="/tags"
-                            className={`font-light text-32 mb-8 ${router.pathname === '/tags' ? 'underline underline-offset-8' : ''}`}
-                            onClick={() => setIsMenuOpened(false)}
-                        >
-                            {t('layout.header.my_tags_label')}
-                        </Link>
-                        <Link
-                            href="/pools"
-                            className={`font-light text-32 mb-8 ${router.pathname.includes('pools') ? 'underline underline-offset-8' : ''}`}
-                            onClick={() => setIsMenuOpened(false)}
-                        >
-                            {t('layout.header.agents_label')}
-                        </Link>
-                        {isBridgeEnabled  &&
-                            <Link
-                                href="/bridge"
-                                className={`font-light text-32 mb-8 ${router.pathname.includes('bridge') ? 'underline underline-offset-8' : ''}`}
-                                onClick={() => setIsMenuOpened(false)}
-                            >
-                                {t('layout.header.bridge_label')}
-                            </Link>
-                        }
-                    </div>
-                </Drawer>
             </AppShell>
         </>
     );

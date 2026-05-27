@@ -1,21 +1,57 @@
 import { useTranslation } from "react-i18next";
-import { Title, Text, Grid, SimpleGrid, rem, Divider, Button } from "@mantine/core";
-import { IEcosystemInfo, ITimeData } from "@/types";
+import { Title, Text, Grid, rem, Divider, Button, Stack } from "@mantine/core";
+import { IEcosystemInfo } from "@/types";
 import { formatNumberWithSuffix } from "@/utils";
 import { COINS } from "@/config/coin";
-import { IconInfoHexagon } from "@tabler/icons-react";
-import Badge from "@/components/elements/Badge";
-import Link from "next/link";
+import { IconInfoHexagon, IconInfinity } from "@tabler/icons-react";
+import XrpIcon from "@/components/icons/XrpIcon";
 import React from "react";
 import { modals } from "@mantine/modals";
 import { useMediaQuery } from "@mantine/hooks";
 
 interface IFassetsOverviewCard {
     ecoSystemInfo: IEcosystemInfo | undefined;
-    timeData: ITimeData | undefined;
 }
 
-export default function FassetsOverviewCard({ ecoSystemInfo, timeData } : IFassetsOverviewCard) {
+interface IOverviewSectionProps {
+    label: string;
+    borderClassName?: string;
+    onInfoClick?: () => void;
+    children: React.ReactNode;
+}
+
+function OverviewSection({ label, borderClassName = "", onInfoClick, children }: IOverviewSectionProps) {
+    return (
+        <div
+            className={`flex flex-1 flex-col justify-center max-md:items-center border-[var(--flr-border-color)] px-[25px] sm:px-6 py-3 sm:py-8 ${borderClassName}`}
+        >
+            <div>
+                <div className="flex items-center">
+                    <Text
+                        className="text-16 uppercase"
+                        fw={300}
+                        c="var(--flr-gray)"
+                    >
+                        {label}
+                    </Text>
+                    {onInfoClick && (
+                        <IconInfoHexagon
+                            style={{ width: rem(16), height: rem(16) }}
+                            color="var(--mantine-color-gray-6)"
+                            className="ml-2 flex-shrink-0 cursor-pointer hover:stroke-gray-600"
+                            onClick={onInfoClick}
+                        />
+                    )}
+                </div>
+                <div className="flex items-center mt-1">
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default function FassetsOverviewCard({ ecoSystemInfo } : IFassetsOverviewCard) {
     const { t } = useTranslation();
     const mediaQueryMatches = useMediaQuery('(max-width: 640px)');
 
@@ -24,75 +60,74 @@ export default function FassetsOverviewCard({ ecoSystemInfo, timeData } : IFasse
             return {
                 ...supply,
                 token: COINS.find(coin => coin.type.toLowerCase() === supply.fasset.toLowerCase()),
-                timeData: timeData?.supplyDiff.find(diff => diff.fasset.toLowerCase() === supply.fasset.toLowerCase())
             };
         })
         ?.find(supply => supply.fasset.toLowerCase().includes('xrp'));
 
-    const openModal = () => {
-        modals.open({
-            zIndex: 3000,
-            size: 800,
-            fullScreen: mediaQueryMatches,
-            title: <Text className="text-32" fw={300} c="var(--flr-black)">
-                {t('fassets_overview_card.available_to_mint_modal.title')}
-            </Text>,
-            children: (
-                <div>
-                    <div className="py-2 px-0 sm:px-8">
-                        <Title
-                            className="text-24 mb-3"
-                            fw={300}
-                            c="var(--flr-dark-gray)"
-                        >
-                            {t('fassets_overview_card.available_to_mint_modal.what_title')}
-                        </Title>
-                        <Text
-                            className="text-16 whitespace-pre-line"
-                            fw={400}
-                            c="var(--flr-dark-gray)"
-                        >
-                            {t('fassets_overview_card.available_to_mint_modal.what_description_label')}
-                        </Text>
-                        <Title
-                            className="text-24 mb-3 mt-10"
-                            fw={300}
-                            c="var(--flr-dark-gray)"
-                        >
-                            {t('fassets_overview_card.available_to_mint_modal.how_title')}
-                        </Title>
-                        <Text
-                            className="text-16"
-                            fw={400}
-                            c="var(--flr-dark-gray)"
-                        >
-                            {t('fassets_overview_card.available_to_mint_modal.how_description_label')}
-                        </Text>
-                    </div>
-                    <Divider
-                        c="var(--flr-border-color)"
-                        className="my-10 -mx-4"
-                    />
-                    <Button
-                        onClick={() => {
-                            modals.closeAll()
-                        }}
-                        variant="filled"
-                        color="black"
-                        radius="xl"
-                        size="sm"
-                        fullWidth
-                        className="hover:text-white font-normal mb-5"
-                    >
-                        {t('fassets_overview_card.available_to_mint_modal.confirm_button')}
-                    </Button>
-                </div>
-            )
-        })
-    }
+      const openModal = () => {
+          modals.open({
+              zIndex: 3000,
+              size: 800,
+              fullScreen: mediaQueryMatches,
+              title: <Text className="text-32" fw={300} c="var(--flr-black)">
+                  {t('core_vault_card.modal.title')}
+              </Text>,
+              children: (
+                  <div>
+                      <div className="py-2 px-0 sm:px-8">
+                          <Title
+                              className="text-24 mb-3"
+                              fw={300}
+                              c="var(--flr-dark-gray)"
+                          >
+                              {t('core_vault_card.modal.why_core_vault_title')}
+                          </Title>
+                          <Text
+                              className="text-16 whitespace-pre-line"
+                              fw={400}
+                              c="var(--flr-dark-gray)"
+                          >
+                              {t('core_vault_card.modal.why_core_vault_description_label')}
+                          </Text>
+                          <Title
+                              className="text-24 mb-3 mt-10"
+                              fw={300}
+                              c="var(--flr-dark-gray)"
+                          >
+                              {t('core_vault_card.modal.what_is_core_vault_title')}
+                          </Title>
+                          <Text
+                              className="text-16"
+                              fw={400}
+                              c="var(--flr-dark-gray)"
+                          >
+                              {t('core_vault_card.modal.what_is_core_vault_description_label')}
+                          </Text>
+                      </div>
+                      <Divider
+                          c="var(--flr-border-color)"
+                          className="my-10 -mx-4"
+                      />
+                      <Button
+                          onClick={() => {
+                              modals.closeAll()
+                          }}
+                          variant="filled"
+                          color="black"
+                          radius="xl"
+                          size="sm"
+                          fullWidth
+                          className="hover:text-white font-normal mb-5"
+                      >
+                          {t('core_vault_card.modal.confirm_button')}
+                      </Button>
+                  </div>
+              )
+          })
+      }
 
     return (
-        <div className="flex flex-col max-[768px]:border-t-0 border-x-0 md:border-x border border-[var(--flr-border-color)] h-full relative">
+        <div className="flex flex-col border border-[var(--flr-border-color)] h-full relative">
             <div className="flex items-center justify-between px-[15px] lg:px-6 py-4 min-h-14 border-b border-[var(--flr-border-color)]">
                 <Title
                     className="text-16 uppercase"
@@ -101,18 +136,12 @@ export default function FassetsOverviewCard({ ecoSystemInfo, timeData } : IFasse
                 >
                     {t('fassets_overview_card.title')}
                 </Title>
-                <Link
-                    href="/mint"
-                    className="flex items-center underline text-16"
-                >
-                    <span>{t('available_to_mint_card.mint_label', { fAsset: xrpFasset?.fasset })}</span>
-                </Link>
             </div>
             <Grid
-                className="flex items-center bg-[var(--flr-lightest-gray)] h-full"
+                className="flex items-center bg-[var(--flr-lightest-gray)] md:h-full"
                 classNames={{
-                    root: 'h-full',
-                    inner: 'h-full w-full'
+                    root: 'md:h-full',
+                    inner: 'md:h-full w-full'
                 }}
                 styles={{
                     root: {
@@ -121,122 +150,79 @@ export default function FassetsOverviewCard({ ecoSystemInfo, timeData } : IFasse
                 }}
             >
                 <Grid.Col
-                    span={{ base: 12, xs: 8 }}
-                    className="max-[575px]:pt-[15px] pl-[15px] lg:pl-6"
+                    span={{ base: 12, sm: 8 }}
+                    className="max-md:pt-[15px] pl-[15px] lg:pl-6"
                 >
-                    <div className="flex items-center min-[576px]:border-r border-[var(--flr-border-color)] h-full py-3">
-                        {xrpFasset?.token?.icon({ width: "140", height: "140" })}
-                        <div className="ml-5">
+                    <div className="flex items-center md:border-r border-[var(--flr-border-color)] md:h-full py-3">
+                        {xrpFasset?.token?.icon({ width: "122", height: "122" })}
+                        <Stack gap={0} className="ml-5">
                             <Text
-                                className="text-12 uppercase"
-                                fw={400}
+                                className="text-16 uppercase"
+                                fw={300}
                                 c="var(--flr-dark-gray)"
                             >
                                 {t('fassets_overview_card.circulating_supply_label')}
                             </Text>
-                            <div className="flex min-[1330px]:flex-row min-[1200px]:flex-col items-baseline my-2">
-                                <Text
-                                    className="text-32 mr-2 leading-none"
-                                    fw={300}
-                                    c="var(--flr-black)"
-                                >
-                                    {formatNumberWithSuffix(xrpFasset?.supply ?? 0)}
-                                </Text>
-                            </div>
-                            <div className="flex items-center">
-                                <Text
-                                    className="text-16 mr-2"
-                                    c="var(--flr-dark-gray)"
-                                    fw={400}
-                                >
-                                    ${formatNumberWithSuffix(xrpFasset?.minted ?? 0, xrpFasset?.token?.type.toLowerCase().includes('btc') ? 6 : 2)}
-                                </Text>
-                                <Badge variant="trend" isPositive={!!xrpFasset?.timeData?.isPositive} className="px-1 shrink-0">
-                                    {xrpFasset?.timeData?.diff}%
-                                </Badge>
-                            </div>
-                        </div>
+                            <Text
+                                className="text-32 leading-none"
+                                fw={300}
+                                lh={"sm"}
+                                c="var(--flr-black)"
+                            >
+                                {formatNumberWithSuffix(xrpFasset?.supply ?? 0)}
+                            </Text>
+                        </Stack>
                     </div>
                 </Grid.Col>
                 <Grid.Col
-                    span={{ base: 12, xs: 4 }}
-                    className="p-0 flex flex-col"
+                    span={{ base: 12, sm: 4 }}
+                    className="p-0 flex md:flex-col md:h-full w-full"
                 >
-                    <div className="flex flex-col justify-center max-[576px]:border-t border-b border-[var(--flr-border-color)] px-[15px] lg:px-6 py-3 basis-1/2">
-                        <Text
-                            className="text-12 uppercase"
-                            fw={400}
-                            c="var(--flr-dark-gray)"
-                        >
-                            {t('fassets_overview_card.overall_fxrp_cap_label', { fAsset: xrpFasset?.fasset })}
-                        </Text>
-                        <div className="flex items-center">
-                            {xrpFasset?.token?.icon({ width: "24", height: "24" })}
-                            {xrpFasset?.mintingCap === '0' &&
+                    <OverviewSection
+                        label={t('fassets_overview_card.minting_cap_label')}
+                        borderClassName="max-md:border-t max-md:border-r md:border-b"
+                    >
+                        {xrpFasset?.token?.icon({ width: "24", height: "24" })}
+                        {xrpFasset?.mintingCap === '0' ? (
+                            <>
+                                <IconInfinity
+                                    size={28}
+                                    stroke={1.25}
+                                    color="var(--flr-dark-gray)"
+                                    className="ml-2 flex-shrink-0"
+                                />
                                 <Text
-                                    className="text-32 ml-2 leading-none"
-                                    fw={300}
+                                    className="text-16 ml-2"
+                                    fw={400}
                                     c="var(--flr-dark-gray)"
                                 >
-                                    <span dangerouslySetInnerHTML={{ __html: '&infin;' }} />
+                                    {t('fassets_overview_card.cap_removed_label')}
                                 </Text>
-                            }
+                            </>
+                        ) : (
                             <Text
-                                className="text-16 ml-2"
-                                fw={400}
+                                className="text-24 ml-2 leading-none"
+                                fw={300}
                                 c="var(--flr-dark-gray)"
                             >
-                                {xrpFasset?.mintingCap === '0'
-                                    ? t('fassets_overview_card.cap_removed_label')
-                                    : formatNumberWithSuffix(xrpFasset?.mintingCap ?? 0)
-                                }
+                                {formatNumberWithSuffix(xrpFasset?.mintingCap ?? 0)}
                             </Text>
-                        </div>
-                        {xrpFasset?.mintingCap !== '0' &&
-                            <Text
-                                className="text-14 mt-1"
-                                c="var(--flr-dark-gray)"
-                                fw={400}
-                            >
-                                ${formatNumberWithSuffix(xrpFasset?.mintingCapUSD ?? 0, xrpFasset?.token?.type.toLowerCase().includes('btc') ? 6 : 2)}
-                            </Text>
-                        }
-                    </div>
-                    <div className="flex flex-col justify-center px-[15px] lg:px-6 py-3 basis-1/2">
-                        <div className="flex items-center">
-                            <Text
-                                className="text-12 uppercase"
-                                fw={400}
-                                c="var(--flr-dark-gray)"
-                            >
-                                {t('fassets_overview_card.available_to_mint_label')}
-                            </Text>
-                            <IconInfoHexagon
-                                style={{width: rem(16), height: rem(16)}}
-                                color="var(--mantine-color-gray-6)"
-                                className="ml-2 flex-shrink-0 cursor-pointer hover:stroke-gray-600"
-                                onClick={openModal}
-                            />
-                        </div>
-
-                        <div className="flex items-center mt-1">
-                            {xrpFasset?.token?.icon({ width: "24", height: "24" })}
-                            <Text
-                                className="text-16 ml-2 leading-none"
-                                fw={400}
-                                c="var(--flr-dark-gray)"
-                            >
-                                {formatNumberWithSuffix(xrpFasset?.availableToMintAsset ?? 0)}
-                            </Text>
-                        </div>
+                        )}
+                    </OverviewSection>
+                    <OverviewSection
+                        label={t('fassets_overview_card.core_vault_label')}
+                        borderClassName="max-md:border-t"
+                        onInfoClick={openModal}
+                    >
+                        <XrpIcon width="24" height="24" className="flex-shrink-0" />
                         <Text
-                            className="text-14 mt-1"
+                            className="text-24 ml-2 leading-none"
+                            fw={300}
                             c="var(--flr-dark-gray)"
-                            fw={400}
                         >
-                            ${formatNumberWithSuffix(xrpFasset?.availableToMintUSD ?? 0, xrpFasset?.token?.type.toLowerCase().includes('btc') ? 6 : 2)}
+                            {formatNumberWithSuffix(ecoSystemInfo?.coreVaultSupply ?? 0)}
                         </Text>
-                    </div>
+                    </OverviewSection>
                 </Grid.Col>
             </Grid>
         </div>

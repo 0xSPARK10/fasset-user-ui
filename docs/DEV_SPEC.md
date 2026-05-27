@@ -1,7 +1,7 @@
 ---
-doc_version: "1.8"
+doc_version: "1.9"
 app_version: "v1.3"
-last_updated: "2026-05-13"
+last_updated: "2026-05-26"
 ---
 
 # FAsset User UI — Developer Specification
@@ -10,7 +10,7 @@ last_updated: "2026-05-13"
 > Covers: domain concepts, data types, flows, APIs, fees, wallets, code patterns.
 > For product/roadmap context see `docs/PRODUCT.md`.
 
-**Version:** 1.8 — 2026-05-13
+**Version:** 1.9 — 2026-05-26
 
 ---
 
@@ -104,6 +104,19 @@ fromLots(lots, lotSize)  = lots * lotSize
 - Display: `coin.decimals`
 - Contract calls: always `parseUnits(value, 6)` — 6 decimals
 - UBA: integer in 6-decimal units
+
+### Coin Catalog Constants (`@/config/coin`)
+
+| Constant | Definition | Use |
+|----------|------------|-----|
+| `COINS` | All `ICoin` entries (mainnet + testnet, FAssets + collaterals + wrapped) | Lookup by `type` / `enabled` / `network` |
+| `BRIDGE_COINS` | `[FTEST_XRP_HYPE, FXRP_HYPE]` — HyperEVM variants of FAssets | Bridge UI source token (lives on HyperEVM, `nativeIcon = HypeIcon`) |
+| `FASSET_COIN` | `COINS.find(c => c.enabled && c.isFAssetCoin)!` — first enabled FAsset | Canonical underlying coin for the current network (FXRP mainnet, FTestXRP testnet) |
+| `HYPE` / `BRIDGE_HYPE` | HyperEVM gas token (mainnet/testnet) | Bridge fee labels |
+
+**`FASSET_COIN` caveat:** returns the FIRST enabled `isFAssetCoin` from `COINS` (array order: XRP variant comes before BTC/DOGE). Safe today because only one FAsset is enabled per deployment. If multiple FAssets are ever enabled simultaneously, use `COINS.find(c => c.enabled && c.type === token.type)` instead — `FASSET_COIN` would silently return the wrong coin (e.g. FXRP for an FBTC context).
+
+Used in: `BridgeXrplForm`, `ReserveMintingTagModal`, `EditExecutorModal`, `pages/tags.tsx`.
 
 ---
 
@@ -224,7 +237,7 @@ const connectedCoin = connectedCoins.find(coin => coin.type == fAssetCoin?.type)
 
 ## 5. Minting Flow
 
-> **v1.3:** Only direct minting (Core Vault) is supported. Agent-backed minting is removed from the UI. See `docs/migrations/MIGRATION_v1.3.md` for the full contract-level diff.
+> Only direct minting (Core Vault) is supported. Agent-backed minting is removed from the UI.
 
 ### Steps
 
@@ -298,7 +311,7 @@ memo = 0x + PREFIX + "0000000000000000" + address.toLowerCase().replace("0x","")
 
 ### Tag vs Memo priority (ConfirmStepper)
 
-Per spec (MIGRATION_v1.3.md §3.1): tag is the **recommended** approach when user has a registered tag.
+Per spec: tag is the **recommended** approach when user has a registered tag.
 
 Priority logic in `ConfirmStepper.tsx`:
 1. **Tag mode** (user manually entered a tag) → send `DestinationTag`, no memo
@@ -995,4 +1008,3 @@ useEffect(() => {
 ---
 
 *For product decisions, edge cases, and roadmap context: see `docs/PRODUCT.md`*
-*For v1.3 migration contracts/events: see `docs/migrations/MIGRATION_v1.3.md`*

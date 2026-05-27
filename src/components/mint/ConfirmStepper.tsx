@@ -20,19 +20,19 @@ import WalletConnectOpenWalletCard from "@/components/cards/WalletConnectOpenWal
 import XamanOpenWalletCard from "@/components/cards/XamanOpenWalletCard";
 import { IFAssetCoin } from "@/types";
 import { IAlertMessage } from "@/components/elements/FormAlert";
-import { WALLET } from "@/constants";
+import { WALLET, WALLET_ID } from "@/constants";
 import { useSignTransaction } from "@/hooks/useContracts";
 import { showErrorNotification } from "@/hooks/useNotifications";
-import { useDirectMintingInfo } from "@/api/minting";
+import { useDirectMintingInfo, useRequestMinting } from "@/api/minting";
 import { XRP_NAMESPACE } from "@/config/networks";
 import { createLogger } from "@/utils/debug";
-
-const log = createLogger('MINT');
 import { useNativeBalance, useUnderlyingBalance } from "@/api/balance";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { isMobile } from "react-device-detect";
 import MintLimitReachedModal from "../modals/MintLimitReachedModal";
 import { useModalGuard } from "@/hooks/useModalGuard";
+
+const log = createLogger('MINT');
 
 const FINISHED_MODAL = "finished_modal";
 const STEP_WALLET_PAYMENT = 0;
@@ -99,6 +99,7 @@ export default function ConfirmStepper({
     const underlyingBalance = useUnderlyingBalance(fAssetCoin.address!, fAssetCoin.type, false);
     const signTransaction = useSignTransaction(fAssetCoin.address!);
     const directMintingInfo = useDirectMintingInfo(fAssetCoin.type, false);
+    const requestMinting = useRequestMinting();
 
     const paymentAmount = useMemo(() => {
         if (!formValues?.amount || !directMintingInfo.data) return "";
@@ -191,6 +192,20 @@ export default function ConfirmStepper({
                 : signTransactionResponse.txid;
             log.log('extracted txId:', txId, '| namespace:', fAssetCoin.network.namespace);
 
+            const walletRegistrationPayload = {
+                userUnderlyingAddress: fAssetCoin.address!,
+                userAddress: mainToken?.address!,
+                underlyingWalletId: WALLET_ID[fAssetCoin.connectedWallet ?? ''] ?? 0,
+                nativeWalletId: WALLET_ID[mainToken?.connectedWallet ?? ''] ?? 0,
+            };
+            log.log('wallet registration request:', walletRegistrationPayload);
+            try {
+                await requestMinting.mutateAsync(walletRegistrationPayload);
+                log.log('wallet registration succeeded');
+            } catch (registrationError) {
+                log.log('wallet registration failed (non-fatal):', registrationError);
+            }
+
             await handleFinish(txId);
 
         } catch (error: any) {
@@ -275,9 +290,7 @@ export default function ConfirmStepper({
                 fw={300}
                 c="var(--flr-black)"
             >
-                {currentStep === STEP_WALLET_PAYMENT
-                    ? t("mint_modal.confirm_step_title")
-                    : t("mint_modal.confirm_second_step_title")}
+                 {t("mint_modal.confirm_step_title")}
             </Title>
             <Text
                 className="my-5 text-16"

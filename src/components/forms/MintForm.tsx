@@ -75,6 +75,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 		const hasXamanInsufficientFunds = useRef(false);
 		const hasMinAmountError = useRef(false);
 		const hasMintCapError = useRef(false);
+		const hasBalanceError = useRef(false);
 		const skipTagLookup = useRef(false);
 		const [tagForLookup, setTagForLookup] = useState("");
 
@@ -172,6 +173,34 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 			return typeof amount === "number" && !Number.isNaN(amount) && amount >= minMintingAmount;
 		};
 
+		// Single source of truth for the Next button disabled state.
+		// Overrides let callers pass freshly-set form values that may not yet be readable via form.getValues().
+		const computeIsDisabled = (overrides: {
+			destinationAddress?: string;
+			resolvedAddress?: string;
+			destinationMode?: "address" | "tag";
+		} = {}): boolean => {
+			if (hasMintCapError.current) return true;
+			if (hasBalanceError.current) return true;
+			if (hasXamanInsufficientFunds.current) return true;
+			if (!hasValidAmount()) return true;
+
+			const values = form.getValues() as {
+				destinationMode?: "address" | "tag";
+				destinationAddress?: string;
+				resolvedAddress?: string;
+			};
+			const mode = overrides.destinationMode ?? values.destinationMode;
+			if (mode === "address") {
+				const addr = overrides.destinationAddress ?? values.destinationAddress;
+				if (!isAddress(addr ?? "")) return true;
+			} else {
+				const resolvedAddress = overrides.resolvedAddress ?? values.resolvedAddress;
+				if (!resolvedAddress) return true;
+			}
+			return false;
+		};
+
 		// Syncs resolvedAddress form field with API result after tag lookup.
 		// setFieldValue("resolvedAddress", "") is only called when value is non-empty
 		// to avoid Mantine clearing the field error as a side effect.
@@ -181,7 +210,13 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 			if (recipientQuery.data?.recipient && !isZeroAddress(recipientQuery.data.recipient)) {
 				form.setFieldValue("resolvedAddress", recipientQuery.data.recipient);
 				form.clearFieldError("resolvedAddress");
-				if (isFormDisabled) isFormDisabled(!hasValidAmount());
+				if (isFormDisabled)
+					isFormDisabled(
+						computeIsDisabled({
+							destinationMode: "tag",
+							resolvedAddress: recipientQuery.data.recipient,
+						}),
+					);
 			} else if (!recipientQuery.isFetching) {
 				if (form.getValues().resolvedAddress) {
 					form.setFieldValue("resolvedAddress", "");
@@ -208,8 +243,13 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 			if (tagsByAddressQuery.isFetching) {
 				isFormDisabled(true);
 			} else if (destinationMode === "address") {
-				const addr = form.getValues().destinationAddress;
-				isFormDisabled(!hasValidAmount() || !isAddress(addr ?? "") || hasXamanInsufficientFunds.current);
+				const addr = form.getValues().destinationAddress as string | undefined;
+				isFormDisabled(
+					computeIsDisabled({
+						destinationMode: "address",
+						destinationAddress: addr,
+					}),
+				);
 			}
 		}, [tagsByAddressQuery.isFetching]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -229,21 +269,19 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 			form.setFieldValue("destinationTag", tagId);
 			form.setFieldValue("resolvedAddress", mintingRecipient);
 			form.clearFieldError("resolvedAddress");
-			if (isFormDisabled) isFormDisabled(!hasValidAmount());
+			if (isFormDisabled)
+				isFormDisabled(
+					computeIsDisabled({
+						destinationMode: "tag",
+						resolvedAddress: mintingRecipient,
+					}),
+				);
 		};
 
 		form.watch("destinationMode", ({ value }) => {
-			setDestinationMode(value as "address" | "tag");
-			if (value === "address") {
-				const addr = form.getValues().destinationAddress;
-				if (isFormDisabled)
-					isFormDisabled(
-						!hasValidAmount() || !isAddress(addr ?? "") || hasXamanInsufficientFunds.current,
-					);
-			} else {
-				const resolvedAddress = form.getValues().resolvedAddress;
-				if (isFormDisabled) isFormDisabled(!hasValidAmount() || !resolvedAddress);
-			}
+			const mode = value as "address" | "tag";
+			setDestinationMode(mode);
+			if (isFormDisabled) isFormDisabled(computeIsDisabled({ destinationMode: mode }));
 		});
 
 		form.watch("destinationAddress", ({ value }) => {
@@ -253,7 +291,10 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 			}
 			if (isFormDisabled)
 				isFormDisabled(
-					!hasValidAmount() || !isAddress(value ?? "") || hasXamanInsufficientFunds.current,
+					computeIsDisabled({
+						destinationMode: "address",
+						destinationAddress: value as string,
+					}),
 				);
 		});
 
@@ -267,7 +308,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 		const executorFee =
 			Number(mintingData.data?.fassetsExecutorFee ?? 0) / 10 ** 6;
 
-		// Fee model (MIGRATION_v1.3.md):
+		// Fee model:
 		//   systemFee    = max(totalSend × feeRate, minimumMintingFee)
 		//   totalSend    = transfer + systemFee + executorFee
 		//
@@ -370,6 +411,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 				if (!hasMinAmountError.current) {
 					onError();
 				}
+				if (isFormDisabled) isFormDisabled(computeIsDisabled());
 			}
 		}, [isMintCapReached, mintingCapInfo.isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -402,11 +444,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 					hasMinAmountError.current = false;
 					onError();
 				}
-				const mode = form.getValues().destinationMode;
-				const addr = form.getValues().destinationAddress;
-				const resolvedAddress = form.getValues().resolvedAddress;
-				const addressOk = mode === "address" ? isAddress(addr ?? "") : !!resolvedAddress;
-				if (isFormDisabled) isFormDisabled(!addressOk || hasXamanInsufficientFunds.current || hasMintCapError.current);
+				if (isFormDisabled) isFormDisabled(computeIsDisabled());
 			}
 		}, 500);
 
@@ -429,11 +467,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 				totalUsd += xamanFee;
 				const totalXrp = totalUsd / response.data.price;
 
-				if (
-					isFormDisabled &&
-					totalXrp > balance - fAssetCoin.minWalletBalance
-				) {
-					isFormDisabled(true);
+				if (totalXrp > balance - fAssetCoin.minWalletBalance) {
 					hasXamanInsufficientFunds.current = true;
 					onError({
 						msg: t("mint_modal.form.error_insufficient_balance_label", {
@@ -442,6 +476,8 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 					});
 				}
 			}
+
+			if (isFormDisabled) isFormDisabled(computeIsDisabled());
 		};
 
 		// Notifies parent when minting fee exceeds threshold so it can show a warning.
@@ -466,7 +502,6 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 		// Shows an error and disables the form if the user's underlying balance
 		// is below the minimum required to cover amount + fees + wallet reserve.
 		// hasBalanceError ref prevents clearing the error on every re-render.
-		const hasBalanceError = useRef(false);
 		useEffect(() => {
 			if (!underlyingBalance.data?.balance || !mintingData.data) return;
 
@@ -482,6 +517,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 			} else if (hasBalanceError.current) {
 				hasBalanceError.current = false;
 				onError();
+				if (isFormDisabled) isFormDisabled(computeIsDisabled());
 			}
 		}, [underlyingBalance.data, mintingData.data]); // eslint-disable-line react-hooks/exhaustive-deps
 

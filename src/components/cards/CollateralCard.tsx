@@ -35,7 +35,7 @@ export default function CollateralCard({ ecoSystemInfo, timeData }: ICollateralC
     });
 
     return (
-        <div className="flex flex-col bg-[var(--flr-lightest-gray)] max-[768px]:border-t-0 border-x-0 md:border-x border border-[var(--flr-border-color)] h-full">
+        <div className="flex flex-col bg-[var(--flr-lightest-gray)] border border-[var(--flr-border-color)] h-full">
             <Text
                 className="bg-[var(--flr-white)] text-16 uppercase px-[15px] lg:px-6 py-4 min-h-14 border-b border-[var(--flr-border-color)]"
                 fw={400}

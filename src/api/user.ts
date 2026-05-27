@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, keepPreviousData } from "@tanstack/react-query";
 import apiClient from "@/api/apiClient";
 import {
     IAgent,
@@ -109,6 +109,7 @@ export function useTimeData(time: string, enabled: boolean = true) {
             const response = await apiClient.get(`timeData/${time}`);
             return response.data as ITimeData;
         },
+        placeholderData: keepPreviousData,
         enabled: enabled
     })
 }

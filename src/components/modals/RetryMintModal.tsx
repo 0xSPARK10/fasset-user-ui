@@ -5,7 +5,7 @@ import { IconCheck, IconCircleCheck, IconExclamationCircle, IconSettings } from 
 import WalletConnectOpenWalletCard from "@/components/cards/WalletConnectOpenWalletCard";
 import React, { useRef, useState } from "react";
 import { useWeb3 } from "@/hooks/useWeb3";
-import { WALLET } from "@/constants";
+import { WALLET, WALLET_ID } from "@/constants";
 import { useUnderlyingStatus, useUserProgress } from "@/api/user";
 import XrpIcon from "@/components/icons/XrpIcon";
 import { formatNumber, toNumber } from "@/utils";
@@ -18,6 +18,9 @@ import { ErrorDecoder } from "ethers-decode-error";
 import { AssetManagerAbi } from "@/abi";
 import MintWaitingModal from "@/components/modals/MintWaitingModal";
 import { modals } from "@mantine/modals";
+import { createLogger } from "@/utils/debug";
+
+const log = createLogger('MINT:retry');
 import { useNativeBalance, useUnderlyingBalance } from "@/api/balance";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
 import XamanOpenWalletCard from "@/components/cards/XamanOpenWalletCard";
@@ -96,26 +99,18 @@ export default function RetryMintModal({ opened, onClose, underlyingTransaction 
                 ? signTransactionResponse?.tx_json?.hash
                 : signTransactionResponse.txid;
 
-            const walletId = {
-                [WALLET.META_MASK]: 1,
-                [WALLET.WALLET_CONNECT]: 2,
-                [WALLET.LEDGER]: 3,
-                [WALLET.XAMAN]: 4
-            };
-
-            await requestMinting.mutateAsync({
-                collateralReservationId: '',
-                txHash: txId,
-                paymentAddress: '',
+            const walletRegistrationPayload = {
                 userUnderlyingAddress: fAssetCoin?.address!,
-                amount: underlyingTransaction.amount,
                 userAddress: mainToken?.address!,
-                fAsset: fAssetCoin?.type!,
-                nativeHash: '',
-                vaultAddress: underlyingTransaction.destinationAddress,
-                nativeWalletId: (mainToken?.connectedWallet && mainToken.connectedWallet in walletId) ? walletId[mainToken.connectedWallet] : 0,
-                underlyingWalletId: (fAssetCoin?.connectedWallet && fAssetCoin.connectedWallet in walletId) ? walletId[fAssetCoin.connectedWallet] : 0
-            });
+                nativeWalletId: WALLET_ID[mainToken?.connectedWallet ?? ''] ?? 0,
+                underlyingWalletId: WALLET_ID[fAssetCoin?.connectedWallet ?? ''] ?? 0,
+            };
+            try {
+                await requestMinting.mutateAsync(walletRegistrationPayload);
+                log.log('wallet registration succeeded');
+            } catch (registrationError) {
+                log.log('wallet registration failed (non-fatal):', registrationError);
+            }
 
             setIsMintWaitingModalActive(true);
             setSignedTransactionTxHash(txId);

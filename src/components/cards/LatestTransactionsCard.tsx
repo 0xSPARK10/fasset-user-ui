@@ -287,7 +287,7 @@ export default function LatestTransactionsCard({ className, refreshKey, type, fA
         const isMainnet = progress.eid === EndpointId.HYPERLIQUID_V2_MAINNET;
         let href: string;
         if (isRedeemAction) {
-            href = `${mainToken?.network.explorerTxUrl}/${progress.txhash}`;
+            href = `${FASSETS_EXPLORER_URL}/tx/${progress.txhash}?network=${mainToken?.nativeName?.toLowerCase()?.includes('sgb') ? 'sgb' : 'flr'}`;
         } else {
             href = isMainnet
                 ? `https://layerzeroscan.com/tx/${progress.txhash}`

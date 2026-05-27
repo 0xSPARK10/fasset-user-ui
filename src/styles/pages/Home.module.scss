@@ -16,6 +16,7 @@
     }
 }
 .tab {
+    font-size: 16px;
     &[data-active="true"] {
         color: var(--flr-pink);
         border-color: var(--flr-pink);
