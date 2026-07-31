@@ -8,10 +8,12 @@ import BridgeXrplForm from "@/components/forms/BridgeXrplForm";
 import { FormRef } from "@/components/forms/BridgeForm";
 import ConfirmStepper from "@/components/bridge/ConfirmStepper";
 import { IconExclamationCircle } from "@tabler/icons-react";
-import { BRIDGE_TYPE } from "@/constants";
+import { BRIDGE_COMPOSE_KIND, BRIDGE_SOURCE_CHAIN, BRIDGE_TYPE } from "@/constants";
+import { bridgeChainEid } from "@/config/bridge";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useNativeBalance, useUnderlyingBalance } from "@/api/balance";
-import { useHyperEVMBalance } from "@/hooks/useContracts";
+import { useHyperEVMBalance, useRedeemWithTagSupported } from "@/hooks/useContracts";
+import { useAssetManagerAddress } from "@/api/user";
 import { useHyperliquidBalance } from "@/api/bridge";
 import { useRedeemerAccount, useUserHistory } from "@/api/oft";
 import FormAlert, { IAlertMessage } from "../elements/FormAlert";
@@ -26,11 +28,17 @@ interface IBridgeModal {
 export interface BridgeConfig {
     titleKey: string;
     needsApproval: boolean;
-    feeTokenKey: 'native' | 'hype';
+    // 'native' = mainToken (FLR/C2FLR/SGB) — the route originates on Flare.
+    // 'hype' / 'eth' = gas coin of the remote source chain.
+    feeTokenKey: 'native' | 'hype' | 'eth';
     finishedDescriptionKey: string;
     ledgerApp: 'source' | 'bridge';
     showSegmentedControl: boolean;
     type: BridgeType;
+    // Display name of the source chain. The 'flare' and 'xrpl' routes share i18n keys
+    // between the HyperEVM and Ethereum sources, so the name is interpolated rather
+    // than the keys being duplicated.
+    sourceName: string;
 }
 
 const BRIDGE_CONFIG: Record<BridgeType, BridgeConfig> = {
@@ -41,7 +49,8 @@ const BRIDGE_CONFIG: Record<BridgeType, BridgeConfig> = {
         finishedDescriptionKey: 'hyperliquid',
         ledgerApp: 'source',
         showSegmentedControl: true,
-        type: BRIDGE_TYPE.HYPER_EVM
+        type: BRIDGE_TYPE.HYPER_EVM,
+        sourceName: 'Flare Network'
     },
     [BRIDGE_TYPE.HYPER_CORE]: {
         titleKey: 'hyperliquid',
@@ -50,7 +59,8 @@ const BRIDGE_CONFIG: Record<BridgeType, BridgeConfig> = {
         finishedDescriptionKey: 'hyperliquid',
         ledgerApp: 'source',
         showSegmentedControl: true,
-        type: BRIDGE_TYPE.HYPER_CORE
+        type: BRIDGE_TYPE.HYPER_CORE,
+        sourceName: 'Flare Network'
     },
     [BRIDGE_TYPE.FLARE]: {
         titleKey: 'flare',
@@ -59,7 +69,8 @@ const BRIDGE_CONFIG: Record<BridgeType, BridgeConfig> = {
         finishedDescriptionKey: 'flare',
         ledgerApp: 'bridge',
         showSegmentedControl: false,
-        type: BRIDGE_TYPE.FLARE
+        type: BRIDGE_TYPE.FLARE,
+        sourceName: 'Hyperliquid'
     },
     [BRIDGE_TYPE.XRPL]: {
         titleKey: 'xrpl',
@@ -68,7 +79,38 @@ const BRIDGE_CONFIG: Record<BridgeType, BridgeConfig> = {
         finishedDescriptionKey: 'xrpl',
         ledgerApp: 'bridge',
         showSegmentedControl: false,
-        type: BRIDGE_TYPE.XRPL
+        type: BRIDGE_TYPE.XRPL,
+        sourceName: 'Hyperliquid'
+    },
+    [BRIDGE_TYPE.ETHEREUM]: {
+        titleKey: 'ethereum',
+        needsApproval: true,
+        feeTokenKey: 'native',
+        finishedDescriptionKey: 'ethereum',
+        ledgerApp: 'source',
+        showSegmentedControl: false,
+        type: BRIDGE_TYPE.ETHEREUM,
+        sourceName: 'Flare Network'
+    },
+    [BRIDGE_TYPE.FLARE_FROM_ETH]: {
+        titleKey: 'flare',
+        needsApproval: false,
+        feeTokenKey: 'eth',
+        finishedDescriptionKey: 'flare',
+        ledgerApp: 'bridge',
+        showSegmentedControl: false,
+        type: BRIDGE_TYPE.FLARE_FROM_ETH,
+        sourceName: 'Ethereum'
+    },
+    [BRIDGE_TYPE.XRPL_FROM_ETH]: {
+        titleKey: 'xrpl',
+        needsApproval: false,
+        feeTokenKey: 'eth',
+        finishedDescriptionKey: 'xrpl',
+        ledgerApp: 'bridge',
+        showSegmentedControl: false,
+        type: BRIDGE_TYPE.XRPL_FROM_ETH,
+        sourceName: 'Ethereum'
     },
 };
 
@@ -79,6 +121,13 @@ export default function BridgeModal({ opened, onClose, token, type }: IBridgeMod
     const { t } = useTranslation();
     const { mainToken } = useWeb3();
     const config = BRIDGE_CONFIG[type];
+    // Covers both XRPL and XRPL_FROM_ETH — each goes through the redeem composer on Flare.
+    const isXrplRoute = BRIDGE_COMPOSE_KIND[type] === 'xrpl';
+    // The source chain determines the srcEid used to query redemption/executor fees.
+    const srcEid = bridgeChainEid(
+        BRIDGE_SOURCE_CHAIN[type],
+        !!mainToken?.network?.mainnet
+    );
     const nativeBalance = useNativeBalance(mainToken?.address ?? '', mainToken !== undefined);
     const hypeEVMBalance = useHyperEVMBalance();
     const hyperliquidBalance = useHyperliquidBalance(mainToken?.address ?? '', false);
@@ -97,19 +146,25 @@ export default function BridgeModal({ opened, onClose, token, type }: IBridgeMod
     const formRef = useRef<FormRef>(null);
     const formValues = useRef<Record<string, any>>();
 
+    const assetManagerAddress = useAssetManagerAddress(token?.type ?? '', isXrplRoute && opened);
+    const redeemWithTagSupported = useRedeemWithTagSupported(
+        assetManagerAddress?.data?.address ?? '',
+        isXrplRoute && opened && !!assetManagerAddress?.data?.address
+    );
+
     const underlyingBalance = useUnderlyingBalance(
         xrplDestAddress,
         token?.type ?? '',
-        type === BRIDGE_TYPE.XRPL && xrplDestAddress.length > 0
+        isXrplRoute && xrplDestAddress.length > 0
     );
 
     const accountError =
-        type === BRIDGE_TYPE.XRPL && underlyingBalance.data?.accountInfo?.depositAuth
+        isXrplRoute && underlyingBalance.data?.accountInfo?.depositAuth
             ? t('bridge_modal.limited_deposit_auth_settings_label')
             : undefined;
 
     const destinationTagError =
-        type === BRIDGE_TYPE.XRPL && showDestTagWarning
+        isXrplRoute && showDestTagWarning
             ? t('bridge_modal.limited_destination_tags_settings_label')
             : undefined;
 
@@ -141,7 +196,7 @@ export default function BridgeModal({ opened, onClose, token, type }: IBridgeMod
         }
 
         if (
-            type === BRIDGE_TYPE.XRPL &&
+            isXrplRoute &&
             !!underlyingBalance.data?.accountInfo?.requireDestTag &&
             String(destinationTag ?? '').trim() === ''
         ) {
@@ -149,9 +204,22 @@ export default function BridgeModal({ opened, onClose, token, type }: IBridgeMod
             return;
         }
 
+        // A tag was entered but the asset manager does not support tag redemptions. Block
+        // while `data` is still undefined too — that covers pending, errors, and older
+        // contracts where `redeemWithTagSupported()` reverts. Without this the payment
+        // would go out untagged and be lost on an account that requires a tag.
+        if (
+            isXrplRoute &&
+            String(destinationTag ?? '').trim() !== '' &&
+            !redeemWithTagSupported.data
+        ) {
+            setErrorMessage(t('redeem_modal.form.destination_tag_not_supported_error'));
+            return;
+        }
+
         formValues.current = form?.getValues();
         setCurrentStep(STEP_CONFIRM);
-    }, [accountError, type, underlyingBalance.data, destinationTag]);
+    }, [accountError, type, isXrplRoute, underlyingBalance.data, destinationTag, redeemWithTagSupported.data, t]);
 
     const closeModal = (refetch: boolean = false) => {
         setErrorMessage(undefined);
@@ -244,8 +312,9 @@ export default function BridgeModal({ opened, onClose, token, type }: IBridgeMod
                                     </Text>
                                 </div>
                             }
-                            {type === BRIDGE_TYPE.XRPL ? (
+                            {isXrplRoute ? (
                                 <BridgeXrplForm
+                                    srcEid={srcEid}
                                     onFormAlert={(alert) => setFormAlert(alert)}
                                     ref={formRef}
                                     token={token!}

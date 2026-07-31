@@ -13,7 +13,7 @@ import { useScrollIntoView } from "@mantine/hooks";
 import { useTranslation, Trans } from "react-i18next";
 import UnderlyingBalanceCard from "@/components/cards/UnderlyingBalanceCard";
 import BalanceCard from "@/components/cards/BalanceCard";
-import LatestTransactionsCard from "@/components/cards/LatestTransactionsCard";
+import MintTransactionsCard from "@/components/cards/TransactionsCard/MintTransactionsCard";
 import FaucetCard from "@/components/cards/FaucetCard";
 import { IFAssetCoin } from "@/types";
 import { useWeb3 } from "@/hooks/useWeb3";
@@ -126,9 +126,8 @@ export default function Mint() {
                     {t('dashboard.refresh_button')}
                 </Button>
             </div>
-            <LatestTransactionsCard
+            <MintTransactionsCard
                 refreshKey={latestTransactionCardKey}
-                type="mint"
                 fAssetCoin={fAssetCoins.find(c => c.network.namespace === XRP_NAMESPACE)}
             />
         </Container>

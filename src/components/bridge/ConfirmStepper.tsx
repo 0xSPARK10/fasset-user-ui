@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next";
 import { IconCheck, IconCircleCheck, IconFilePlus, IconSettings } from "@tabler/icons-react";
 import { useInterval, useMediaQuery } from "@mantine/hooks";
 import { CONTRACT_KEY, useBridgeApprove, useBridgeSend } from "@/hooks/useContracts";
-import { parseUnits } from "@/utils";
+import { parseDestinationTag, parseUnits } from "@/utils";
 import { createLogger } from "@/utils/debug";
 
 const log = createLogger('BRIDGE');
@@ -92,9 +92,10 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                     refetchType: 'all'
                 });
                 if (bridgeConfig.type !== BRIDGE_TYPE.HYPER_CORE) {
+                    // No `exact` because the query key now carries the bridge chain —
+                    // a prefix match covers both the HyperEVM and Ethereum instances.
                     queryClient.invalidateQueries({
                         queryKey: [CONTRACT_KEY.HYPER_EVM_BALANCE, mainToken?.address],
-                        exact: true,
                         refetchType: 'all'
                     });
                 }
@@ -105,12 +106,11 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                         refetchType: 'all'
                     });
                 }
-                // feeTokenKey === 'hype' identifies FLARE and XRPL bridge types,
-                // which are the only types where HYPE is spent as a bridge fee
-                if (bridgeConfig.feeTokenKey === 'hype') {
+                // Every route that does not originate on Flare pays its fee in the remote
+                // chain's gas coin (HYPE or ETH) — that is the balance which changes.
+                if (bridgeConfig.feeTokenKey !== 'native') {
                     queryClient.invalidateQueries({
                         queryKey: [CONTRACT_KEY.HYPE_BALANCE, mainToken?.address],
-                        exact: true,
                         refetchType: 'all'
                     });
                 }
@@ -209,7 +209,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                 executorFee: formValues.executorFee,
                 composerFeePPM: formValues.composerFeePPM,
                 destinationAddress: formValues.destinationAddress,
-                destinationTag: formValues.destinationTag || undefined,
+                destinationTag: parseDestinationTag(formValues.destinationTag),
             });
 
             const hash = await bridgeSend.mutateAsync({
@@ -219,7 +219,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                 executorFee: formValues.executorFee,
                 composerFeePPM: formValues.composerFeePPM,
                 destinationAddress: formValues.destinationAddress,
-                destinationTag: formValues.destinationTag || undefined,
+                destinationTag: parseDestinationTag(formValues.destinationTag),
             });
 
             log.log('send tx hash:', hash);
@@ -409,7 +409,8 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                             c={currentStep === STEP_APPROVE ? 'var(--flr-light-gray)' : 'var(--flr-black)'}
                         >
                             {t(`bridge_modal.bridge_${bridgeConfig.titleKey}_step_label`, {
-                                fAsset: token?.type
+                                fAsset: token?.type,
+                                sourceChain: bridgeConfig.sourceName
                             })}
                         </Text>
                     }
@@ -419,7 +420,10 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                             fw={400}
                             c={currentStep === STEP_APPROVE ? 'var(--flr-light-gray)' : lighten('var(--flr-gray)', 0.378)}
                         >
-                            {t(`bridge_modal.bridge_${bridgeConfig.titleKey}_step_description`, { fAsset: token?.type })}
+                            {t(`bridge_modal.bridge_${bridgeConfig.titleKey}_step_description`, {
+                                fAsset: token?.type,
+                                sourceChain: bridgeConfig.sourceName
+                            })}
                         </Text>
                     }
                     icon={

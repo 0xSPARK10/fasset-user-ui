@@ -14,10 +14,19 @@ import { useWeb3 } from "@/hooks/useWeb3";
 import { XRP_NAMESPACE } from "@/config/networks";
 import { formatUnit } from "@/utils";
 import { createLogger } from "@/utils/debug";
-import { ICoin, INetwork, IUtxo } from "@/types";
-import { WALLET, ABI_ERRORS, BRIDGE_TYPE } from "@/constants";
+import { BridgeChain, BridgeType, ICoin, INetwork, IUtxo } from "@/types";
+import {
+    WALLET,
+    ABI_ERRORS,
+    BRIDGE_TYPE,
+    BRIDGE_CHAIN,
+    BRIDGE_SOURCE_CHAIN,
+    BRIDGE_DESTINATION_CHAIN,
+    BRIDGE_COMPOSE_KIND
+} from "@/constants";
 import { POOL_KEY } from "@/api/pool";
-import { EndpointId } from "@layerzerolabs/lz-definitions";
+import { bridgeChainEid, BRIDGE_SOURCE_OFT } from "@/config/bridge";
+import { BRIDGE_FASSET_COIN, BRIDGE_GAS_COIN } from "@/config/coin";
 import { Options } from "@layerzerolabs/lz-v2-utilities";
 
 export const CONTRACT_KEY = {
@@ -57,6 +66,10 @@ function handleErrors(error: any) {
         throw new Error(i18next.t('errors.abi_custom_error_label', { error: ABI_ERRORS[errorCode] }));
     } else if (error.message.includes('could not coalesce error')) {
         throw new Error(i18next.t('errors.try_reconnecting_label'));
+    } else if (error?.message?.includes('no such account')) {
+        // ethers, from getSigner() on an empty eth_accounts: the WalletConnect session holds
+        // no account for this chain. A session cannot gain chains, so only a new one fixes it.
+        throw new Error(i18next.t('errors.wallet_reconnect_required_label'));
     }
 
     throw error;
@@ -723,8 +736,130 @@ export function useSignPsbt(address: string) {
     })
 }
 
+/**
+ * The coin `provider.getSigner()` uses to pick the chain. `undefined` means mainToken
+ * (Flare) — routes originating on Flare are signed there.
+ *
+ * Resolved through `getBridgeToken` from useWeb3, not by reading `BRIDGE_FASSET_COIN`
+ * directly: only the former stamps the user's address onto the OFT coin. Without it
+ * `LedgerConnector.getSigner` builds `new VoidSigner(undefined)` — the XRPL routes then
+ * throw while ABI-encoding the compose message, the plain ones at `send`.
+ *
+ * It returns the shared coin object rather than a copy on purpose: `MetaMaskConnector`
+ * detects bridge coins with `BRIDGE_COINS.includes(token)`, i.e. reference equality.
+ */
+function bridgeSignerToken(
+    bridgeType: BridgeType,
+    getBridgeToken: (chain: BridgeChain) => ICoin | undefined,
+): ICoin | undefined {
+    const sourceChain = BRIDGE_SOURCE_CHAIN[bridgeType];
+    return sourceChain === BRIDGE_CHAIN.FLARE ? undefined : getBridgeToken(sourceChain);
+}
+
+/**
+ * The contract `quoteSend` / `send` is called on, chosen by the route's source chain.
+ */
+function bridgeSourceContract(bridgeType: BridgeType, signer: any) {
+    const { address, abi } = BRIDGE_SOURCE_OFT[BRIDGE_SOURCE_CHAIN[bridgeType]];
+
+    if (!address || !abi) {
+        throw new Error(i18next.t('errors.transaction_failed_label'));
+    }
+
+    return new ethers.Contract(address, abi, signer);
+}
+
+interface BridgeSendParamsArgs {
+    bridgeType: BridgeType;
+    amount: string;
+    signerAddress?: string;
+    recipient: string;
+    mainnet: boolean;
+    executorFee?: string;
+    composerFeePPM?: string;
+    destinationAddress?: string;
+    destinationTag?: number;
+    log?: ReturnType<typeof createLogger>;
+}
+
+/**
+ * Builds the LayerZero `SendParam` for a bridge route. Shared by `useBridgeQouteSend`
+ * and `useBridgeSend`, which each used to build the same parameters independently —
+ * every new route previously had to be added in both places.
+ */
+function buildBridgeSendParams({
+    bridgeType,
+    amount,
+    signerAddress,
+    recipient,
+    mainnet,
+    executorFee,
+    composerFeePPM,
+    destinationAddress,
+    destinationTag,
+    log
+}: BridgeSendParamsArgs) {
+    const abiCoder = AbiCoder.defaultAbiCoder();
+    const PPM_DENOMINATOR = BigInt(1_000_000);
+
+    let options = Options.newOptions().addExecutorLzReceiveOption(200_000, 0);
+    let composeMsg = '0x';
+    let to = ethers.zeroPadValue(recipient, 32);
+    let amountToSend = amount;
+
+    const composeKind = BRIDGE_COMPOSE_KIND[bridgeType];
+
+    if (composeKind === 'hyper_core') {
+        composeMsg = abiCoder.encode(['uint256', 'address'], ['0', signerAddress]);
+        to = ethers.zeroPadValue(process.env.HYPERLIQUID_COMPOSER_ADDRESS!, 32);
+        options.addExecutorComposeOption(0, 200_000, '0');
+    } else if (composeKind === 'xrpl') {
+        // Gross-up: user enters net amount, total = net / (1 - composerFeePPM/1M)
+        const feePPM = BigInt(composerFeePPM ?? '0');
+        const amountBig = BigInt(amount);
+        amountToSend = ((amountBig * PPM_DENOMINATOR) / (PPM_DENOMINATOR - feePPM)).toString();
+        const tag = destinationTag ?? 0;
+        log?.log('compose params:', {
+            redeemer: signerAddress,
+            underlyingAddress: destinationAddress ?? '',
+            redeemWithTag: tag !== 0,
+            destinationTag: tag,
+            executor: ethers.ZeroAddress,
+            executorFee: executorFee ?? '0',
+            composerAddress: process.env.FXRP_COMPOSER_ADDRESS,
+        });
+        composeMsg = abiCoder.encode(
+            ['tuple(address, string, bool, uint256, address, uint256)'],
+            [[
+                signerAddress,
+                destinationAddress ?? '',
+                tag !== 0,
+                BigInt(tag),
+                ethers.ZeroAddress,
+                BigInt(executorFee ?? '0'),
+            ]]
+        );
+        log?.log('composeMsg encoded:', composeMsg);
+        // The redeem composer always lives on Flare and supports every source chain —
+        // this address is unchanged for XRPL_FROM_ETH.
+        to = ethers.zeroPadValue(process.env.FXRP_COMPOSER_ADDRESS!, 32);
+        // executorFee from /api/oft/redemptionFees — required for executor to process the redemption
+        options = Options.newOptions().addExecutorLzReceiveOption(400_000, 0).addExecutorComposeOption(0, 5_000_000, executorFee ?? '0');
+    }
+
+    return {
+        dstEid: bridgeChainEid(BRIDGE_DESTINATION_CHAIN[bridgeType], mainnet),
+        to: to,
+        amountLD: amountToSend,
+        minAmountLD: amountToSend,
+        extraOptions: options.toHex(),
+        composeMsg: composeMsg,
+        oftCmd: '0x'
+    };
+}
+
 export function useBridgeQouteSend() {
-    const { mainToken, bridgeToken } = useWeb3();
+    const { mainToken, getBridgeToken } = useWeb3();
     const provider = getProvider(mainToken?.address!);
 
     return useMutation({
@@ -739,84 +874,22 @@ export function useBridgeQouteSend() {
             if (!provider) return;
 
             try {
-                const abiCoder = AbiCoder.defaultAbiCoder();
-                const signer = await provider.getSigner(
-                    bridgeType === BRIDGE_TYPE.FLARE || bridgeType === BRIDGE_TYPE.XRPL
-                        ? bridgeToken
-                        : undefined
-                );
+                const signer = await provider.getSigner(bridgeSignerToken(bridgeType, getBridgeToken));
                 const signerAddress = await signer?.getAddress();
 
-                const PPM_DENOMINATOR = BigInt(1_000_000);
-                let options = Options.newOptions().addExecutorLzReceiveOption(200_000, 0);
-                let composeMsg = '0x';
-                let to = ethers.zeroPadValue(mainToken?.address!, 32);
-                let amountToSend = amount;
+                const sendParams = buildBridgeSendParams({
+                    bridgeType,
+                    amount,
+                    signerAddress,
+                    recipient: mainToken?.address!,
+                    mainnet: !!mainToken?.network?.mainnet,
+                    executorFee,
+                    composerFeePPM,
+                    destinationAddress,
+                    destinationTag
+                });
 
-                if (bridgeType === BRIDGE_TYPE.HYPER_CORE) {
-                    composeMsg = abiCoder.encode(['uint256', 'address'], ['0', signerAddress]);
-                    to = ethers.zeroPadValue(process.env.HYPERLIQUID_COMPOSER_ADDRESS!, 32);
-                    options.addExecutorComposeOption(0, 200_000, '0');
-                } else if (bridgeType === BRIDGE_TYPE.XRPL) {
-                    // Gross-up: user enters net amount, total = net / (1 - composerFeePPM/1M)
-                    const feePPM = BigInt(composerFeePPM ?? '0');
-                    const amountBig = BigInt(amount);
-                    amountToSend = ((amountBig * PPM_DENOMINATOR) / (PPM_DENOMINATOR - feePPM)).toString();
-                    const tag = destinationTag ?? 0;                    
-                    composeMsg = abiCoder.encode(
-                        ['tuple(address, string, bool, uint256, address, uint256)'],
-                        [[
-                            signerAddress,
-                            destinationAddress ?? '',
-                            tag !== 0,
-                            BigInt(tag),
-                            ethers.ZeroAddress,
-                            BigInt(executorFee ?? '0'),
-                        ]]
-                    );
-                    to = ethers.zeroPadValue(process.env.FXRP_COMPOSER_ADDRESS!, 32);
-                    // executorFee from /api/oft/redemptionFees — required for executor to process the redemption
-                    options = Options.newOptions().addExecutorLzReceiveOption(400_000, 0).addExecutorComposeOption(0, 5_000_000, executorFee ?? '0');
-                }
-
-                let address: string | undefined = undefined;
-                let abi: any | undefined = undefined;
-
-                if (bridgeType === BRIDGE_TYPE.FLARE || bridgeType === BRIDGE_TYPE.XRPL) {
-                    address = process.env.BRIDGE_HYPE_FXRP_OFT_ADAPTER_ADDRESS!;
-                    abi = OFTUpgradeableAbi;
-                } else {
-                    address = process.env.BRIDGE_FXRP_OFT_ADAPTER_ADDRESS!;
-                    abi = FAssetOFTAdapterAbi;
-                }
-
-                if (!address || !abi) {
-                    throw new Error(i18next.t('errors.transaction_failed_label'));
-                }
-
-                let dstEid: number;
-                if (bridgeType === BRIDGE_TYPE.FLARE || bridgeType === BRIDGE_TYPE.XRPL) {
-                    dstEid = mainToken?.network?.mainnet
-                        ? EndpointId.FLARE_V2_MAINNET
-                        : EndpointId.FLARE_V2_TESTNET;
-                } else {
-                    dstEid = mainToken?.network?.mainnet
-                        ? EndpointId.HYPERLIQUID_V2_MAINNET
-                        : EndpointId.HYPERLIQUID_V2_TESTNET;
-                }
-
-                const contract = new ethers.Contract(address!, abi, signer);
-
-                const sendParams = {
-                    dstEid: dstEid,
-                    to: to,
-                    amountLD: amountToSend,
-                    minAmountLD: amountToSend,
-                    extraOptions: options.toHex(),
-                    composeMsg: composeMsg,
-                    oftCmd: '0x'
-                };
-
+                const contract = bridgeSourceContract(bridgeType, signer);
                 const result = await contract.quoteSend(sendParams, false);
                 return result.nativeFee;
             } catch (error: any) {
@@ -855,7 +928,7 @@ export function useBridgeApprove() {
 }
 
 export function useBridgeSend() {
-    const { mainToken, bridgeToken } = useWeb3();
+    const { mainToken, getBridgeToken } = useWeb3();
     const provider = getProvider(mainToken?.address!);
 
     return useMutation({
@@ -872,96 +945,33 @@ export function useBridgeSend() {
 
             const log = createLogger('BRIDGE_SEND');
             try {
-                const abiCoder = AbiCoder.defaultAbiCoder();
-                const signer = await provider.getSigner(
-                    bridgeType === BRIDGE_TYPE.FLARE || bridgeType === BRIDGE_TYPE.XRPL
-                        ? bridgeToken
-                        : undefined
-                );
+                const signer = await provider.getSigner(bridgeSignerToken(bridgeType, getBridgeToken));
                 const signerAddress = await signer?.getAddress();
 
-                const PPM_DENOMINATOR = BigInt(1_000_000);
-                let options = Options.newOptions().addExecutorLzReceiveOption(200_000, 0);
-                let composeMsg = '0x';
-                let to = ethers.zeroPadValue(mainToken?.address!, 32);
-                let amountToSend = amount;
+                const sendParams = buildBridgeSendParams({
+                    bridgeType,
+                    amount,
+                    signerAddress,
+                    recipient: mainToken?.address!,
+                    mainnet: !!mainToken?.network?.mainnet,
+                    executorFee,
+                    composerFeePPM,
+                    destinationAddress,
+                    destinationTag,
+                    log
+                });
 
-                if (bridgeType === BRIDGE_TYPE.HYPER_CORE) {
-                    composeMsg = abiCoder.encode(['uint256', 'address'], ['0', signerAddress]);
-                    to = ethers.zeroPadValue(process.env.HYPERLIQUID_COMPOSER_ADDRESS!, 32);
-                    options.addExecutorComposeOption(0, 200_000, '0');
-                } else if (bridgeType === BRIDGE_TYPE.XRPL) {
-                    const xrplLog = log.child('XRPL');
-                    // Gross-up: user enters net amount, total = net / (1 - composerFeePPM/1M)
-                    const feePPM = BigInt(composerFeePPM ?? '0');
-                    const amountBig = BigInt(amount);
-                    amountToSend = ((amountBig * PPM_DENOMINATOR) / (PPM_DENOMINATOR - feePPM)).toString();
-                    const tag = destinationTag ?? 0;
-                    xrplLog.log('compose params:', {
-                        redeemer: signerAddress,
-                        underlyingAddress: destinationAddress ?? '',
-                        redeemWithTag: tag !== 0,
-                        destinationTag: tag,
-                        executor: ethers.ZeroAddress,
-                        executorFee: executorFee ?? '0',
-                        composerAddress: process.env.FXRP_COMPOSER_ADDRESS,
-                    });
-                    composeMsg = abiCoder.encode(
-                        ['tuple(address, string, bool, uint256, address, uint256)'],
-                        [[
-                            signerAddress,
-                            destinationAddress ?? '',
-                            tag !== 0,
-                            BigInt(tag),
-                            ethers.ZeroAddress,
-                            BigInt(executorFee ?? '0'),
-                        ]]
-                    );
-                    xrplLog.log('composeMsg encoded:', composeMsg);
-                    to = ethers.zeroPadValue(process.env.FXRP_COMPOSER_ADDRESS!, 32);
-                    // executorFee from /api/oft/redemptionFees — required for executor to process the redemption
-                    options = Options.newOptions().addExecutorLzReceiveOption(400_000, 0).addExecutorComposeOption(0, 5_000_000, executorFee ?? '0');
-                }
-
-                let address: string | undefined = undefined;
-                let abi: any | undefined = undefined;
-
-                if (bridgeType === BRIDGE_TYPE.FLARE || bridgeType === BRIDGE_TYPE.XRPL) {
-                    address = process.env.BRIDGE_HYPE_FXRP_OFT_ADAPTER_ADDRESS!;
-                    abi = OFTUpgradeableAbi;
-                } else {
-                    address = process.env.BRIDGE_FXRP_OFT_ADAPTER_ADDRESS!;
-                    abi = FAssetOFTAdapterAbi;
-                }
-
-                if (!address || !abi) {
-                    throw new Error(i18next.t('errors.transaction_failed_label'));
-                }
-
-                let dstEid: number;
-                if (bridgeType === BRIDGE_TYPE.FLARE || bridgeType === BRIDGE_TYPE.XRPL) {
-                    dstEid = mainToken?.network?.mainnet
-                        ? EndpointId.FLARE_V2_MAINNET
-                        : EndpointId.FLARE_V2_TESTNET;
-                } else {
-                    dstEid = mainToken?.network?.mainnet
-                        ? EndpointId.HYPERLIQUID_V2_MAINNET
-                        : EndpointId.HYPERLIQUID_V2_TESTNET;
-                }
-
-                const contract = new ethers.Contract(address!, abi, signer);
-                log.log('params:', { bridgeType, dstEid, to, amountToSend, composeMsg, fee: fee?.toString(), signerAddress });
+                const contract = bridgeSourceContract(bridgeType, signer);
+                log.log('params:', {
+                    bridgeType,
+                    sourceChain: BRIDGE_SOURCE_CHAIN[bridgeType],
+                    ...sendParams,
+                    fee: fee?.toString(),
+                    signerAddress
+                });
 
                 const tx = await contract.send(
-                    {
-                        dstEid: dstEid,
-                        to: to,
-                        amountLD: amountToSend,
-                        minAmountLD: amountToSend,
-                        extraOptions: options.toHex(),
-                        composeMsg: composeMsg,
-                        oftCmd: '0x'
-                    },
+                    sendParams,
                     { nativeFee: fee, lzTokenFee: '0' },
                     signerAddress,
                     {
@@ -1019,45 +1029,54 @@ export function useTransferFrom() {
     });
 }
 
-export function useHyperEVMBalance(enabled: boolean = true) {
-    const { mainToken, bridgeToken } = useWeb3();
-    const provider = getProvider(mainToken?.address!);
+// Read-only balance queries use a direct JsonRpcProvider against the bridge chain RPC.
+// Going through the wallet signer mutates universalProvider.defaultChain and races
+// with concurrent operations on Flare, producing ethers "network changed" errors.
+//
+// `chain` defaults to HYPER_EVM so existing callers stay unchanged.
+export function useHyperEVMBalance(enabled: boolean = true, chain: BridgeChain = BRIDGE_CHAIN.HYPER_EVM) {
+    const { mainToken } = useWeb3();
+    const rpcUrl = BRIDGE_FASSET_COIN[chain]?.network?.rpcUrl;
+    const oftAddress = BRIDGE_SOURCE_OFT[chain]?.address;
 
     return useQuery({
-        queryKey: [CONTRACT_KEY.HYPER_EVM_BALANCE, mainToken?.address!],
+        queryKey: [CONTRACT_KEY.HYPER_EVM_BALANCE, mainToken?.address!, chain],
         queryFn: async () => {
-            if (!provider) return 0;
+            if (!mainToken?.address || !rpcUrl || !oftAddress) return 0;
 
             try {
-                const signer = await provider.getSigner(bridgeToken);
-                const contract = new ethers.Contract(process.env.BRIDGE_HYPE_FXRP_OFT_ADAPTER_ADDRESS!, IIFAssetAbi, signer);
-                return await contract.balanceOf(mainToken?.address!);
+                const provider = new ethers.JsonRpcProvider(rpcUrl);
+                const contract = new ethers.Contract(oftAddress, IIFAssetAbi, provider);
+                const balance = await contract.balanceOf(mainToken.address);
+                return balance;
             } catch (error: any) {
                 handleErrors(error);
             }
         },
-        enabled: enabled,
+        enabled: enabled && !!mainToken?.address && !!rpcUrl && !!oftAddress,
         staleTime: 10000
     })
 }
 
-export function useHypeBalance(enabled: boolean = true) {
-    const { mainToken, bridgeToken } = useWeb3();
-    const provider = getProvider(mainToken?.address!);
+// Gas balance on the bridge chain (HYPE or ETH) — pays the LayerZero nativeFee.
+export function useHypeBalance(enabled: boolean = true, chain: BridgeChain = BRIDGE_CHAIN.HYPER_EVM) {
+    const { mainToken } = useWeb3();
+    const rpcUrl = BRIDGE_GAS_COIN[chain]?.network?.rpcUrl;
 
     return useQuery({
-        queryKey: [CONTRACT_KEY.HYPE_BALANCE, mainToken?.address!],
+        queryKey: [CONTRACT_KEY.HYPE_BALANCE, mainToken?.address!, chain],
         queryFn: async () => {
-            if (!provider) return 0;
+            if (!mainToken?.address || !rpcUrl) return 0;
 
             try {
-                const signer = await provider.getSigner(bridgeToken);
-                return await signer?.provider?.getBalance(mainToken?.address!);
+                const provider = new ethers.JsonRpcProvider(rpcUrl);
+                const balance = await provider.getBalance(mainToken.address);
+                return balance;
             } catch (error: any) {
                 handleErrors(error);
             }
         },
-        enabled: enabled,
+        enabled: enabled && !!mainToken?.address && !!rpcUrl,
         staleTime: 10000
     })
 }

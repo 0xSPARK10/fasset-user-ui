@@ -9,6 +9,7 @@ import C2FlrIcon from "@/components/icons/C2FlrIcon";
 import { INamespaceMethods, INetwork } from "@/types";
 import { LEDGER_APP } from "@/constants";
 import FXrpHypeCoreIcon from "@/components/icons/FXrpHypeCoreIcon";
+import EthIcon from "@/components/icons/EthIcon";
 
 export const ETH_NAMESPACE = 'eip155';
 export const XRP_NAMESPACE = 'xrpl';
@@ -195,6 +196,40 @@ export const HYPERLIQUID_EVM: INetwork = {
     mainnet: true,
     explorerAddressUrl: 'https://hyperevmscan.io/address',
     explorerTxUrl: 'https://hyperevmscan.io/tx',
+    ledgerApp: LEDGER_APP.ETH
+}
+
+export const NETWORK_ETHEREUM: INetwork = {
+    chainId: '1',
+    name: 'Ethereum',
+    shortName: 'Ethereum',
+    brandName: 'Ethereum',
+    rpcUrl: 'https://ethereum-rpc.publicnode.com',
+    namespace: ETH_NAMESPACE,
+    methods: ETH_NAMESPACE_METODS,
+    addRpcMap: true,
+    icon: (props) => <EthIcon width="32" height="32" {...props} />,
+    isMandatory: false,
+    mainnet: true,
+    explorerAddressUrl: 'https://etherscan.io/address',
+    explorerTxUrl: 'https://etherscan.io/tx',
+    ledgerApp: LEDGER_APP.ETH
+}
+
+export const NETWORK_ETHEREUM_SEPOLIA: INetwork = {
+    chainId: '11155111',
+    name: 'Ethereum Sepolia',
+    shortName: 'Sepolia',
+    brandName: 'Ethereum',
+    rpcUrl: 'https://ethereum-sepolia-rpc.publicnode.com',
+    namespace: ETH_NAMESPACE,
+    methods: ETH_NAMESPACE_METODS,
+    addRpcMap: true,
+    icon: (props) => <EthIcon width="32" height="32" {...props} />,
+    isMandatory: false,
+    mainnet: false,
+    explorerAddressUrl: 'https://sepolia.etherscan.io/address',
+    explorerTxUrl: 'https://sepolia.etherscan.io/tx',
     ledgerApp: LEDGER_APP.ETH
 }
 

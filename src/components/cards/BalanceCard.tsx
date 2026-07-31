@@ -30,6 +30,7 @@ import { NETWORK_FLARE, NETWORK_FLARE_COSTON2_TESTNET } from "@/config/networks"
 import { useNetworks } from "@/hooks/useNetworks";
 import { BALANCE_FETCH_INTERVAL, WALLET } from "@/constants";
 import CryptoJS from "crypto-js";
+import BalanceRow from "@/components/cards/BalanceRow";
 
 interface IBalanceCard {
     className?: string;
@@ -359,50 +360,33 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                         }
                     </div>
                     {fAssetCoins.map((fAssetCoin) => (
-                        <div
+                        <BalanceRow
                             key={fAssetCoin.type}
-                            className="flex max-[360px]:flex-col justify-between border-t mt-2 pt-2"
-                        >
-                            <div className="flex items-center">
-                                {fAssetCoin.icon !== null && fAssetCoin.icon()}
-                                <div className="ml-3">
-                                    <Text
-                                        c="var(--flr-gray)"
-                                        className="text-12"
-                                        fw={400}
+                            icon={fAssetCoin.icon !== null && fAssetCoin.icon()}
+                            label={fAssetCoin?.type}
+                            value={fAssetCoin?.balance}
+                            action={
+                                <>
+                                    <Tooltip
+                                        label={t('balance_card.connect_tooltip')}
+                                        withArrow
+                                        disabled={fAssetCoin.enabled}
                                     >
-                                        {fAssetCoin?.type}
-                                    </Text>
-                                    <Text
-                                        className="text-14"
-                                        fw={500}
-                                    >
-                                        {fAssetCoin?.balance}
-                                    </Text>
-                                </div>
-                            </div>
-                            <div className="flex items-center max-[360px]:mt-2">
-                                <Tooltip
-                                    label={t('balance_card.connect_tooltip')}
-                                    withArrow
-                                    disabled={fAssetCoin.enabled}
-                                >
+                                        <Button
+                                            variant="gradient"
+                                            size="xs"
+                                            radius="xl"
+                                            fw={400}
+                                            disabled={!fAssetCoin.enabled || disabledFassets.includes(fAssetCoin.type)}
+                                            onClick={() => {
+                                                activeFAssetCoin.current = fAssetCoin;
+                                                setIsMintModalActive(true);
+                                            }}
+                                        >
+                                            {t('balance_card.mint_button')}
+                                        </Button>
+                                    </Tooltip>
                                     <Button
-                                        variant="gradient"
-                                        size="xs"
-                                        className="mr-3"
-                                        radius="xl"
-                                        fw={400}
-                                        disabled={!fAssetCoin.enabled || disabledFassets.includes(fAssetCoin.type)}
-                                        onClick={() => {
-                                            activeFAssetCoin.current = fAssetCoin;
-                                            setIsMintModalActive(true);
-                                        }}
-                                    >
-                                        {t('balance_card.mint_button')}
-                                    </Button>
-                                </Tooltip>
-                                <Button
                                         variant="gradient"
                                         size="xs"
                                         radius="xl"
@@ -414,9 +398,9 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                                     >
                                         {t('balance_card.redeem_button')}
                                     </Button>
-                                
-                            </div>
-                        </div>
+                                </>
+                            }
+                        />
                     ))}
                     <Divider
                         className="my-10"
@@ -442,27 +426,13 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                         className="mt-2"
                     >
                         {stableCoins.map(stableCoin => (
-                            <div
+                            <BalanceRow
                                 key={stableCoin.type}
-                                className="flex items-center border-t pt-2"
-                            >
-                                {stableCoin.icon !== null && stableCoin.icon()}
-                                <div className="ml-3">
-                                    <Text
-                                        c="var(--flr-gray)"
-                                        fw={400}
-                                        className="text-12"
-                                    >
-                                        {stableCoin?.type}
-                                    </Text>
-                                    <Text
-                                        className="text-14"
-                                        fw={500}
-                                    >
-                                        {stableCoin?.balance}
-                                    </Text>
-                                </div>
-                            </div>
+                                className=""
+                                icon={stableCoin.icon !== null && stableCoin.icon()}
+                                label={stableCoin?.type}
+                                value={stableCoin?.balance}
+                            />
                         ))}
                     </SimpleGrid>
                 </>

@@ -1,7 +1,7 @@
 ---
-doc_version: "1.5"
+doc_version: "1.9"
 app_version: "v1.3"
-last_updated: "2026-04-28"
+last_updated: "2026-07-30"
 ---
 
 # FAsset User UI — Business Rules & Edge Cases
@@ -129,6 +129,43 @@ Both `isDepositAuthBlocking` and `isRequireDestTagBlocking` feed into `isNextBut
 
 **Code:** `src/components/modals/RedeemModal.tsx` (`isRequireDestTagBlocking`, line ~108)
 
+### A tag is blocked when the asset manager does not support tag redemptions
+
+On the XRPL bridge routes, entering a destination tag is blocked unless
+`AssetManager.redeemWithTagSupported()` returns `true`. The block also applies while the query
+is still pending, errored, or reverting — i.e. `data` being `undefined` blocks too.
+
+```ts
+if (isXrplRoute && String(destinationTag ?? '').trim() !== '' && !redeemWithTagSupported.data) {
+    setErrorMessage(t('redeem_modal.form.destination_tag_not_supported_error'));
+    return;
+}
+```
+
+**Why:** older asset managers revert on `redeemWithTagSupported()`. Treating the unknown case
+as "supported" would send the payment untagged, and on an account that requires a tag the XRP
+would be lost. Failing closed is the only safe reading.
+
+**Code:** `src/components/modals/BridgeModal.tsx` (lines ~208–218)
+
+### Destination tag `0` is sent untagged — known limitation
+
+The bridge compose message sets `redeemWithTag: tag !== 0`, so a tag of `0` collapses into
+"no tag" and the XRP arrives without one. `parseDestinationTag` preserves `0` correctly, but
+the encoder one layer down discards it, so the helper's stated purpose is not achieved.
+
+The **direct redeem path does not share this limitation**: it passes the tag as a string and
+tests `destinationTag ? … : …`, and `"0"` is truthy, so `0` goes out as a real tag. The
+`requireDestTag` block likewise measures an empty string, not falsiness.
+
+**Why it is left as is:** the behaviour is unchanged from before the Ethereum work (the old
+`Number(value) || undefined` also dropped `0`), tag `0` is rare in practice, and whether the
+composer contract repeats the same `tag != 0` test is unverified. An empty input already
+expresses "no tag", so `0` carries no meaning the UI cannot otherwise convey.
+
+**Code:** `src/hooks/useContracts.ts` (`buildBridgeSendParams`, `tag !== 0`),
+`src/utils/number.ts` (`parseDestinationTag`)
+
 ### Partial redemption: redeemed amount is calculated from the remaining
 
 When the redemption API response has `incomplete: true`, the UI does not show `requestedAmount` as the result. Instead it computes the actual redeemed amount:
@@ -191,6 +228,99 @@ const MIN_BRIDGE_AMOUNT = 5;
 **Why:** Prevents dust bridge transactions. The actual minimum will come from `minimumRedeemAmountUBA` once the backend confirms the correct value.
 
 **Code:** `src/components/forms/BridgeXrplForm.tsx` (line ~164)
+
+### A WalletConnect session does not gain chains added in a later release
+
+Chains are requested once, in `connect()`, and a session then persists for weeks. Adding a bridge chain therefore reaches new sessions only — every session negotiated before the release keeps its old chain set, and nothing renegotiates it. Observed on mainnet: bridging *to* Ethereum worked (signed on Flare, always in the session) while bridging *from* Ethereum failed until the user disconnected and reconnected the wallet.
+
+The failure is pre-flight and surfaces as ethers' `no such account`, already at the fee quote while the user is typing the amount — not at send:
+
+```
+setDefaultChain('eip155:1')                     // succeeds; no validation against the session
+BrowserProvider.getSigner() → eth_accounts      // UniversalProvider filters accounts by default chain
+  → []                                          // no eip155:1 account in the session
+  → Error("no such account")                     // ethers, provider-jsonrpc.js
+```
+
+**Why:** A `wallet_addEthereumChain` equivalent does not exist in the WalletConnect session protocol, and `optionalNamespaces` are approved at the wallet's discretion, so no connect-time code can repair a session that already exists. The only fix is a new session, which is why the user is told to disconnect and reconnect rather than the app trying to recover silently.
+
+The handling is one branch in `handleErrors` and nothing more. Every `getSigner()` call in `useContracts.ts` — all 17 of them — is already wrapped by it and there are no callers elsewhere, so a guard inside the connector would catch nothing that this does not. It was tried and dropped for that reason.
+
+Deliberately **not** a modal with a reconnect button, and no pre-flight check on the card: the case could not be reproduced on testnet (Bifrost approves the chains it supports regardless of a narrower request), and unverifiable flow is worse than a message that is guaranteed to appear.
+
+Should a pre-flight check ever be added, two things decide whether it works:
+
+- **`session.namespaces` is the authority, not `universalProvider.namespaces`.** `createProviders` builds each rpcProvider with `accounts` taken from the session, overriding the merged namespaces — which hold what we *requested*, including chains the wallet never approved. Checking the requested set yields false positives.
+- **Compare the chain reference, not a string prefix.** On mainnet Ethereum is `eip155:1`, which prefixes Flare (`eip155:14`) and Songbird (`eip155:19`); an `includes('eip155:1')` check passes on a Flare-only session. Testnet cannot catch this — Sepolia (`11155111`) prefixes nothing.
+
+**Code:** `src/hooks/useContracts.ts` (`handleErrors`)
+
+### ETH-priced fees and balances come from the coin, and the fee is rounded up
+
+Both the cross-chain fee row on Bridge to Flare / Bridge to XRPL and the gas balance row on
+the Ethereum bridge card are displayed with as many decimals as the ETH figure needs, taken
+from the coin rather than from a default at the call site:
+
+```ts
+ETH.feeDecimals = SEPOLIA_ETH.feeDecimals = 6   // fee row; every other coin falls back to 4
+ETH.decimals    = SEPOLIA_ETH.decimals    = 6   // balance row; every other coin falls back to 2
+```
+
+Two fields because the two numbers do not track each other: HYPE fees are shown at four
+decimals while a HYPE balance is shown at two. For ETH they happen to coincide at six.
+
+The fee row pads to a fixed width; the balance row does not. `ETH.decimals` is a *ceiling* for
+the balance — it floors to six decimals, then trims trailing zeros down to a floor of two:
+
+| ETH balance      | renders      |
+| ---------------- | ------------ |
+| `0`              | `0.00`       |
+| `0.0004`         | `0.0004`     |
+| `1.5`            | `1.50`       |
+| `2.3333333333`   | `2.333333`   |
+
+**Why variable width:** the two ends of an ETH-priced range want different things. A sub-cent
+balance is meaningless without all six decimals, while a whole-ETH one padded out to
+`1.500000` reads as false precision. Version 1.8 of this doc argued a fixed width was needed
+for column alignment — that was wrong: `BalanceRow` renders the value as text stacked under
+its label, not in a right-aligned numeric column, so nothing lines up against it.
+
+The minimum of two decimals is what keeps `0` rendering as `0.00` rather than a bare `0`, and
+it comes from `formatNumber`'s `minFractionDigits` parameter, which defaults to the fixed-width
+behaviour every other call site relies on.
+
+**Why the extra decimals:** One ETH is worth orders of magnitude more than one FLR or HYPE, so
+the same fee in value terms is a much smaller number — the LayerZero nativeFee is thousandths
+of an ETH on mainnet and millionths on Sepolia. At the four decimals the HyperEVM routes use,
+both round to `0.0000`, and a fee row of zeros reads as "bridging is free" rather than "the fee
+is tiny".
+
+**Why rounded up:** `formatCrossChainFee` is the one helper in `core/fees/format.ts` that rounds
+up instead of flooring. A fee shown lower than the one actually charged understates the cost,
+and flooring would also drop a small-but-real fee into a row of zeros — rounding up lands it on
+the last shown digit instead, which removes the need for a separate `< 0.000001` case. The other
+helpers there (`formatInputAmount`, `formatFeeAmount`) still floor, because flooring is what
+protects the user in their context: a max amount must never exceed what can actually be sent.
+
+**Why the balance row floors:** `formatBalanceAmount` rounds down, the opposite of the fee row
+and for the same reason it protects the user — a balance shown higher than the one held reads
+as spendable when it is not. The cost is that dust below `0.000001 ETH` floors to `0.00`, so it
+is indistinguishable from an empty account, while the fee row rounds *up* and quotes
+`0.000001`. A user holding dust therefore sees a balance that reads as nothing next to a fee
+that reads as something — accepted, because the alternative shows a balance they cannot spend.
+
+The zero-balance placeholder goes through the same helper rather than a hardcoded string, so
+a not-yet-loaded row and a genuinely empty one render identically. Note that
+`useHypeBalance` returns `0n` for an empty account, which is falsy — the placeholder branch
+is what actually renders a zero balance, and both branches agree only because they share the
+helper.
+
+**Code:** `src/types.ts` (`ICoin.decimals`, `ICoin.feeDecimals`),
+`src/config/coin.tsx` (`ETH`, `SEPOLIA_ETH`),
+`src/utils/number.ts` (`formatNumber`'s `minFractionDigits`),
+`src/core/fees/format.ts` (`formatCrossChainFee`, `formatBalanceAmount`),
+`src/components/forms/BridgeForm.tsx` and `BridgeXrplForm.tsx` (cross-chain fee row),
+`src/components/cards/BridgeUnderlyingBalanceCard.tsx` (gas balance row)
 
 ---
 

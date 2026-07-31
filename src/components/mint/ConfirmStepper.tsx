@@ -37,7 +37,7 @@ const log = createLogger('MINT');
 const FINISHED_MODAL = "finished_modal";
 const STEP_WALLET_PAYMENT = 0;
 const STEP_WALLET_COMPLETED = 1;
-const DIRECT_MINTING_PREFIX = "4642505266410018";
+const DIRECT_MINTING_EX_PREFIX = "4642505266410021"; // type = DIRECT_MINTING_EX
 
 interface IConfirmStepper {
     opened: boolean;
@@ -47,9 +47,17 @@ interface IConfirmStepper {
     onClose: (isWaitingMintModalActive: boolean) => void;
 }
 
-function encodeDirectMintingMemo(destinationAddress: string) {
-    const normalizedAddress = destinationAddress.toLowerCase().replace(/^0x/, "");
-    return `0x${DIRECT_MINTING_PREFIX}${"0".repeat(8)}${normalizedAddress}`.toUpperCase();
+function encodeDirectMintingMemo(recipient: string, executor: string) {
+    const normalize = (addr: string) => (addr ?? "").toLowerCase().replace(/^0x/, "");
+    const r = normalize(recipient);
+    const e = normalize(executor);
+    // Both must be 20-byte (40 hex char) EVM addresses; fail loudly rather than
+    // emit a malformed (too-short) memo if the executor is missing.
+    if (r.length !== 40 || e.length !== 40) {
+        throw new Error("Invalid recipient or executor address for direct minting memo");
+    }
+    // DIRECT_MINTING_EX memo: prefix(8B) + recipient(20B) + executor(20B) = 48 bytes, no padding.
+    return `0x${DIRECT_MINTING_EX_PREFIX}${r}${e}`.toUpperCase();
 }
 
 function calculateDirectMintPaymentAmount(
@@ -157,7 +165,10 @@ export default function ConfirmStepper({
                 : (formValues.addressTag as string);
             const useTag = !!tagToSend;
             const paymentReference = !useTag && formValues.destinationAddress
-                ? encodeDirectMintingMemo(formValues.destinationAddress)
+                ? encodeDirectMintingMemo(
+                    formValues.destinationAddress,
+                    directMintingResponse.executorAddress,
+                  )
                 : undefined;
 
             log.log('tag resolution:', {

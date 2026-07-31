@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { WALLET } from "@/constants";
 import { useConnectedCoin } from "@/store/coin";
 import { ethers, JsonRpcSigner } from "ethers";
-import { BRIDGE_COINS, COINS, HYPE, TEST_HYPE } from "@/config/coin";
+import { BRIDGE_COINS, BRIDGE_GAS_COIN, COINS } from "@/config/coin";
 import { ICoin } from "@/types";
 
 export interface IMetaMaskConnector {
@@ -103,8 +103,14 @@ export default function MetaMaskConnector(): IMetaMaskConnector {
         if (!token) {
             token = mainToken!;
         }
+        // Bridge coins are FAsset OFTs (FXRP), so their `type`/`nativeName` is not
+        // suitable as `nativeCurrency` for wallet_addEthereumChain — swap them for the
+        // gas coin of the same chain (HYPE or ETH).
         if (BRIDGE_COINS.includes(token)) {
-            token = token?.network?.mainnet ? HYPE : TEST_HYPE;
+            const gasCoin = Object.values(BRIDGE_GAS_COIN).find(
+                coin => coin.network.chainId === token?.network?.chainId
+            );
+            token = gasCoin ?? token;
         }
 
         //@ts-ignore

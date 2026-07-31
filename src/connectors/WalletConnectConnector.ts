@@ -7,7 +7,7 @@ import UniversalProvider, { ConnectParams } from "@walletconnect/universal-provi
 import { ethers, JsonRpcSigner } from "ethers";
 import { getAccountsFromNamespaces } from "@walletconnect/utils";
 import { useConnectedCoin } from "@/store/coin";
-import { ETH_NAMESPACE, HYPERLIQUID_EVM, HYPERLIQUID_EVM_TESTNET, XRP_NAMESPACE } from "@/config/networks";
+import { ETH_NAMESPACE, HYPERLIQUID_EVM, HYPERLIQUID_EVM_TESTNET, NETWORK_ETHEREUM, NETWORK_ETHEREUM_SEPOLIA, XRP_NAMESPACE } from "@/config/networks";
 import { COINS } from "@/config/coin";
 import { CoinEnum, ICoin, INetwork } from "@/types";
 import { WALLET } from "@/constants";
@@ -55,7 +55,9 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
             const localNetworks = [...networks];
 
             if (isBridgeEnabled) {
-                localNetworks.push(mainToken?.network?.mainnet ? HYPERLIQUID_EVM : HYPERLIQUID_EVM_TESTNET);
+                const isMainnet = mainToken?.network?.mainnet;
+                localNetworks.push(isMainnet ? HYPERLIQUID_EVM : HYPERLIQUID_EVM_TESTNET);
+                localNetworks.push(isMainnet ? NETWORK_ETHEREUM : NETWORK_ETHEREUM_SEPOLIA);
             }
 
             localNetworks.forEach(network => {

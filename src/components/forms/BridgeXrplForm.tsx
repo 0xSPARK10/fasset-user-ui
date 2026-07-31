@@ -20,11 +20,12 @@ import { useTranslation } from "react-i18next";
 import {
 	formatNumber,
 	formatUnit,
+	parseDestinationTag,
 	parseUnits,
 	roundDownToDecimals,
 	toNumber,
 } from "@/utils";
-import { formatInputAmount } from "@/core/fees/format";
+import { formatCrossChainFee, formatInputAmount } from "@/core/fees/format";
 import { useDebouncedCallback, useMediaQuery } from "@mantine/hooks";
 import { IconArrowNarrowRight } from "@tabler/icons-react";
 import { useWeb3 } from "@/hooks/useWeb3";
@@ -32,12 +33,12 @@ import { useBridgeQouteSend, useHypeBalance } from "@/hooks/useContracts";
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { ErrorDecoder } from "ethers-decode-error";
 import { FAssetOFTAdapterAbi } from "@/abi";
-import { BRIDGE_TYPE } from "@/constants";
+import { BRIDGE_CHAIN, BRIDGE_TYPE } from "@/constants";
 import { BridgeConfig } from "@/components/modals/BridgeModal";
 import { useRedemptionFees } from "@/api/oft";
 import { useRedemptionFee, useRedemptionQueue } from "@/api/redemption";
-import { EndpointId } from "@layerzerolabs/lz-definitions";
-import { FASSET_COIN, HYPE } from "@/config/coin";
+import { BRIDGE_GAS_COIN, FASSET_COIN } from "@/config/coin";
+import { FEE_TOKEN_CHAIN } from "@/config/bridge";
 import { isValidClassicAddress } from "xrpl";
 import DestinationAddressField from "@/components/elements/DestinationAddressField";
 import AmountInput from "../elements/AmountInput";
@@ -47,6 +48,8 @@ import { IAlertMessage } from "../elements/FormAlert";
 interface IBridgeXrplForm {
 	token: ICoin;
 	bridgeConfig: BridgeConfig;
+	/** LayerZero eid of the source chain — used to query redemption/executor fees. */
+	srcEid: number;
 	onError: (error: string | undefined) => void;
 	onFormAlert: (alert?: IAlertMessage) => void;
 	onCoreVaultError: (error: string) => void;
@@ -82,6 +85,8 @@ const BridgeXrplForm = forwardRef<FormRef, IBridgeXrplForm>(
 	(
 		{
 			token,
+			bridgeConfig,
+			srcEid,
 			onError,
 			onFormAlert,
 			onDestinationAddressChange,
@@ -95,10 +100,9 @@ const BridgeXrplForm = forwardRef<FormRef, IBridgeXrplForm>(
 		const { mainToken, bridgeToken, getConnectedCoin } = useWeb3();
 
 		const qouteSend = useBridgeQouteSend();
-		const hypeBalance = useHypeBalance(true);
-		const srcEid = mainToken?.network?.mainnet
-			? EndpointId.HYPERLIQUID_V2_MAINNET
-			: EndpointId.HYPERLIQUID_V2_TESTNET;
+		const feeChain = FEE_TOKEN_CHAIN[bridgeConfig.feeTokenKey];
+		const feeCoin = feeChain ? BRIDGE_GAS_COIN[feeChain] : mainToken;
+		const hypeBalance = useHypeBalance(true, feeChain ?? BRIDGE_CHAIN.HYPER_EVM);
 		const redemptionFees = useRedemptionFees(srcEid, true);
 		const redemptionFee = useRedemptionFee(token.type, true);
 		const redemptionQueue = useRedemptionQueue(token.type, true);
@@ -196,7 +200,7 @@ const BridgeXrplForm = forwardRef<FormRef, IBridgeXrplForm>(
 			initialValues: {
 				amount: undefined,
 				fee: undefined,
-				type: BRIDGE_TYPE.XRPL,
+				type: bridgeConfig.type,
 				destinationAddress: "",
 				destinationTag: "" as string | number,
 				executorFee: undefined,
@@ -267,7 +271,7 @@ const BridgeXrplForm = forwardRef<FormRef, IBridgeXrplForm>(
 			if (toNumber(hypeBalanceFormatted) < toNumber(fee)) {
 				onError(
 					t("bridge_modal.error_insufficient_balance_label", {
-						tokenName: CoinEnum.HYPE,
+						tokenName: feeCoin?.type,
 					}),
 				);
 				if (isFormDisabled) isFormDisabled(true);
@@ -328,11 +332,11 @@ const BridgeXrplForm = forwardRef<FormRef, IBridgeXrplForm>(
 			try {
 				const quoteFee = await qouteSend.mutateAsync({
 					amount: parseUnits(value, 6).toString(),
-					bridgeType: BRIDGE_TYPE.XRPL,
+					bridgeType: bridgeConfig.type,
 					executorFee: redemptionFees.data?.executorFee,
 					composerFeePPM: redemptionFees.data?.composerFeePPM,
 					destinationAddress: destinationAddressRef.current || undefined,
-					destinationTag: Number(form.getValues().destinationTag) || undefined,
+					destinationTag: parseDestinationTag(form.getValues().destinationTag),
 				});
 				setFee(formatUnit(quoteFee, 18));
 				form.setFieldValue("fee", quoteFee);
@@ -434,19 +438,18 @@ const BridgeXrplForm = forwardRef<FormRef, IBridgeXrplForm>(
 						{t("bridge_modal.form.cross_chain_fee_label")}
 					</Text>
 					<div className="flex items-center">
-						{bridgeToken?.nativeIcon &&
-							bridgeToken.nativeIcon({ width: "18", height: "18" })}
+						{feeCoin?.icon && feeCoin.icon({ width: "18", height: "18" })}
 						<Text className="text-16 mx-2" fw={400} c="var(--flr-black)">
 							{qouteSend.isPending ? (
 								<Loader size={14} />
 							) : fee ? (
-								formatNumber(fee, 4)
+								formatCrossChainFee(fee, feeCoin?.feeDecimals)
 							) : (
 								<span>&mdash;</span>
 							)}
 						</Text>
 						<Text c="var(--flr-gray)" fw={400} className="text-16 w-12">
-							{HYPE.type}
+							{feeCoin?.type}
 						</Text>
 					</div>
 				</div>

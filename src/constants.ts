@@ -117,6 +117,55 @@ export const BRIDGE_TYPE = {
     HYPER_EVM: 'hyper_evm',
     HYPER_CORE: 'hyper_core',
     FLARE: 'flare',
-    XRPL: 'xrpl'
+    XRPL: 'xrpl',
+    ETHEREUM: 'ethereum',
+    // FLARE / XRPL are taken and mean "from HyperEVM", hence the _FROM_ETH suffix.
+    // Goes away with the route registry — see dev-docs/TODO.md row 41.
+    FLARE_FROM_ETH: 'flare_from_eth',
+    XRPL_FROM_ETH: 'xrpl_from_eth'
+} as const;
+
+// The chain the transaction is signed on and where the source OFT lives.
+export const BRIDGE_CHAIN = {
+    FLARE: 'flare',
+    HYPER_EVM: 'hyper_evm',
+    ETHEREUM: 'ethereum'
+} as const;
+
+// Single source of truth for "where does this route start". Replaces the hand-written
+// `bridgeType === FLARE || bridgeType === XRPL` chains, which meant "source is
+// HyperEVM" — with Ethereum there are two remote chains, so that reading is wrong.
+export const BRIDGE_SOURCE_CHAIN = {
+    [BRIDGE_TYPE.HYPER_EVM]: BRIDGE_CHAIN.FLARE,
+    [BRIDGE_TYPE.HYPER_CORE]: BRIDGE_CHAIN.FLARE,
+    [BRIDGE_TYPE.ETHEREUM]: BRIDGE_CHAIN.FLARE,
+    [BRIDGE_TYPE.FLARE]: BRIDGE_CHAIN.HYPER_EVM,
+    [BRIDGE_TYPE.XRPL]: BRIDGE_CHAIN.HYPER_EVM,
+    [BRIDGE_TYPE.FLARE_FROM_ETH]: BRIDGE_CHAIN.ETHEREUM,
+    [BRIDGE_TYPE.XRPL_FROM_ETH]: BRIDGE_CHAIN.ETHEREUM
+} as const;
+
+// The chain LayerZero delivers the message to (dstEid).
+// XRPL routes target Flare — the redeem composer there redeems onward into XRP.
+export const BRIDGE_DESTINATION_CHAIN = {
+    [BRIDGE_TYPE.HYPER_EVM]: BRIDGE_CHAIN.HYPER_EVM,
+    [BRIDGE_TYPE.HYPER_CORE]: BRIDGE_CHAIN.HYPER_EVM,
+    [BRIDGE_TYPE.ETHEREUM]: BRIDGE_CHAIN.ETHEREUM,
+    [BRIDGE_TYPE.FLARE]: BRIDGE_CHAIN.FLARE,
+    [BRIDGE_TYPE.XRPL]: BRIDGE_CHAIN.FLARE,
+    [BRIDGE_TYPE.FLARE_FROM_ETH]: BRIDGE_CHAIN.FLARE,
+    [BRIDGE_TYPE.XRPL_FROM_ETH]: BRIDGE_CHAIN.FLARE
+} as const;
+
+// How composeMsg + extraOptions are encoded for each route.
+// 'plain' = a straight transfer with no composer.
+export const BRIDGE_COMPOSE_KIND = {
+    [BRIDGE_TYPE.HYPER_EVM]: 'plain',
+    [BRIDGE_TYPE.HYPER_CORE]: 'hyper_core',
+    [BRIDGE_TYPE.ETHEREUM]: 'plain',
+    [BRIDGE_TYPE.FLARE]: 'plain',
+    [BRIDGE_TYPE.FLARE_FROM_ETH]: 'plain',
+    [BRIDGE_TYPE.XRPL]: 'xrpl',
+    [BRIDGE_TYPE.XRPL_FROM_ETH]: 'xrpl'
 } as const;
 

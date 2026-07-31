@@ -18,6 +18,8 @@ import Usdt0Icon from "@/components/icons/Usdt0Icon";
 import {
     HYPERLIQUID_EVM,
     HYPERLIQUID_EVM_TESTNET,
+    NETWORK_ETHEREUM,
+    NETWORK_ETHEREUM_SEPOLIA,
     NETWORK_BTC,
     NETWORK_BTC_TESTNET,
     NETWORK_DOGE,
@@ -29,9 +31,10 @@ import {
     NETWORK_XRPL,
     NETWORK_XRPL_TESTNET
 } from "@/config/networks";
-import { BIP44_PATH, IS_MAINNET, WALLET } from "@/constants";
+import { BIP44_PATH, BRIDGE_CHAIN, IS_MAINNET, WALLET } from "@/constants";
 import HypeIcon from "@/components/icons/HypeIcon";
 import FXrpHypeEVMIcon from "@/components/icons/FXrpHypeEVMIcon";
+import FXrpEthIcon from "@/components/icons/FXrpEthIcon";
 
 const enabledUnderlyingFassets = process.env.ENABLED_UNDERLYING_FASSETS && process.env.ENABLED_UNDERLYING_FASSETS.length > 0
     ? process.env.ENABLED_UNDERLYING_FASSETS.split(',').map(fasset => fasset.toLowerCase())
@@ -334,6 +337,69 @@ export const FXRP_HYPE: ICoin = {
 }
 
 
+// Gas coin on Ethereum — pays the LayerZero nativeFee for the ETH→Flare and ETH→XRPL routes.
+// Not named TEST_ETH because that is already taken by the Flare-side display coin (CoinEnum.TestETH).
+export const ETH: ICoin = {
+    type: CoinEnum.ETH,
+    nativeName: 'ETH',
+    icon: (props) => <EthIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    lotSize: 1,
+    minWalletBalance: 0,
+    network: NETWORK_ETHEREUM,
+    enabled: isMainnet,
+    isFAssetCoin: false,
+    supportedWallets: [],
+    decimals: 6,
+    feeDecimals: 6,
+    bipPath: BIP44_PATH.MAINNET.ETH
+}
+
+export const SEPOLIA_ETH: ICoin = {
+    type: CoinEnum.ETH,
+    nativeName: 'ETH',
+    icon: (props) => <EthIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    lotSize: 1,
+    minWalletBalance: 0,
+    network: NETWORK_ETHEREUM_SEPOLIA,
+    enabled: !isMainnet,
+    isFAssetCoin: false,
+    supportedWallets: [],
+    decimals: 6,
+    feeDecimals: 6,
+    bipPath: BIP44_PATH.TESTNET.ETH
+}
+
+// FXRP as Ethereum sees it (the OFT). Mirrors FXRP_HYPE / FTEST_XRP_HYPE.
+export const FXRP_ETH: ICoin = {
+    type: CoinEnum.FXRP,
+    nativeName: 'FXRP',
+    icon: (props) => <FXrpEthIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    nativeIcon: (props) => <EthIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    lotSize: 10,
+    minWalletBalance: 0,
+    network: NETWORK_ETHEREUM,
+    enabled: isMainnet && enabledUnderlyingFassets.includes(CoinEnum.FXRP.toLowerCase()),
+    isFAssetCoin: false,
+    supportedWallets: [],
+    decimals: 2,
+    bipPath: BIP44_PATH.MAINNET.ETH
+}
+
+export const FTEST_XRP_ETH: ICoin = {
+    type: CoinEnum.FTestXRP,
+    nativeName: 'FTestXRP',
+    icon: (props) => <FXrpEthIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    nativeIcon: (props) => <EthIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    lotSize: testnetChain === 'C2FLR' ? 10 : 20,
+    minWalletBalance: 0,
+    network: NETWORK_ETHEREUM_SEPOLIA,
+    enabled: !isMainnet && enabledUnderlyingFassets.includes(CoinEnum.FTestXRP.toLowerCase()),
+    isFAssetCoin: false,
+    supportedWallets: [],
+    decimals: 2,
+    bipPath: BIP44_PATH.TESTNET.ETH
+}
+
 export const WCFLR: ICoin = {
     type: CoinEnum.WCFLR,
     icon: (props) => <CflrIcon width="32" height="32" className="flex-shrink-0" {...props} />,
@@ -410,8 +476,23 @@ export const COINS = [
 
 export const BRIDGE_COINS = [
     FTEST_XRP_HYPE,
-    FXRP_HYPE
+    FXRP_HYPE,
+    FTEST_XRP_ETH,
+    FXRP_ETH
 ];
+
+// Gas coin per bridge chain — the fee token for the LayerZero nativeFee.
+// BRIDGE_CHAIN.FLARE is absent because there the fee is paid in mainToken (FLR/C2FLR/SGB).
+export const BRIDGE_GAS_COIN: Record<string, ICoin> = {
+    [BRIDGE_CHAIN.HYPER_EVM]: isMainnet ? HYPE : TEST_HYPE,
+    [BRIDGE_CHAIN.ETHEREUM]: isMainnet ? ETH : SEPOLIA_ETH
+};
+
+// FXRP OFT coin per bridge chain — the source token for routes originating on a remote chain.
+export const BRIDGE_FASSET_COIN: Record<string, ICoin> = {
+    [BRIDGE_CHAIN.HYPER_EVM]: isMainnet ? FXRP_HYPE : FTEST_XRP_HYPE,
+    [BRIDGE_CHAIN.ETHEREUM]: isMainnet ? FXRP_ETH : FTEST_XRP_ETH
+};
 
 export const FASSET_COIN = COINS.find(c => c.enabled && c.isFAssetCoin)!;
 

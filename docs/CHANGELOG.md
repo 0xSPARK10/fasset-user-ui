@@ -6,6 +6,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [Unreleased]
 
+## [1.3.16] — 2026-07-17
+
+- Direct minting: custom executor support — `ConfirmStepper` now packs the allowed executor into the XRP payment memo using the new `DIRECT_MINTING_EX` reference type (prefix `0x4642505266410021`; 48-byte layout: prefix(8B) + recipient(20B) + executor(20B), no padding). Executor is read from `directMintingInfo.executorAddress`; no API interface change required. Applies to address (memo) mode only — tag mode unchanged. Guards against a malformed memo by throwing when recipient/executor is not a valid 20-byte EVM address
+
+## [1.3.15] — 2026-05-29
+
+- `LatestTransactionsCard` split into `MintTransactionsCard` + `BridgeTransactionsCard` under `components/cards/TransactionsCard/` — type-narrowed (`ITransaction` / `IBridgeTransaction`, no `as` casts), with colocated `useMintTransactionTable` / `useBridgeTransactionTable` hooks (cell renderers + column defs) and a shared `transactionTypes.ts` (action constants + interfaces); bridge variant no longer evaluates mint-only branches
+- Mobile: amount column in mint/bridge transaction tables now left-aligned to match the rest of the two-column layout (desktop right-alignment preserved)
+- Shared `BalanceRow` (icon + label + value + optional action) and `CardHeader` (title + address + explorer link) components extracted with responsive `flex-col` stacking on <360px screens; `BridgeUnderlyingBalanceCard`, `BridgeBalanceCard`, `BridgeAccountBalanceCard` headers and balance rows migrated to them, plus `BalanceCard` fAsset/stablecoin rows (`BalanceCard` header stays inline — mobile/desktop layout flip and "not connected" fallback don't fit the shared shape)
+- `BridgeUnderlyingBalanceCard` cleanup: removed dead XRPL-disable code (`Tooltip` / `HoverTooltip` imports, `isXrplDisabled`, `useUnderlyingBalance` call) — the real `depositAuth` / `requireDestTag` check lives in `BridgeModal` against the user-entered destination address
+- `BridgeUnderlyingBalanceCard` simplification: dropped two `useState`s mirroring react-query data, derived `bridgeToken` via `useMemo` and `fAssetHyperliquidBalance` inline; switched `useInterval` to `autoInvoke`; collapsed two bridge buttons + two modals via a `BRIDGE_ACTIONS` config
+
+## [1.3.14] — 2026-05-27
+
+- Bridge: prevent `"network changed: 14 => 999"` ethers error on repeat Hyperliquid bridge — `useHyperEVMBalance` / `useHypeBalance` now read via direct `JsonRpcProvider` so background polls no longer mutate the shared WalletConnect `defaultChain`
+- Latest transactions: bridge-to-XRPL redeem rows now link to `FASSETS_EXPLORER_URL` (Flare-side redemption tx is EVM, not XRPL) — fixes `/undefined/<hash>` broken link when `fAssetCoin` was not passed from the bridge page
+
 ## [1.3.13] — 2026-05-26
 
 - `BridgeXrplForm`: amount preview now resolves underlying icon/name via `FASSET_COIN` (`@/config/coin`) instead of hardcoded `XrpIcon` / `"XRP"` — correct for both FXRP (mainnet) and FTestXRP (testnet)

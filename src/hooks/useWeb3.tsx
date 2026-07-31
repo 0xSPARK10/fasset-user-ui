@@ -5,9 +5,9 @@ import {
 	useMemo,
 	useContext,
 } from "react";
-import { CoinEnum, ICoin, INetwork } from "@/types";
+import { BridgeChain, CoinEnum, ICoin, INetwork } from "@/types";
 import { useRouter } from "next/router";
-import { COINS, FTEST_XRP_HYPE, FXRP_HYPE } from "@/config/coin";
+import { BRIDGE_FASSET_COIN, COINS, FTEST_XRP_HYPE, FXRP_HYPE } from "@/config/coin";
 import { WALLET } from "@/constants";
 import { useQueryClient } from "@tanstack/react-query";
 import { useConnectedCoin } from "@/store/coin";
@@ -32,6 +32,7 @@ interface IWeb3Context {
 	isBridgeEnabled: boolean;
 	mainToken: ICoin | undefined;
 	bridgeToken: ICoin | undefined;
+	getBridgeToken: (chain: BridgeChain) => ICoin | undefined;
 	displayWalletName: string | undefined;
 	ledgerConnector: ILedgerConnector;
 	walletConnectConnector: IWalletConnectConnector;
@@ -149,6 +150,22 @@ export function Web3Provider({
 		}
 	}
 
+	/**
+	 * FXRP OFT coin on the given bridge chain, carrying the user's address.
+	 * `bridgeToken` above is the same thing but hardwired to HyperEVM — it stays
+	 * for existing callers. New code should use this function instead.
+	 */
+	const getBridgeToken = (chain: BridgeChain): ICoin | undefined => {
+		if (!isBridgeEnabled) return undefined;
+
+		const coin = BRIDGE_FASSET_COIN[chain];
+		if (coin) {
+			coin.address = mainToken?.address;
+		}
+
+		return coin;
+	};
+
 	const getConnectedCoin = (type: CoinEnum) =>
 		connectedCoins.find((coin) => coin.type.toLowerCase() === type.toLowerCase());
 
@@ -171,6 +188,7 @@ export function Web3Provider({
 			connectedWallets,
 			mainToken,
 			bridgeToken,
+			getBridgeToken,
 			displayWalletName,
 			ledgerConnector,
 			walletConnectConnector,

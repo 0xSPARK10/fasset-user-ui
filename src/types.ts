@@ -1,8 +1,9 @@
 import React, { ReactNode } from "react";
 import { MantineSize } from "@mantine/core";
-import { BRIDGE_TYPE } from "./constants";
+import { BRIDGE_CHAIN, BRIDGE_TYPE } from "./constants";
 
 export type BridgeType = typeof BRIDGE_TYPE[keyof typeof BRIDGE_TYPE];
+export type BridgeChain = typeof BRIDGE_CHAIN[keyof typeof BRIDGE_CHAIN];
 
 export interface ITableRowAction<T> {
     name: string;
@@ -44,6 +45,7 @@ export const enum CoinEnum {
     C2FLR = 'C2FLR',
     FLR = 'FLR',
     HYPE = 'HYPE',
+    ETH = 'ETH',
     WCFLR = 'WCFLR',
     WC2FLR = 'WC2FLR',
     WFLR = 'WFLR',
@@ -75,6 +77,7 @@ export interface ICoin {
     bipPath?: string;
     isStableCoin?: boolean;
     contractDecimals?: number; // on-chain decimals for parseUnits (e.g. 18 for wnat, 6 for fasset/collateral)
+    feeDecimals?: number; // display decimals for a fee paid in this coin, when it needs more precision than `decimals` (e.g. 6 for ETH); omit to take formatCrossChainFee's default
 }
 
 export interface INetwork {

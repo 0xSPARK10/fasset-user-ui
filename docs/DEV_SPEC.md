@@ -1,7 +1,7 @@
 ---
-doc_version: "1.9"
+doc_version: "1.10"
 app_version: "v1.3"
-last_updated: "2026-05-26"
+last_updated: "2026-07-29"
 ---
 
 # FAsset User UI — Developer Specification
@@ -452,17 +452,37 @@ BRIDGE_TYPE = {
   HYPER_CORE: 'hyper_core', // Flare → Hyperliquid Core spot account
   FLARE: 'flare',           // HyperEVM → Flare
   XRPL: 'xrpl',            // HyperEVM → XRPL (bridge + redeem)
+  ETHEREUM: 'ethereum',     // Flare → Ethereum
+  // FLARE / XRPL were taken and mean "from HyperEVM", hence the _FROM_ETH suffix.
+  FLARE_FROM_ETH: 'flare_from_eth', // Ethereum → Flare
+  XRPL_FROM_ETH: 'xrpl_from_eth',   // Ethereum → XRPL (bridge + redeem)
 }
 ```
 
 ### Direction & Config
 
-| Type | Source | Needs approve | Fee token | Ledger app |
-|------|--------|--------------|-----------|-----------|
-| `HYPER_EVM` | Flare | Yes | FLR/C2FLR | mainToken |
-| `HYPER_CORE` | Flare | Yes | FLR/C2FLR | mainToken |
-| `FLARE` | HyperEVM | No | HYPE | bridgeToken |
-| `XRPL` | HyperEVM | No | HYPE | bridgeToken |
+| Type | Source | LZ destination | Needs approve | Fee token | Ledger app |
+|------|--------|----------------|--------------|-----------|-----------|
+| `HYPER_EVM` | Flare | HyperEVM | Yes | FLR/C2FLR | source |
+| `HYPER_CORE` | Flare | HyperEVM (→ Core spot) | Yes | FLR/C2FLR | source |
+| `FLARE` | HyperEVM | Flare | No | HYPE | bridge |
+| `XRPL` | HyperEVM | Flare (→ composer → XRPL) | No | HYPE | bridge |
+| `ETHEREUM` | Flare | Ethereum | Yes | FLR/C2FLR | source |
+| `FLARE_FROM_ETH` | Ethereum | Flare | No | ETH | bridge |
+| `XRPL_FROM_ETH` | Ethereum | Flare (→ composer → XRPL) | No | ETH | bridge |
+
+Source chain comes from `BRIDGE_SOURCE_CHAIN`, LZ destination from `BRIDGE_DESTINATION_CHAIN`,
+both in `constants.ts`. Only Flare-source routes need an approve — the remote chains hold a
+plain OFT that burns from the caller. Fee token per route is `BridgeConfig.feeTokenKey`
+resolved through `FEE_TOKEN_CHAIN` (`config/bridge.ts`): `native` = mainToken, `hype`, `eth`.
+
+Endpoint IDs are never hardcoded: `BRIDGE_CHAIN_EID` + `bridgeChainEid(chain, mainnet)` in
+`config/bridge.ts` read them from `@layerzerolabs/lz-definitions`. `bridgeChainFromEid(eid)`
+is the reverse lookup, used where only the backend's `eid` is available (bridge history).
+
+**Which contract is called** — `BRIDGE_SOURCE_OFT[sourceChain]`: an OFTAdapter on Flare
+(wraps existing FXRP), a standalone OFT on every remote chain. Remote OFT addresses are
+NOT shared between chains; Ethereum has its own.
 
 ### LayerZero Send Parameters
 
@@ -484,9 +504,26 @@ BRIDGE_TYPE = {
 // HYPER_CORE:
 abi.encode(['uint256', 'address'], ['0', signerAddress])
 
-// XRPL:
-abi.encode(['address', 'string'], [signerAddress, xrplDestinationAddress])
+// XRPL and XRPL_FROM_ETH — FAssetRedeemComposer v2 tuple:
+abi.encode(
+  ['tuple(address, string, bool, uint256, address, uint256)'],
+  [[
+    signerAddress,           // redeemer on Flare
+    destinationAddress,      // XRPL classic address, '' when unset
+    tag !== 0,               // redeemWithTag
+    BigInt(tag),             // destinationTag
+    ethers.ZeroAddress,      // executor
+    BigInt(executorFee),     // executorFee, from /api/oft/redemptionFees
+  ]]
+)
 ```
+
+Both XRPL routes target the same composer on Flare (`FXRP_COMPOSER_ADDRESS`) — it supports
+every source chain, so the address does not change for `XRPL_FROM_ETH`. Their extraOptions
+are `addExecutorLzReceiveOption(400_000, 0)` + `addExecutorComposeOption(0, 5_000_000, executorFee)`.
+
+Note `tag !== 0`: destination tag `0` is encoded as "no tag" and goes out untagged — see
+BUSINESS_RULES.md. The direct redeem path does not share this limitation.
 
 ### Composer Fee Formula
 
@@ -502,9 +539,19 @@ From `GET /api/oft/redemptionFees/:srcEid` → `IOFTRedemptionFees.composerFeePP
 |---------|-------------|
 | `BRIDGE_FXRP_ADDRESS` | FAsset ERC-20 on Flare (needs approve) |
 | `BRIDGE_FXRP_OFT_ADAPTER_ADDRESS` | OFT Adapter on Flare |
-| `BRIDGE_HYPE_FXRP_OFT_ADAPTER_ADDRESS` | OFT token on HyperEVM |
+| `BRIDGE_HYPE_FXRP_OFT_ADAPTER_ADDRESS` | OFT token on HyperEVM (misnomer — not an adapter) |
+| `BRIDGE_ETH_FXRP_OFT_ADDRESS` | OFT token on Ethereum — its own address, not HyperEVM's |
 | `HYPERLIQUID_COMPOSER_ADDRESS` | Composer on HyperEVM (HYPER_CORE) |
-| `FXRP_COMPOSER_ADDRESS` | Composer on Flare (XRPL) |
+| `FXRP_COMPOSER_ADDRESS` | Composer on Flare (XRPL and XRPL_FROM_ETH) |
+| `ENABLED_BRIDGE_CHAINS` | Comma-separated remote chains the app offers, e.g. `hyper_evm,ethereum`. Defaults to `hyper_evm` when the line is absent |
+
+A remote chain is offered only when it is listed in `ENABLED_BRIDGE_CHAINS` **and** has an OFT
+address — see `isBridgeChainEnabled`. The address alone is no proof the contract is live and
+its peers are wired, which is why the flag exists as a no-deploy kill switch.
+
+Every address above is network-specific. When deploying to mainnet all of them change, not
+just `NETWORK`; only `BRIDGE_ETH_FXRP_OFT_ADDRESS` currently documents its mainnet
+counterpart inline in `.env.example`.
 
 ### IMessage (LayerZero status)
 

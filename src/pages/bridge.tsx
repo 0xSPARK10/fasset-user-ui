@@ -8,12 +8,12 @@ import React, { useMemo, useState } from "react";
 import { COINS } from "@/config/coin";
 import BridgeUnderlyingBalanceCard from "@/components/cards/BridgeUnderlyingBalanceCard";
 import { GetServerSideProps } from "next";
-import LatestTransactionsCard from "@/components/cards/LatestTransactionsCard";
+import BridgeTransactionsCard from "@/components/cards/TransactionsCard/BridgeTransactionsCard";
 import { IconArrowUpRight } from "@tabler/icons-react";
 import BridgeAccountBalanceCard from "@/components/cards/BridgeAccountBalanceCard";
 import { useNetworks } from "@/hooks/useNetworks";
 import UnderlyingBalanceCard from "@/components/cards/UnderlyingBalanceCard";
-import { IS_MAINNET } from "@/constants";
+import { BRIDGE_CHAIN, IS_MAINNET } from "@/constants";
 
 export default function Bridge() {
     const { t } = useTranslation();
@@ -59,7 +59,11 @@ export default function Bridge() {
                             className="mb-2"
                         />
                     )}
-                    <BridgeUnderlyingBalanceCard />
+                    <BridgeUnderlyingBalanceCard
+                        chain={BRIDGE_CHAIN.ETHEREUM}
+                        className="mb-2"
+                    />
+                    <BridgeUnderlyingBalanceCard className="mb-2" />
                     <Trans
                         i18nKey={'bridge.hyperliquid_trading_platform_label'}
                         components={{
@@ -111,9 +115,8 @@ export default function Bridge() {
                     {t('dashboard.refresh_button')}
                 </Button>
             </div>
-            <LatestTransactionsCard
+            <BridgeTransactionsCard
                 refreshKey={latestTransactionCardKey}
-                type="bridge"
             />
         </Container>
     )

@@ -5,7 +5,7 @@ import React, {
 	useState,
 } from "react";
 import { useForm, UseFormReturnType } from "@mantine/form";
-import { CoinEnum, ICoin } from "@/types";
+import { ICoin } from "@/types";
 import { Divider, Loader, Text, SegmentedControl } from "@mantine/core";
 import { yupResolver } from "mantine-form-yup-resolver";
 import * as yup from "yup";
@@ -17,10 +17,12 @@ import { useBridgeQouteSend, useHypeBalance } from "@/hooks/useContracts";
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { ErrorDecoder } from "ethers-decode-error";
 import { FAssetOFTAdapterAbi } from "@/abi";
-import { BRIDGE_TYPE } from "@/constants";
+import { BRIDGE_CHAIN, BRIDGE_TYPE } from "@/constants";
 import { BridgeConfig } from "@/components/modals/BridgeModal";
 import { useNativeBalance } from "@/api/balance";
-import { HYPE } from "@/config/coin";
+import { BRIDGE_GAS_COIN } from "@/config/coin";
+import { FEE_TOKEN_CHAIN } from "@/config/bridge";
+import { formatCrossChainFee } from "@/core/fees/format";
 import AmountInput from "../elements/AmountInput";
 
 interface IBridgeForm {
@@ -38,7 +40,7 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(
 	({ token, type, bridgeConfig, onError, isFormDisabled }: IBridgeForm, ref) => {
 		const { t } = useTranslation();
 		const mediaQueryMatches = useMediaQuery("(max-width: 40em)");
-		const { mainToken, bridgeToken } = useWeb3();
+		const { mainToken } = useWeb3();
 
 		const [amount, setAmount] = useState<number>();
 		const [fee, setFee] = useState<string>();
@@ -46,11 +48,19 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(
 			useState<(typeof BRIDGE_TYPE)[keyof typeof BRIDGE_TYPE]>(type);
 		const qouteSend = useBridgeQouteSend();
 		
-        const nativeBalance = useNativeBalance(
+        // feeTokenKey → the chain the LayerZero nativeFee is paid on.
+		// undefined = the route originates on Flare, so the fee comes from mainToken.
+		const feeChain = FEE_TOKEN_CHAIN[bridgeConfig.feeTokenKey];
+		const feeCoin = feeChain ? BRIDGE_GAS_COIN[feeChain] : mainToken;
+
+		const nativeBalance = useNativeBalance(
 			mainToken?.address!,
-			bridgeConfig.feeTokenKey === "native",
+			feeChain === undefined,
 		);
-		const hypeBalance = useHypeBalance(bridgeConfig.feeTokenKey === "hype");
+		const hypeBalance = useHypeBalance(
+			feeChain !== undefined,
+			feeChain ?? BRIDGE_CHAIN.HYPER_EVM,
+		);
 
 		const schema = yup.object().shape({
 			amount: yup
@@ -99,7 +109,7 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(
 		useEffect(() => {
 			if (!fee) return;
 
-			if (bridgeConfig.feeTokenKey === "native") {
+			if (feeChain === undefined) {
 				if (!nativeBalance.data) {
 					if (isFormDisabled) isFormDisabled(true);
 					return;
@@ -125,7 +135,7 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(
 				if (toNumber(balance) < toNumber(fee)) {
 					onError(
 						t("bridge_modal.error_insufficient_balance_label", {
-							tokenName: CoinEnum.HYPE,
+							tokenName: feeCoin?.type,
 						}),
 					);
 				}
@@ -234,24 +244,18 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(
 						{t("bridge_modal.form.cross_chain_fee_label")}
 					</Text>
 					<div className="flex items-center">
-						{bridgeConfig.feeTokenKey === "native" &&
-							mainToken?.icon &&
-							mainToken.icon({ width: "18", height: "18" })}
-						{bridgeConfig.feeTokenKey === "hype" &&
-							bridgeToken?.nativeIcon &&
-							bridgeToken.nativeIcon({ width: "18", height: "18" })}
+						{feeCoin?.icon && feeCoin.icon({ width: "18", height: "18" })}
 						<Text className="text-16 mx-2" fw={400} c="var(--flr-black)">
 							{qouteSend.isPending ? (
 								<Loader size={14} />
 							) : fee ? (
-								formatNumber(fee, 4)
+								formatCrossChainFee(fee, feeCoin?.feeDecimals)
 							) : (
 								<span>&mdash;</span>
 							)}
 						</Text>
 						<Text c="var(--flr-gray)" fw={400} className="text-16 w-12">
-							{bridgeConfig.feeTokenKey === "native" && mainToken?.type}
-							{bridgeConfig.feeTokenKey === "hype" && HYPE.type}
+							{feeCoin?.type}
 						</Text>
 					</div>
 				</div>

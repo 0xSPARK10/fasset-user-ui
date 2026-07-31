@@ -1,66 +1,63 @@
-import {
-    Anchor,
-    Button,
-    LoadingOverlay,
-    Paper,
-    Text,
-    Title
-} from "@mantine/core";
-import React, { useEffect, useRef, useState } from "react";
+import { Button, LoadingOverlay, Paper } from "@mantine/core";
+import React, { useMemo, useRef, useState } from "react";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useNativeBalance } from "@/api/balance";
 import { useTranslation } from "react-i18next";
-import { truncateString } from "@/utils";
-import CopyIcon from "@/components/icons/CopyIcon";
-import { IconArrowUpRight } from "@tabler/icons-react";
-import { IFAssetCoin } from "@/types";
+import { BridgeType, IFAssetCoin } from "@/types";
 import { COINS } from "@/config/coin";
 import BridgeModal from "@/components/modals/BridgeModal";
 import { useInterval } from "@mantine/hooks";
-import { BALANCE_FETCH_INTERVAL, BRIDGE_TYPE } from "@/constants";
+import { BALANCE_FETCH_INTERVAL, BRIDGE_DESTINATION_CHAIN, BRIDGE_TYPE } from "@/constants";
+import { isBridgeChainEnabled } from "@/config/bridge";
+import BalanceRow from "@/components/cards/BalanceRow";
+import CardHeader from "@/components/cards/CardHeader";
 
 interface IHyperLiquidBalanceCard {
     className?: string;
 }
 
+// Destinations reachable from Flare. HYPER_CORE opens a modal with a SegmentedControl
+// (HyperEVM vs Hyperliquid Spot); Ethereum is a single route.
+//
+// A route stays hidden until its destination chain is enabled — without a wired peer
+// `quoteSend` would revert and the user would get nothing but an error.
+const BRIDGE_ACTIONS: { type: BridgeType; labelKey: string }[] = [
+    { type: BRIDGE_TYPE.ETHEREUM, labelKey: 'bridge_to_ethereum_button' },
+    { type: BRIDGE_TYPE.HYPER_CORE, labelKey: 'bridge_to_hype_button' },
+].filter(action => isBridgeChainEnabled(BRIDGE_DESTINATION_CHAIN[action.type]));
+
 export default function BridgeBalanceCard({ className }: IHyperLiquidBalanceCard) {
     const { mainToken } = useWeb3();
     const { t } = useTranslation();
-    const [tokens, setTokens] = useState<IFAssetCoin[]>([]);
-    const [isBridgeModalActive, setIsBridgeModalActive] = useState<boolean>(false);
+    const [activeModal, setActiveModal] = useState<BridgeType | null>(null);
     const activeToken = useRef<IFAssetCoin>();
     const nativeBalance = useNativeBalance(mainToken?.address ?? '', mainToken !== undefined);
 
-    useEffect(() => {
-        if (!nativeBalance.data) return;
+    useInterval(
+        () => {
+            nativeBalance.refetch();
+        },
+        BALANCE_FETCH_INTERVAL,
+        { autoInvoke: true },
+    );
 
-        const matchedCoins: IFAssetCoin[] = nativeBalance.data
+    const tokens = useMemo<IFAssetCoin[]>(() => {
+        if (!nativeBalance.data) return [];
+        return nativeBalance.data
             .filter(item => COINS.find(coin => coin.enabled && coin.type === item.symbol))
             .map(balance => {
                 const coin = COINS.find(coin => coin.enabled && coin.type === balance.symbol);
-
                 return {
                     ...coin!,
-                    ...balance
-                }
+                    ...balance,
+                };
             })
             .filter(coin => coin?.balance !== undefined);
-
-        setTokens(matchedCoins);
-        nativeBalanceFetchInterval.start();
-
-        return () => {
-            nativeBalanceFetchInterval.stop();
-        }
     }, [nativeBalance.data]);
-
-    const nativeBalanceFetchInterval = useInterval(() => {
-        nativeBalance.refetch();
-    }, BALANCE_FETCH_INTERVAL);
 
     const closeModal = () => {
         activeToken.current = undefined;
-        setIsBridgeModalActive(false);
+        setActiveModal(null);
     }
 
 
@@ -70,90 +67,47 @@ export default function BridgeBalanceCard({ className }: IHyperLiquidBalanceCard
             withBorder
         >
             <LoadingOverlay visible={mainToken !== undefined && nativeBalance.isPending} zIndex={2} />
-            <div className="flex justify-between items-baseline mb-5">
-                <div className="flex flex-col sm:flex-row sm:items-center">
-                    <Title fw={500} className="text-15 mr-3">
-                        {mainToken?.nativeName?.toLowerCase()?.includes('sgb')
-                            ? t('bridge_balance_card.sgb_address_label')
-                            : t('bridge_balance_card.flr_address_label')
-                        }
-                    </Title>
-                    {mainToken &&
-                        <div className="flex items-center break-all mr-3">
-                            <Text
-                                fw={400}
-                                className="text-15 block"
-                            >
-                                {truncateString(mainToken?.address ?? '', 8, 8)}
-                            </Text>
-                            <CopyIcon
-                                text={mainToken?.address ?? ''}
-                                color="#AFAFAF"
-                            />
-                        </div>
-                    }
-                </div>
-                <Anchor
-                    underline="always"
-                    href={`${mainToken?.network.explorerAddressUrl}/${mainToken?.address}`}
-                    target="_blank"
-                    className="inline-flex items-center text-12"
-                    c="var(--flr-black)"
-                    fw={500}
-                >
-                    {t('bridge_balance_card.view_on_explorer_button')}
-                    <IconArrowUpRight
-                        size={20}
-                        className="ml-1 flex-shrink-0"
-                    />
-                </Anchor>
-            </div>
-            {tokens?.map(token => (
-                <div
+            <CardHeader
+                className="mb-5"
+                title={mainToken?.nativeName?.toLowerCase()?.includes('sgb')
+                    ? t('bridge_balance_card.sgb_address_label')
+                    : t('bridge_balance_card.flr_address_label')}
+                address={mainToken?.address}
+                explorerHref={`${mainToken?.network.explorerAddressUrl}/${mainToken?.address}`}
+                explorerLabel={t('bridge_balance_card.view_on_explorer_button')}
+            />
+            {tokens.map(token => (
+                <BalanceRow
                     key={token.symbol}
-                    className="flex max-[360px]:flex-col justify-between border-t mt-2 pt-2"
-                >
-                    <div className="flex items-center">
-                        {token?.icon !== null && token.icon()}
-                        <div className="ml-3">
-                            <Text
-                                c="var(--flr-gray)"
-                                className="text-12"
-                                fw={400}
-                            >
-                                {token?.symbol}
-                            </Text>
-                            <Text
-                                className="text-14"
-                                fw={500}
-                            >
-                                {token?.balance}
-                            </Text>
-                        </div>
-                    </div>
-                    {token?.isFAssetCoin &&
+                    icon={token?.icon !== null && token.icon()}
+                    label={token?.symbol}
+                    value={token?.balance}
+                    action={token?.isFAssetCoin && BRIDGE_ACTIONS.map(({ type, labelKey }) => (
                         <Button
+                            key={type}
                             variant="gradient"
                             size="xs"
-                            className="mr-3"
                             radius="xl"
                             fw={400}
                             onClick={() => {
                                 activeToken.current = token;
-                                setIsBridgeModalActive(true);
+                                setActiveModal(type);
                             }}
                         >
-                            {t('bridge_balance_card.bridge_to_hype_button')}
+                            {t(`bridge_balance_card.${labelKey}`)}
                         </Button>
-                    }
-                </div>
+                    ))}
+                />
             ))}
-            <BridgeModal
-                opened={isBridgeModalActive}
-                onClose={closeModal}
-                token={activeToken.current}
-                type={BRIDGE_TYPE.HYPER_CORE}
-            />
+            {BRIDGE_ACTIONS.map(({ type }) => (
+                <BridgeModal
+                    key={type}
+                    opened={activeModal === type}
+                    onClose={closeModal}
+                    token={activeToken.current}
+                    type={type}
+                />
+            ))}
         </Paper>
     )
 }

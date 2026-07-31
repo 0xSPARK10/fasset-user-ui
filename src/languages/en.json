@@ -161,10 +161,11 @@
         "hyperliquid_trading_platform_label": "Want to go to Hyperliquid trading platform? Follow this<a>link<icon></icon></a>",
         "latest_transactions_subtitle": "Displaying all transactions in last 7 days.",
         "latest_transactions_title": "Latest transactions",
-        "title": "Hyperliquid Bridge"
+        "title": "Bridge"
     },
     "bridge_balance_card": {
         "bridge_to_hype_button": "Bridge to HYPE",
+        "bridge_to_ethereum_button": "Bridge to ETH",
         "flr_address_label": "FLR Address",
         "sgb_address_label": "SGB Address",
         "view_on_explorer_button": "View on Explorer"
@@ -179,12 +180,14 @@
     "bridge_modal": {
         "approve_step_description": "Confirm the transaction to approve OFT adapter to spend your FXRP and to approve the Composer.",
         "approve_step_label": "1. Approve OFT Adapter",
-        "bridge_flare_step_description": "Confirm the send transaction to transfer your {{fAsset}} from the Hyperliquid to Flare Network.",
+        "bridge_flare_step_description": "Confirm the send transaction to transfer your {{fAsset}} from {{sourceChain}} to Flare Network.",
         "bridge_flare_step_label": "Bridge {{fAsset}}",
-        "bridge_xrpl_step_description": "Confirm the bridge transaction to transfer your {{fAsset}} from Hyperliquid to Flare network and redeem to XRPL.",
+        "bridge_xrpl_step_description": "Confirm the bridge transaction to transfer your {{fAsset}} from {{sourceChain}} to Flare network and redeem to XRPL.",
         "bridge_xrpl_step_label": "Bridge {{fAsset}}",
         "bridge_hyperliquid_step_description": "Confirm the send transaction to transfer your {{fAsset}} from the Flare Network to Hyperliquid.",
         "bridge_hyperliquid_step_label": "2. Bridge {{fAsset}}",
+        "bridge_ethereum_step_description": "Confirm the send transaction to transfer your {{fAsset}} from the Flare Network to Ethereum.",
+        "bridge_ethereum_step_label": "2. Bridge {{fAsset}}",
         "confirm_step_description": "Please open your wallet app and confirm dialogue to complete the process.",
         "confirm_step_title": "Confirm in your wallet app",
         "error_insufficient_balance_label": "Insufficient {{tokenName}} for LayerZero cross-chain fee",
@@ -193,11 +196,13 @@
             "description_flare_label": "Bridge completed. Your {{fAsset}} is now available on Flare Network.",
             "description_xrpl_label": "Bridge has been successfully initiated. Your XRP will be available in your wallet shortly. You can monitor the status of your transfer by checking your latest transactions list.",
             "description_hyperliquid_label": "Bridge completed. Your {{fAsset}} is now available on {{bridgeType}}.",
+            "description_ethereum_label": "Bridge completed. Your {{fAsset}} is now available on Ethereum.",
             "title": "Finished",
             "title_xrpl": "Initiated"
         },
         "flare_title": "Bridge {{fAsset}} to Flare Network",
         "xrpl_title": "Bridge {{fAsset}} to XRPL",
+        "ethereum_title": "Bridge {{fAsset}} to Ethereum",
         "form": {
             "amount_label": "Amount",
             "amount_step_title": "I want to bridge",
@@ -234,7 +239,10 @@
         "hyper_core_label": "Hyperliquid - Spot",
         "hyper_evm_label": "HyperEVM",
         "know_more_label": "Want to know more about Hyperliquid? Follow this <a>link<icon></icon></a>",
-        "title": "Hyperliquid"
+        "title": "Hyperliquid",
+        "eth_label": "ETH",
+        "ethereum_label": "Ethereum",
+        "ethereum_title": "Ethereum"
     },
     "claim_rewards_from_pool_modal": {
         "confirm_step_description": "Please open your wallet app and confirm the dialogue to complete the process.",
@@ -315,7 +323,7 @@
     "connect_wallet_modal": {
         "term_of_service_label": "By connecting a wallet, you agree to the <0>Terms of Service</0>",
         "title": "Connect Wallet",
-        "wallet_description_label": "These four services will allow you to connect to networks. \u2028Note: If you connect to additional networks using the same service, you must disconnect before connecting to multiple networks.",
+        "wallet_description_label": "These four services will allow you to connect to networks.  Note: If you connect to additional networks using the same service, you must disconnect before connecting to multiple networks.",
         "wallet_title": "Which wallet should I use?"
     },
     "copy_icon": {
@@ -396,7 +404,8 @@
         "abi_custom_error_label": "Execution reverted: {{error}}",
         "ledger_error_label": "Declined - Check ledger device for more information.",
         "transaction_failed_label": "Transaction failed.",
-        "try_reconnecting_label": "Could not coalesce error - Try reconnecting your wallet."
+        "try_reconnecting_label": "Could not coalesce error - Try reconnecting your wallet.",
+        "wallet_reconnect_required_label": "Your wallet is not connected to the network this transaction is signed on. Please disconnect and reconnect your wallet, then try again."
     },
     "fasset_position_card": {
         "available_rewards_label": "Your available rewards",
