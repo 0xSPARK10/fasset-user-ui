@@ -11,13 +11,14 @@ import {
 import { useForm } from "@mantine/form";
 import { yupResolver } from "mantine-form-yup-resolver";
 import * as yup from "yup";
-import { isAddress, isError } from "ethers";
+import { isError } from "ethers";
 import { useTranslation } from "react-i18next";
 import FAssetModal from "@/components/modals/FAssetModal";
 import ModalConfirmStep from "@/components/elements/ModalConfirmStep";
 import ModalSuccessStep from "@/components/elements/ModalSuccessStep";
 import FormAlert from "@/components/elements/FormAlert";
 import { ITagsByAddress } from "@/types";
+import { isValidEvmAddress } from "@/utils";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useModalGuard } from "@/hooks/useModalGuard";
 import { useSetMintingRecipient } from "@/hooks/useContracts";
@@ -53,7 +54,7 @@ export default function RecipientTagModal({ opened, tag, onClose, onSuccess }: I
             .test(
                 'is-valid-address',
                 t('validation.messages.invalid_address', { field: t('edit_tag_modal.minting_recipient_label') }),
-                (val) => isAddress(val ?? "")
+                (val) => isValidEvmAddress(val)
             ),
     });
 

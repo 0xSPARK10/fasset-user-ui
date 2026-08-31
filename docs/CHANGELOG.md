@@ -6,6 +6,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [Unreleased]
 
+## [1.3.17] — 2026-08-31
+
+- Address validation: new `isValidEvmAddress()` guard in `utils/guards.ts` requires the `0x` prefix on top of ethers' `isAddress()` — ethers accepts bare 40-char hex in validation but treats it as an ENS name during contract-call address resolution, which fails on networks without ENS. Adopted in `MintForm` (destination address + tag lookup + submit guard), `SendCPTForm`, `EditExecutorModal`, `RecipientTagModal` and `TransferTagModal`, so bad input is caught at form level instead of surfacing as an ENS error at submit time
+- Bridge to XRPL finished step: title changed from "Initiated" to "Finished" and the description now reads "Bridge completed. Your {{underlying}} is now available on XRPL." — the route redeems the FAsset, so `ConfirmStepper` passes `FASSET_COIN.nativeName` as the `underlying` interpolation (XRP on mainnet, testXRP on testnet) instead of the previously hardcoded "XRP"
+- Connect wallet modal: removed a double space in `wallet_description_label`
+
 ## [1.3.16] — 2026-07-17
 
 - Direct minting: custom executor support — `ConfirmStepper` now packs the allowed executor into the XRP payment memo using the new `DIRECT_MINTING_EX` reference type (prefix `0x4642505266410021`; 48-byte layout: prefix(8B) + recipient(20B) + executor(20B), no padding). Executor is read from `directMintingInfo.executorAddress`; no API interface change required. Applies to address (memo) mode only — tag mode unchanged. Guards against a malformed memo by throwing when recipient/executor is not a valid 20-byte EVM address

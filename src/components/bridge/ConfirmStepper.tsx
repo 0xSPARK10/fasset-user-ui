@@ -32,6 +32,7 @@ import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransa
 import { useQueryClient } from "@tanstack/react-query";
 import { BALANCE_KEY } from "@/api/balance";
 import { OFT_KEY } from "@/api/oft";
+import { FASSET_COIN } from "@/config/coin";
 
 interface IConfirmStepper {
     token: ICoin;
@@ -307,6 +308,9 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                         >
                             {t(`bridge_modal.finished_modal.description_${bridgeConfig.finishedDescriptionKey}_label`, {
                                 fAsset: token?.type,
+                                // The XRPL route redeems the FAsset, so the user receives the
+                                // underlying coin (XRP) rather than the FAsset the route started with.
+                                underlying: FASSET_COIN?.nativeName,
                                 bridgeType: formValues?.type === BRIDGE_TYPE.HYPER_CORE ? 'Hyperliquid' : 'HyperEVM'
                             })}
                         </Text>

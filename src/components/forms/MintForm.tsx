@@ -24,7 +24,7 @@ import {
 	useMediaQuery,
 } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
-import { toNumber, isZeroAddress } from "@/utils";
+import { toNumber, isZeroAddress, isValidEvmAddress } from "@/utils";
 import { createLogger } from "@/utils/debug";
 
 const log = createLogger('MINT:FORM');
@@ -37,7 +37,6 @@ import { useUnderlyingBalance } from "@/api/balance";
 import { useFassetPrice } from "@/api/user";
 import { WALLET } from "@/constants";
 import { useDirectMintingInfo, useMintingRecipient, useMintingCapInfo } from "@/api/minting";
-import { isAddress } from "ethers";
 import { useUserTags } from "@/api/tags";
 
 interface IMintForm {
@@ -128,7 +127,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 						.test(
 							"is-valid-address",
 							t("validation.messages.invalid_address"),
-							(value) => isAddress(value ?? ""),
+							(value) => isValidEvmAddress(value),
 						),
 				otherwise: (s) => s.optional(),
 			}),
@@ -165,7 +164,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 		const tagsByAddressQuery = useUserTags(
 			fAssetCoin.type,
 			addressForTagLookup,
-			addressForTagLookup.length > 0 && isAddress(addressForTagLookup),
+			addressForTagLookup.length > 0 && isValidEvmAddress(addressForTagLookup),
 		);
 
 		const hasValidAmount = () => {
@@ -193,7 +192,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 			const mode = overrides.destinationMode ?? values.destinationMode;
 			if (mode === "address") {
 				const addr = overrides.destinationAddress ?? values.destinationAddress;
-				if (!isAddress(addr ?? "")) return true;
+				if (!isValidEvmAddress(addr)) return true;
 			} else {
 				const resolvedAddress = overrides.resolvedAddress ?? values.resolvedAddress;
 				if (!resolvedAddress) return true;

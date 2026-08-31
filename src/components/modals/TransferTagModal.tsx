@@ -3,7 +3,7 @@ import { Button, Divider, List, Stepper, Text, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { yupResolver } from "mantine-form-yup-resolver";
 import * as yup from "yup";
-import { isAddress, isError } from "ethers";
+import { isError } from "ethers";
 import { useTranslation } from "react-i18next";
 import FAssetModal from "@/components/modals/FAssetModal";
 import ModalConfirmStep from "@/components/elements/ModalConfirmStep";
@@ -11,6 +11,7 @@ import ModalSuccessStep from "@/components/elements/ModalSuccessStep";
 import FormAlert from "@/components/elements/FormAlert";
 import AlertBox from "@/components/elements/AlertBox";
 import { ITagsByAddress } from "@/types";
+import { isValidEvmAddress } from "@/utils";
 import { useTransferTag } from "@/hooks/useContracts";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useModalGuard } from "@/hooks/useModalGuard";
@@ -62,7 +63,7 @@ export default function TransferTagModal({
 				t("validation.messages.invalid_address", {
 					field: t("transfer_tag_modal.new_owner_label"),
 				}),
-				(val) => isAddress(val ?? ""),
+				(val) => isValidEvmAddress(val),
 			),
 	});
 

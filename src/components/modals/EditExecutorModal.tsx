@@ -3,7 +3,7 @@ import { Button, Divider, Stepper, Text, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { yupResolver } from "mantine-form-yup-resolver";
 import * as yup from "yup";
-import { isAddress, isError } from "ethers";
+import { isError } from "ethers";
 import { useTranslation } from "react-i18next";
 import FAssetModal from "@/components/modals/FAssetModal";
 import ModalConfirmStep from "@/components/elements/ModalConfirmStep";
@@ -14,7 +14,7 @@ import { ITagsByAddress } from "@/types";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useModalGuard, isAbortError } from "@/hooks/useModalGuard";
 import { useSetAllowedExecutor } from "@/hooks/useContracts";
-import { formatTimestamp } from "@/utils";
+import { formatTimestamp, isValidEvmAddress } from "@/utils";
 import apiClient from "@/api/apiClient";
 import { FASSET_COIN } from "@/config/coin";
 import PasteClipboard from "../elements/PasteClipboard";
@@ -64,7 +64,7 @@ export default function EditExecutorModal({
 				t("validation.messages.invalid_address", {
 					field: t("edit_executor_modal.executor_label"),
 				}),
-				(val) => !val || isAddress(val),
+				(val) => !val || isValidEvmAddress(val),
 			),
 	});
 

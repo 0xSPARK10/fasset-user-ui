@@ -15,13 +15,12 @@ import { useForm, UseFormReturnType } from "@mantine/form";
 import { useDebouncedCallback, useMediaQuery } from "@mantine/hooks";
 import * as yup from "yup";
 import { yupResolver } from "mantine-form-yup-resolver";
-import { isAddress } from "ethers";
 import { IconArrowUpRight } from "@tabler/icons-react";
 import { ErrorDecoder } from "ethers-decode-error";
 import { useTranslation, Trans } from "react-i18next";
 import CopyIcon from "@/components/icons/CopyIcon";
 import { useTransferCollateralPoolToken } from "@/hooks/useContracts";
-import { parseUnits, formatUnit, toNumber, ALLOWED_DECIMAL_SEPARATORS } from "@/utils";
+import { parseUnits, formatUnit, toNumber, ALLOWED_DECIMAL_SEPARATORS, isValidEvmAddress } from "@/utils";
 import { CollateralPoolTokenAbi } from "@/abi";
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { formatNumber, truncateString } from "@/utils";
@@ -62,7 +61,7 @@ const SendCPTForm = forwardRef<FormRef, ISendCPTForm>(({ collateralPool, payDebt
                 {
                     field: t('send_cpt_modal.form.address_label')
                 }),
-                (val: any) => isAddress(val))
+                (val: any) => isValidEvmAddress(val))
 
     });
 

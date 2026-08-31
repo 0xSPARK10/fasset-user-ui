@@ -164,8 +164,8 @@
         "title": "Bridge"
     },
     "bridge_balance_card": {
-        "bridge_to_hype_button": "Bridge to HYPE",
-        "bridge_to_ethereum_button": "Bridge to ETH",
+        "bridge_to_hype_button": "Bridge to Hyperliquid",
+        "bridge_to_ethereum_button": "Bridge to Ethereum",
         "flr_address_label": "FLR Address",
         "sgb_address_label": "SGB Address",
         "view_on_explorer_button": "View on Explorer"
@@ -194,11 +194,11 @@
         "finished_modal": {
             "confirm_button": "OK",
             "description_flare_label": "Bridge completed. Your {{fAsset}} is now available on Flare Network.",
-            "description_xrpl_label": "Bridge has been successfully initiated. Your XRP will be available in your wallet shortly. You can monitor the status of your transfer by checking your latest transactions list.",
+            "description_xrpl_label": "Bridge completed. Your {{underlying}} is now available on XRPL.",
             "description_hyperliquid_label": "Bridge completed. Your {{fAsset}} is now available on {{bridgeType}}.",
             "description_ethereum_label": "Bridge completed. Your {{fAsset}} is now available on Ethereum.",
             "title": "Finished",
-            "title_xrpl": "Initiated"
+            "title_xrpl": "Finished"
         },
         "flare_title": "Bridge {{fAsset}} to Flare Network",
         "xrpl_title": "Bridge {{fAsset}} to XRPL",
@@ -323,7 +323,7 @@
     "connect_wallet_modal": {
         "term_of_service_label": "By connecting a wallet, you agree to the <0>Terms of Service</0>",
         "title": "Connect Wallet",
-        "wallet_description_label": "These four services will allow you to connect to networks.  Note: If you connect to additional networks using the same service, you must disconnect before connecting to multiple networks.",
+        "wallet_description_label": "These four services will allow you to connect to networks. Note: If you connect to additional networks using the same service, you must disconnect before connecting to multiple networks.",
         "wallet_title": "Which wallet should I use?"
     },
     "copy_icon": {
