@@ -16,10 +16,9 @@ export default function BalanceRow({
 	action,
 	className = "mt-2",
 }: IBalanceRow) {
-	const responsiveStack = action ? "max-[360px]:flex-col" : "";
 	return (
 		<div
-			className={`flex ${responsiveStack} border-t pt-2 w-full ${className}`}
+			className={`flex flex-wrap items-center gap-y-3 border-t pt-2 w-full ${className}`}
 		>
 			<div className="flex items-center">
 				{icon}
@@ -33,7 +32,7 @@ export default function BalanceRow({
 				</div>
 			</div>
 			{action && (
-				<div className="ml-auto flex items-center gap-[10px] max-[360px]:ml-0 max-[360px]:mt-2">
+				<div className="ml-auto flex flex-wrap items-center gap-[10px]">
 					{action}
 				</div>
 			)}
