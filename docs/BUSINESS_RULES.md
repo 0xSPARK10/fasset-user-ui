@@ -229,6 +229,27 @@ const MIN_BRIDGE_AMOUNT = 5;
 
 **Code:** `src/components/forms/BridgeXrplForm.tsx` (line ~164)
 
+### The OFT send is submitted with a 1.5x gas buffer
+
+`useBridgeSend` estimates gas at submit time and adds 50% before sending, the same multiplier
+`POOL_ENTER` / `POOL_EXIT` already use:
+
+```ts
+let gasLimit = await contract.send.estimateGas(...);
+gasLimit = (gasLimit * BigInt(150)) / BigInt(100);
+```
+
+**Why:** with no explicit `gasLimit`, ethers v6 estimates and submits the bare figure, so the
+send carries no margin at all. An OFT send's cost is not stable between the estimate and
+inclusion — LayerZero endpoint and DVN configuration change what `send` executes — and an
+under-provisioned send still burns the LayerZero fee before reverting out of gas. This was the
+app's least predictable call and the only contract call submitted without headroom.
+
+Note the estimate is not an extra round trip: ethers already made the same `eth_estimateGas`
+call internally when `gasLimit` was absent. It is now explicit so the buffer can be applied.
+
+**Code:** `src/hooks/useContracts.ts` (`useBridgeSend`)
+
 ### A WalletConnect session does not gain chains added in a later release
 
 Chains are requested once, in `connect()`, and a session then persists for weeks. Adding a bridge chain therefore reaches new sessions only — every session negotiated before the release keeps its old chain set, and nothing renegotiates it. Observed on mainnet: bridging *to* Ethereum worked (signed on Flare, always in the session) while bridging *from* Ethereum failed until the user disconnected and reconnected the wallet.

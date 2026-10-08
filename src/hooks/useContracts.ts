@@ -970,7 +970,11 @@ export function useBridgeSend() {
                     signerAddress
                 });
 
-                const tx = await contract.send(
+                // Estimate at submit time and add headroom, same as POOL_ENTER / POOL_EXIT.
+                // Without an explicit gasLimit ethers estimates and submits the bare figure,
+                // leaving no margin — and an OFT send's cost can rise between the estimate and
+                // inclusion when LayerZero endpoint or DVN state changes.
+                let gasLimit = await contract.send.estimateGas(
                     sendParams,
                     { nativeFee: fee, lzTokenFee: '0' },
                     signerAddress,
@@ -978,12 +982,26 @@ export function useBridgeSend() {
                         value: fee
                     }
                 );
+                gasLimit = (gasLimit * BigInt(150)) / BigInt(100);
+                log.log('gas limit (estimate +50%):', gasLimit.toString());
+
+                const tx = await contract.send(
+                    sendParams,
+                    { nativeFee: fee, lzTokenFee: '0' },
+                    signerAddress,
+                    {
+                        value: fee,
+                        gasLimit: gasLimit
+                    }
+                );
 
                 log.log('tx hash:', tx.hash);
                 const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
                 log.log('receipt status:', receipt.status, 'blockNumber:', receipt.blockNumber);
                 if (receipt.status === 0) {
-                    throw new Error(i18next.t('errors.transaction_failed_label'));
+                    // Carry the hash in the message: it is the only channel that reaches the
+                    // UI, and a reverted send is untraceable without it.
+                    throw new Error(i18next.t('errors.transaction_failed_with_hash_label', { hash: tx.hash }));
                 }
                 return tx.hash;
             } catch (error: any) {

@@ -404,6 +404,7 @@
         "abi_custom_error_label": "Execution reverted: {{error}}",
         "ledger_error_label": "Declined - Check ledger device for more information.",
         "transaction_failed_label": "Transaction failed.",
+        "transaction_failed_with_hash_label": "Transaction failed. Transaction hash: {{hash}}",
         "try_reconnecting_label": "Could not coalesce error - Try reconnecting your wallet.",
         "wallet_reconnect_required_label": "Your wallet is not connected to the network this transaction is signed on. Please disconnect and reconnect your wallet, then try again."
     },
