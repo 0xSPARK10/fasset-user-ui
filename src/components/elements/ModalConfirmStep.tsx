@@ -47,7 +47,7 @@ export default function ModalConfirmStep({
                     }
                 />
             </Stepper>
-            <ModalDivider my="8" />
+            <ModalDivider />
             <Paper
                 radius="lg"
                 className="px-10 py-5 mt-[40px]"

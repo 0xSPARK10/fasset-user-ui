@@ -1,1 +1,7 @@
 docs/superpowers/
+
+# Internal docs and AI tooling (except CLAUDE.md) — kept local only (the repo is published on GitHub)
+.claude/
+docs/BUSINESS_RULES.md
+docs/PRODUCT_OWNER.md
+docs/issues/

@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import React, { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { modals } from "@mantine/modals";
-import { IconCheck, IconCircleCheck, IconExclamationCircle, IconFilePlus } from "@tabler/icons-react";
+import { IconCheck, IconCircleCheck, IconFilePlus } from "@tabler/icons-react";
 import { parseUnits } from "@/utils";
 import { isError } from "ethers";
 import { ErrorDecoder } from "ethers-decode-error";
@@ -30,6 +30,8 @@ import { showErrorNotification } from "@/hooks/useNotifications";
 import { POOL_KEY, useUserPool } from "@/api/pool";
 import { COINS } from "@/config/coin";
 import { USER_KEY } from "@/api/user";
+import FormAlert from "@/components/elements/FormAlert";
+import { useFormAlerts } from "@/hooks/useFormAlerts";
 
 interface IClaimRewardsFromPoolModal {
     opened: boolean;
@@ -50,9 +52,10 @@ const FINISHED_MODAL = 'finished_modal;'
 export default function ClaimRewardsFromPoolModal({ opened, onClose, collateralPool }: IClaimRewardsFromPoolModal) {
     const [currentStep, setCurrentStep] = useState<number>(STEP_AMOUNT);
     const [currentWalletStep, setCurrentWalletStep] = useState<number>(STEP_WALLET_CLAIM_REWARDS);
-    const [errorMessage, setErrorMessage] = useState<string>();
+    const { get, setOrClear, clear, clearAll } = useFormAlerts<"submit">();
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
+    const [isNextButtonDisabled, setIsNextButtonDisabled] = useState<boolean>(true);
     const [formValues, setFormValues] = useState<any>();
 
     const { t } = useTranslation();
@@ -64,7 +67,7 @@ export default function ClaimRewardsFromPoolModal({ opened, onClose, collateralP
     const queryClient = useQueryClient();
 
     const closeModal = () => {
-        setErrorMessage(undefined);
+        clearAll();
         setCurrentStep(STEP_AMOUNT);
         setCurrentWalletStep(STEP_WALLET_CLAIM_REWARDS);
         onClose();
@@ -112,11 +115,11 @@ export default function ClaimRewardsFromPoolModal({ opened, onClose, collateralP
 
             setCurrentStep(STEP_AMOUNT);
             if (isError(error, 'ACTION_REJECTED')) {
-                setErrorMessage(t('notifications.request_rejected_by_user_label'));
+                setOrClear("submit", t('notifications.request_rejected_by_user_label'));
             } else {
                 const errorDecoder = ErrorDecoder.create([CollateralPoolAbi]);
                 const decodedError = await errorDecoder.decode(error);
-                setErrorMessage(error?.error?.message || decodedError.reason as string);
+                setOrClear("submit", error?.error?.message || decodedError.reason as string);
             }
             modals.closeAll();
         } finally {
@@ -126,13 +129,13 @@ export default function ClaimRewardsFromPoolModal({ opened, onClose, collateralP
     }
 
     const onNextStepClick = async() => {
-        setErrorMessage(undefined);
+        clear("submit");
         const form = formRef.current?.form();
         const status = form?.validate();
 
         const nativeBalance = nativeBalances?.data?.find(nativeBalance => 'wrapped' in nativeBalance);
         if (nativeBalance && toNumber(nativeBalance.balance) < MIN_DEPOSIT) {
-            setErrorMessage(t('claim_rewards_from_pool_modal.error_not_enough_balance', { tokenName: nativeBalance.symbol }));
+            setOrClear("submit", t('claim_rewards_from_pool_modal.error_not_enough_balance', { tokenName: nativeBalance.symbol }));
             return;
         }
         if (status?.hasErrors || !form) return;
@@ -220,22 +223,7 @@ export default function ClaimRewardsFromPoolModal({ opened, onClose, collateralP
                         withIcon={false}
                     >
                         <div>
-                            {errorMessage &&
-                                <div className="flex items-center mb-5 border border-red-700 p-3 bg-red-100">
-                                    <IconExclamationCircle
-                                        style={{ width: rem(25), height: rem(25) }}
-                                        color="var(--flr-red)"
-                                        className="mr-3"
-                                    />
-                                    <Text
-                                        className="text-16"
-                                        fw={400}
-                                        c="var(--flr-red)"
-                                    >
-                                        {errorMessage}
-                                    </Text>
-                                </div>
-                            }
+                            <FormAlert message={get("submit")?.msg} type={get("submit")?.type} />
                             <Title
                                 fw={300}
                                 className="text-24 mb-5"
@@ -245,6 +233,7 @@ export default function ClaimRewardsFromPoolModal({ opened, onClose, collateralP
                             {collateralPool &&
                                 <ClaimRewardsFromPoolForm
                                     ref={formRef}
+                                    isFormDisabled={(status) => setIsNextButtonDisabled(status)}
                                     collateralPool={collateralPool}
                                 />
                             }
@@ -348,6 +337,7 @@ export default function ClaimRewardsFromPoolModal({ opened, onClose, collateralP
                         radius="xl"
                         size="sm"
                         fullWidth
+                        disabled={isNextButtonDisabled}
                         className="hover:text-white"
                     >
                         {t('claim_rewards_from_pool_modal.next_button')}

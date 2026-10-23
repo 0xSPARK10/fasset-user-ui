@@ -24,7 +24,7 @@ import { useModalGuard } from "@/hooks/useModalGuard";
 import { useSetMintingRecipient } from "@/hooks/useContracts";
 import { WALLET } from "@/constants";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
-import PasteClipboard from "../elements/PasteClipboard";
+import PasteClipboard from "@/components/elements/PasteClipboard";
 
 interface IRecipientTagModal {
     opened: boolean;

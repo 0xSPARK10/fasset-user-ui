@@ -4,7 +4,6 @@ import i18next from "i18next";
 import {
     AssetManagerAbi,
     CollateralPoolAbi,
-    CollateralPoolTokenAbi,
     IIFAssetAbi,
     FAssetOFTAdapterAbi,
     OFTUpgradeableAbi,
@@ -13,6 +12,7 @@ import {
 import { useWeb3 } from "@/hooks/useWeb3";
 import { XRP_NAMESPACE } from "@/config/networks";
 import { formatUnit } from "@/utils";
+import { Fees } from "@/core/fees";
 import { createLogger } from "@/utils/debug";
 import { BridgeChain, BridgeType, ICoin, INetwork, IUtxo } from "@/types";
 import {
@@ -242,6 +242,7 @@ export function useRedeemWithTagSupported(assetManagerAddress: string, enabled: 
             return await contract.redeemWithTagSupported() as boolean;
         },
         enabled: enabled && !!assetManagerAddress && !!mainToken?.network?.rpcUrl,
+        staleTime: Infinity
     });
 }
 
@@ -523,144 +524,6 @@ export function useWithdrawFeesCollateralPool() {
     });
 }
 
-
-export function useTransferCollateralPoolToken() {
-    const { mainToken } = useWeb3();
-    const provider = getProvider(mainToken?.address!);
-
-    return useMutation({
-        mutationFn: async ({
-            userAddress,
-            poolAddress,
-            amount,
-            getGasFee = false
-        }: {
-            userAddress: string,
-            poolAddress: string,
-            amount: string,
-            getGasFee?: boolean
-        }) => {
-            if (!provider) return;
-
-            try {
-                const signer = await provider.getSigner();
-                const contract = new ethers.Contract(poolAddress, CollateralPoolTokenAbi, signer);
-
-                if (getGasFee) {
-                    const gasPrice = (await getFeeData(mainToken!)).gasPrice;
-                    const gasLimit = await contract.transfer.estimateGas(userAddress, amount);
-
-                    if (gasPrice) {
-                        return Number(formatUnit(gasPrice, 9)) * Number(gasLimit);
-                    }
-
-                    return undefined;
-                }
-
-                const tx = await contract.transfer(userAddress, amount);
-
-                const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
-                if (receipt.status === 0) {
-                    throw new Error(i18next.t('errors.transaction_failed_label'));
-                }
-
-                return tx;
-            } catch (error: any) {
-                handleErrors(error);
-            }
-        }
-    });
-}
-
-export function useFreeCptApprove() {
-    const { mainToken } = useWeb3();
-    const provider = getProvider(mainToken?.address!);
-
-    return useMutation({
-        mutationFn: async ({
-            coinName,
-            spenderAddress,
-            amount,
-            getGasFee = false
-        }: {
-            coinName: string,
-            spenderAddress: string,
-            amount: string,
-            getGasFee?: boolean
-        }) => {
-            const contractAddresses = {
-                xrp:  process.env.FREE_CPT_XRP_CONTRACT_ADDRESS,
-                btc: process.env.FREE_CPT_BTC_CONTRACT_ADDRESS,
-                doge: process.env.FREE_CPT_DOGE_CONTRACT_ADDRESS
-            };
-            const token = coinName.match(/(xrp|btc|doge)/i);
-
-            if (!provider || !token) return;
-
-            try {
-                const signer = await provider.getSigner();
-
-                const tokenKey = token[0]?.toLowerCase() as keyof typeof contractAddresses;
-                const contract = new ethers.Contract(contractAddresses[tokenKey]!, CollateralPoolTokenAbi, signer);
-
-                if (getGasFee) {
-                    const gasPrice = (await getFeeData(mainToken!)).gasPrice;
-                    const gasLimit = await contract.approve.estimateGas(spenderAddress, amount);
-
-                    if (gasPrice) {
-                        return Number(formatUnit(gasPrice, 9)) * Number(gasLimit);
-                    }
-
-                    return undefined;
-                }
-
-                const tx = await contract.approve(spenderAddress, amount);
-                const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
-                if (receipt.status === 0) {
-                    throw new Error(i18next.t('errors.transaction_failed_label'));
-                }
-
-                return tx;
-            } catch (error: any) {
-                handleErrors(error);
-            }
-        }
-    });
-}
-
-export function useFreeCptPayAssetFeeDebt() {
-    const { mainToken } = useWeb3();
-    const provider = getProvider(mainToken?.address!);
-
-    return useMutation({
-        mutationFn: async ({
-            poolAddress,
-            amount
-        }: {
-            poolAddress: string,
-            amount: string
-        }) => {
-            if (!provider) return;
-
-            try {
-                const signer = await provider.getSigner();
-                const contract = new ethers.Contract(poolAddress, CollateralPoolAbi, signer);
-
-                const tx = await contract.payFAssetFeeDebt(amount);
-
-                const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
-                if (receipt.status === 0) {
-                    throw new Error(i18next.t('errors.transaction_failed_label'));
-                }
-
-                return tx;
-            } catch (error: any) {
-                handleErrors(error);
-            }
-        }
-    });
-}
-
 export function useCancelCollateralReservation() {
     const { mainToken } = useWeb3();
     const provider = getProvider(mainToken?.address!);
@@ -800,7 +663,6 @@ function buildBridgeSendParams({
     log
 }: BridgeSendParamsArgs) {
     const abiCoder = AbiCoder.defaultAbiCoder();
-    const PPM_DENOMINATOR = BigInt(1_000_000);
 
     let options = Options.newOptions().addExecutorLzReceiveOption(200_000, 0);
     let composeMsg = '0x';
@@ -817,7 +679,7 @@ function buildBridgeSendParams({
         // Gross-up: user enters net amount, total = net / (1 - composerFeePPM/1M)
         const feePPM = BigInt(composerFeePPM ?? '0');
         const amountBig = BigInt(amount);
-        amountToSend = ((amountBig * PPM_DENOMINATOR) / (PPM_DENOMINATOR - feePPM)).toString();
+        amountToSend = Fees.totalToBridgeRaw(amountBig, feePPM).toString();
         const tag = destinationTag ?? 0;
         log?.log('compose params:', {
             redeemer: signerAddress,

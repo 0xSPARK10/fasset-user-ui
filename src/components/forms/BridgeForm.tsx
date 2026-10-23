@@ -6,12 +6,12 @@ import React, {
 } from "react";
 import { useForm, UseFormReturnType } from "@mantine/form";
 import { ICoin } from "@/types";
-import { Divider, Loader, Text, SegmentedControl } from "@mantine/core";
+import { Text, SegmentedControl } from "@mantine/core";
 import { yupResolver } from "mantine-form-yup-resolver";
 import * as yup from "yup";
 import { useTranslation } from "react-i18next";
 import { formatNumber, formatUnit, parseUnits, toNumber } from "@/utils";
-import { useDebouncedCallback, useMediaQuery } from "@mantine/hooks";
+import { useDebouncedCallback } from "@mantine/hooks";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useBridgeQouteSend, useHypeBalance } from "@/hooks/useContracts";
 import { showErrorNotification } from "@/hooks/useNotifications";
@@ -22,8 +22,10 @@ import { BridgeConfig } from "@/components/modals/BridgeModal";
 import { useNativeBalance } from "@/api/balance";
 import { BRIDGE_GAS_COIN } from "@/config/coin";
 import { FEE_TOKEN_CHAIN } from "@/config/bridge";
-import { formatCrossChainFee } from "@/core/fees/format";
-import AmountInput from "../elements/AmountInput";
+import AmountInput from "@/components/elements/AmountInput";
+import ModalDivider from "@/components/elements/ModalDivider";
+import FeeBreakdown from "@/components/elements/FeeBreakdown";
+import { useBridgeFees } from "@/hooks/fees/useBridgeFees";
 
 interface IBridgeForm {
 	token: ICoin;
@@ -37,22 +39,27 @@ export type FormRef = {
 };
 
 const BridgeForm = forwardRef<FormRef, IBridgeForm>(
-	({ token, type, bridgeConfig, onError, isFormDisabled }: IBridgeForm, ref) => {
+	(
+		{ token, type, bridgeConfig, onError, isFormDisabled }: IBridgeForm,
+		ref,
+	) => {
 		const { t } = useTranslation();
-		const mediaQueryMatches = useMediaQuery("(max-width: 40em)");
 		const { mainToken } = useWeb3();
-
 		const [amount, setAmount] = useState<number>();
 		const [fee, setFee] = useState<string>();
 		const [bridgeType, setBridgeType] =
 			useState<(typeof BRIDGE_TYPE)[keyof typeof BRIDGE_TYPE]>(type);
 		const qouteSend = useBridgeQouteSend();
-		
-        // feeTokenKey → the chain the LayerZero nativeFee is paid on.
+		// feeTokenKey → the chain the LayerZero nativeFee is paid on.
 		// undefined = the route originates on Flare, so the fee comes from mainToken.
 		const feeChain = FEE_TOKEN_CHAIN[bridgeConfig.feeTokenKey];
 		const feeCoin = feeChain ? BRIDGE_GAS_COIN[feeChain] : mainToken;
 
+		const feeItems = useBridgeFees({
+			feeCoin,
+			fee,
+			isLoading: qouteSend.isPending,
+		});
 		const nativeBalance = useNativeBalance(
 			mainToken?.address!,
 			feeChain === undefined,
@@ -65,6 +72,7 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(
 		const schema = yup.object().shape({
 			amount: yup
 				.number()
+				.transform((value) => (Number.isNaN(value) ? undefined : value))
 				.required(
 					t("validation.messages.required", {
 						field: t("bridge_modal.form.amount_label"),
@@ -72,8 +80,8 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(
 				)
 				.min(0),
 		});
-		
-        const form = useForm({
+
+		const form = useForm({
 			mode: "controlled",
 			initialValues: {
 				amount: undefined,
@@ -81,14 +89,12 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(
 				type: type,
 			},
 			validate: yupResolver(schema),
-			onValuesChange: (values: any) => {
-				if (values?.amount?.length === 0) {
-					form.setFieldValue("amount", undefined);
-				}
-			},
 		});
 
 		form.watch("amount", ({ value }) => {
+			const isEmpty =
+				value === undefined || value === "" || Number.isNaN(Number(value));
+			if (isEmpty && isFormDisabled) isFormDisabled(true);
 			debounceSetAmount(value);
 		});
 		form.watch("type", ({ value }) => {
@@ -105,7 +111,7 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(
 			if (isFormDisabled) isFormDisabled(true);
 		}, []);
 
-        // Check value and throw errors
+		// Check value and throw errors
 		useEffect(() => {
 			if (!fee) return;
 
@@ -166,11 +172,16 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(
 		);
 
 		const debounceSetAmount = useDebouncedCallback(async (value) => {
-			if (value === amount) return;
-
-			setAmount(value);
 			if (!value || typeof value !== "number" || isNaN(value)) {
+				setAmount(undefined);
+				setFee(undefined);
+				form.setFieldValue("fee", undefined);
 				if (isFormDisabled) isFormDisabled(true);
+				return;
+			}
+			setAmount(value);
+			if (value === amount) {
+				if (isFormDisabled) isFormDisabled(false);
 				return;
 			}
 
@@ -188,7 +199,11 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(
 			} catch (error: any) {
 				const errorDecoder = ErrorDecoder.create([FAssetOFTAdapterAbi]);
 				const decodedError = await errorDecoder.decode(error);
-				showErrorNotification(error?.error?.message || decodedError.reason || (error as Error)?.message);
+				showErrorNotification(
+					error?.error?.message ||
+						decodedError.reason ||
+						(error as Error)?.message,
+				);
 			}
 		}, 500);
 
@@ -197,9 +212,11 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(
 				<Text className="text-24 mb-5" fw={300} c="var(--flr-black)">
 					{t("bridge_modal.form.amount_step_title")}
 				</Text>
-				<AmountInput				
+				<AmountInput
 					description={t("bridge_modal.form.balance_amount_label", {
-						balance: formatNumber(Math.floor(toNumber(token?.balance ?? "0") * 100) / 100),
+						balance: formatNumber(
+							Math.floor(toNumber(token?.balance ?? "0") * 100) / 100,
+						),
 						token: token.type,
 					})}
 					form={form}
@@ -223,42 +240,16 @@ const BridgeForm = forwardRef<FormRef, IBridgeForm>(
 									label: t("bridge_modal.form.hyper_evm_label"),
 									value: BRIDGE_TYPE.HYPER_EVM,
 								},
-							]}	
+							]}
 						/>
 					</div>
 				)}
-				<Divider
-					className="my-8"
-					styles={{
-						root: {
-							marginLeft: mediaQueryMatches ? "-1rem" : "-2.75rem",
-							marginRight: mediaQueryMatches ? "-1rem" : "-2.75rem",
-						},
-					}}
+				<ModalDivider />
+				<FeeBreakdown
+					feesLabel={t("bridge_modal.form.fees_label")}
+					iconSize={18}
+					items={feeItems}
 				/>
-				<Text fw={400} c="var(--flr-gray)" className="text-12 mb-1 uppercase">
-					{t("bridge_modal.form.fees_label")}
-				</Text>
-				<div className="flex justify-between">
-					<Text className="text-16" fw={400} c="var(--flr-black)">
-						{t("bridge_modal.form.cross_chain_fee_label")}
-					</Text>
-					<div className="flex items-center">
-						{feeCoin?.icon && feeCoin.icon({ width: "18", height: "18" })}
-						<Text className="text-16 mx-2" fw={400} c="var(--flr-black)">
-							{qouteSend.isPending ? (
-								<Loader size={14} />
-							) : fee ? (
-								formatCrossChainFee(fee, feeCoin?.feeDecimals)
-							) : (
-								<span>&mdash;</span>
-							)}
-						</Text>
-						<Text c="var(--flr-gray)" fw={400} className="text-16 w-12">
-							{feeCoin?.type}
-						</Text>
-					</div>
-				</div>
 			</div>
 		);
 	},

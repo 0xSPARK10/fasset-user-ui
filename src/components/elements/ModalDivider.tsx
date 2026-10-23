@@ -14,7 +14,7 @@ export default function ModalDivider({
     marginXMobile = "-1rem",
     className,
     mb,
-    my,
+    my = 32,
 }: IModalDivider) {
     const isMobile = useMediaQuery("(max-width: 640px)");
 

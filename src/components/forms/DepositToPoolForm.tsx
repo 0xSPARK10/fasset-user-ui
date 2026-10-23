@@ -1,20 +1,20 @@
 import {
-    Divider,
     NumberInput,
     Text,
-    Loader,
     Button,
     lighten
 } from "@mantine/core";
 import { useForm, UseFormReturnType } from "@mantine/form";
 import React, { Dispatch, forwardRef, SetStateAction, useEffect, useImperativeHandle, useState } from "react";
-import { useDebouncedCallback, useMediaQuery } from "@mantine/hooks";
+import { useDebouncedCallback } from "@mantine/hooks";
 import { yupResolver } from "mantine-form-yup-resolver";
 import { formatNumber, toNumber, truncateString, ALLOWED_DECIMAL_SEPARATORS } from "@/utils";
 import CopyIcon from "@/components/icons/CopyIcon";
 import * as yup from "yup";
 import { useTranslation, Trans } from "react-i18next";
 import { IPool } from "@/types";
+import FeeBreakdown from "@/components/elements/FeeBreakdown";
+import { useNativeFee } from "@/hooks/fees/useNativeFee";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useEnterCollateralPool } from "@/hooks/useContracts";
 import { parseUnits, formatUnit } from "@/utils";
@@ -22,23 +22,23 @@ import { useNativeBalance } from "@/api/balance";
 import { ErrorDecoder } from "ethers-decode-error";
 import { CollateralPoolAbi } from "@/abi";
 import { showErrorNotification } from "@/hooks/useNotifications";
+import ModalDivider from "../elements/ModalDivider";
 
 interface IDepositToPoolForm {
     collateralPool: IPool;
-    isFormDisabled: boolean;
-    setIsFormDisabled: Dispatch<SetStateAction<boolean>>;
+    isFormDisabled?: (status: boolean) => void;
+    setIsEstimating: Dispatch<SetStateAction<boolean>>;
 }
 
 export type FormRef = {
     form: () => UseFormReturnType<any>;
 }
 
-const DepositToPoolForm = forwardRef<FormRef, IDepositToPoolForm>(({ collateralPool, setIsFormDisabled }: IDepositToPoolForm, ref) => {
+const DepositToPoolForm = forwardRef<FormRef, IDepositToPoolForm>(({ collateralPool, isFormDisabled, setIsEstimating }: IDepositToPoolForm, ref) => {
     const [amount, setAmount] = useState<number>();
     const [fee, setFee] = useState<number>();
     const [maxDeposit, setMaxDeposit] = useState<number>();
     const { t } = useTranslation();
-    const mediaQueryMatches = useMediaQuery('(max-width: 40em)');
 
     const { mainToken } = useWeb3();
     const enterCollateralPool = useEnterCollateralPool();
@@ -46,6 +46,7 @@ const DepositToPoolForm = forwardRef<FormRef, IDepositToPoolForm>(({ collateralP
 
     const schema = yup.object().shape({
         amount: yup.number()
+            .transform((value) => (Number.isNaN(value) ? undefined : value))
             .required(t('validation.messages.required', { field: t('deposit_to_pool_modal.form.amount_label') }))
             .min(1)
     });
@@ -59,6 +60,8 @@ const DepositToPoolForm = forwardRef<FormRef, IDepositToPoolForm>(({ collateralP
     });
 
     form.watch('amount', ({ value }) => {
+        const isEmpty = value === undefined || value === '' || Number.isNaN(Number(value));
+        if (isEmpty && isFormDisabled) isFormDisabled(true);
         debounceSetAmount(value);
     });
 
@@ -78,19 +81,20 @@ const DepositToPoolForm = forwardRef<FormRef, IDepositToPoolForm>(({ collateralP
         }
     }, [nativeBalances.data]);
     useEffect(() => {
-        if (!enterCollateralPool.isPending) {
-            setIsFormDisabled(false);
-        }
-        else {
-            setIsFormDisabled(true);
-        }
+        setIsEstimating(enterCollateralPool.isPending);
     }, [enterCollateralPool.isPending]);
 
     const debounceSetAmount = useDebouncedCallback(async (value) => {
-        if (value === amount) return;
-
+        if (value === undefined || value === '' || Number.isNaN(Number(value))) {
+            setAmount(undefined);
+            if (isFormDisabled) isFormDisabled(true);
+            return;
+        }
         setAmount(value);
-        if (!value || value === amount) return;
+        if (value === amount) {
+            if (isFormDisabled) isFormDisabled(false);
+            return;
+        }
         try {
             const estimatedGas = await enterCollateralPool.mutateAsync({
             userAddress: mainToken?.address!,
@@ -100,12 +104,23 @@ const DepositToPoolForm = forwardRef<FormRef, IDepositToPoolForm>(({ collateralP
             });
 
             setFee(Number(formatUnit(estimatedGas, 9)));
+            if (isFormDisabled) isFormDisabled(false);
         } catch (error) {
             const errorDecoder = ErrorDecoder.create([CollateralPoolAbi]);
             const decodedError = await errorDecoder.decode(error);
             showErrorNotification(decodedError.reason as string);
+            if (isFormDisabled) isFormDisabled(true);
         }
     }, 500);
+
+    const feeItems = useNativeFee({
+        labelKey: 'deposit_to_pool_modal.form.fee_label',
+        mainToken,
+        fee,
+        amount,
+        requireAmount: true,
+        isLoading: enterCollateralPool.isPending,
+    });
 
     return (
         <>
@@ -192,15 +207,7 @@ const DepositToPoolForm = forwardRef<FormRef, IDepositToPoolForm>(({ collateralP
                     />
                 </Text>
             </div>
-            <Divider
-                className="my-8"
-                styles={{
-                    root: {
-                        marginLeft: mediaQueryMatches ? '-1rem' : '-2.75rem',
-                        marginRight: mediaQueryMatches ? '-1rem' : '-2.75rem'
-                    }
-                }}
-            />
+            <ModalDivider />
             <Text
                 fw={400}
                 c="var(--flr-gray)"
@@ -237,44 +244,11 @@ const DepositToPoolForm = forwardRef<FormRef, IDepositToPoolForm>(({ collateralP
                     </Text>
                 </div>
             </div>
-            <Text
-                fw={400}
-                c="var(--flr-gray)"
-                className="text-12 mb-1 mt-5 uppercase"
-            >
-                {t('deposit_to_pool_modal.form.fees_label')}
-            </Text>
-            <div className="flex justify-between">
-                <Text
-                    className="text-16"
-                    fw={400}
-                    c="var(--flr-black)"
-                >
-                    {t('deposit_to_pool_modal.form.fee_label')}
-                </Text>
-                <div className="flex items-center">
-                    {mainToken?.icon && mainToken.icon({ width: "18", height: "18" })}
-                    <Text
-                        className="text-16 mx-2"
-                        fw={400}
-                        c="var(--flr-black)"
-                    >
-                        {enterCollateralPool.isPending
-                            ? <Loader size={14} />
-                            : amount && fee
-                                ? formatNumber(fee, 4)
-                                : <span>&mdash;</span>
-                        }
-                    </Text>
-                    <Text
-                        c="var(--flr-gray)"
-                        fw={400}
-                        className="text-16 w-12"
-                    >
-                        {mainToken?.type}
-                    </Text>
-                </div>
-            </div>
+            <FeeBreakdown
+                feesLabel={t('deposit_to_pool_modal.form.fees_label')}
+                iconSize={18}
+                items={feeItems}
+            />
         </>
     );
 });

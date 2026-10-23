@@ -1,16 +1,14 @@
 ---
-doc_version: "1.10"
-app_version: "v1.3"
-last_updated: "2026-07-29"
+doc_version: "1.11"
+app_version: "v1.4"
+last_updated: "2026-10-20"
 ---
 
 # FAsset User UI — Developer Specification
 
 > Single source of truth for developers and AI tools implementing features.
 > Covers: domain concepts, data types, flows, APIs, fees, wallets, code patterns.
-> For product/roadmap context see `docs/PRODUCT.md`.
-
-**Version:** 1.9 — 2026-05-26
+> For product/roadmap context see `docs/PRODUCT_OWNER.md`.
 
 ---
 
@@ -498,6 +496,8 @@ NOT shared between chains; Ethereum has its own.
 }
 ```
 
+**Gas:** `useBridgeSend` estimates `send()` gas explicitly and submits it with a 1.5x buffer (same as `POOL_ENTER` / `POOL_EXIT`) — an under-provisioned OFT send still burns the LayerZero fee before reverting. On a status-0 receipt the thrown message includes the tx hash.
+
 ### Compose Messages
 
 ```ts
@@ -580,7 +580,6 @@ counterpart inline in `.env.example`.
 CollateralPool.enter({ value: amount })           // deposit native → receive CPT
 CollateralPool.exit(tokenShare)                   // burn CPT → receive native
 CollateralPool.withdrawFees(feeShare)             // claim FAsset fees
-CollateralPool.payFAssetFeeDebt(amount)           // clear fee debt before exit
 ```
 
 ### IPool Key Fields
@@ -603,9 +602,9 @@ CollateralPool.payFAssetFeeDebt(amount)           // clear fee debt before exit
 
 `MAX_CR_VALUE = 1000` — displayed as infinity. Check with `isMaxCRValue()`.
 
-### Free CPT Program
+### Removed: CPT transfer & fee debt payment
 
-`FREE_CPT_XRP/BTC/DOGE_CONTRACT_ADDRESS` — special CPT tokens for fee debt payment. Require `approve()` before `payFAssetFeeDebt`.
+`SendCPTsModal` / `PayDebtModal` (and `useTransferCollateralPoolToken`, `useFreeCptApprove`, `useFreeCptPayAssetFeeDebt`) were removed in 2026-09 — unreachable since the `PoolsTable` entry point was dropped (Jun 2025). The UI no longer calls `payFAssetFeeDebt` or uses the Free CPT contracts.
 
 ### IMaxWithdraw
 
@@ -693,6 +692,37 @@ Distinct from minting tags. The redeemer requests that the agent includes a spec
 | Composer fee (PPM) | `GET /oft/redemptionFees/:srcEid` | Deducted from amount | Bridge XRPL/CORE |
 | OFT executor fee | same endpoint | Added to LZ fee | Bridge XRPL |
 | Xaman fee | computed in UI | User's XRP balance | Xaman wallet only |
+
+### Fee Code (`src/core/fees/`, `src/hooks/fees/`)
+
+All fee math and display is centralized — never compute fees inline in a form or stepper.
+
+**`Fees` class** (`core/fees/fees.ts`) — pure static math:
+
+| Method | Use |
+|--------|-----|
+| `totalToBridge(net, feePPM)` / `totalToBridgeRaw(bigint…)` | Composer gross-up — gross to send so the user receives `net` |
+| `affordableNet(balance, feePPM)` | Inverse — max net bridgeable from a balance |
+| `redeemingFee(amount, bips)` | Redemption fee |
+| `mintingFee(base, executorFee, bips, minimumFee)` | Direct-mint system fee (gross-up + min floor) |
+| `mintPaymentRaw(...)` | Total direct-mint XRP payment in drops (string, for the on-chain request) |
+
+Display formatting lives in `core/fees/format.ts` (`formatFeeAmount`, `formatCrossChainFee`, `formatBalanceAmount`, `formatInputAmount`).
+
+**Per-flow hooks** (`hooks/fees/`) return ready-to-render `FeeItem[]`: `useNativeFee`, `useBridgeFees`, `useBridgeXrplFees`, `useMintFees`, `useRedeemFees`, `useReserveMintingTagFees`. Build new items with `buildFeeItem({ label, token, fee: { amount, isLoading }, currencyName, format? })`.
+
+**`FeeBreakdown`** (`components/elements/FeeBreakdown.tsx`) renders them:
+
+```tsx
+const fees = useRedeemFees({...});
+<FeeBreakdown items={fees} />                       // single "fees" group
+<FeeBreakdown sections={[                            // several groups, one shared currency column
+  { label: t("...you_will_receive"), items: receiveItems },
+  { label: t("...fees"), items: fees },
+]} />
+```
+
+`amount: null` renders a dash; `isLoading` renders a spinner.
 
 ---
 
@@ -867,7 +897,7 @@ default → error?.response?.data?.message ?? error.message
 | `WALLETCONNECT_PROJECT_ID` | WC v2 project ID |
 | `XAMAN_API_KEY` | Xaman API key |
 | `XPUB_SECRET` | AES key for Ledger xpub |
-| `FREE_CPT_XRP/BTC/DOGE_CONTRACT_ADDRESS` | Free CPT contracts |
+| `FREE_CPT_XRP/BTC/DOGE_CONTRACT_ADDRESS` | Free CPT contracts — unused since 2026-09 (still in `.env.example`) |
 | `BRIDGE_FXRP_ADDRESS` | FAsset ERC-20 on Flare |
 | `BRIDGE_FXRP_OFT_ADAPTER_ADDRESS` | OFT Adapter on Flare |
 | `BRIDGE_HYPE_FXRP_OFT_ADAPTER_ADDRESS` | OFT token on HyperEVM |
@@ -982,6 +1012,31 @@ Props: `title: string`, `type?: "info" | "error"` (default: `"info"`, orange), `
 
 Both components live in `src/components/elements/`.
 
+### Form Alert Channels (`useFormAlerts` + `resolveAlert`)
+
+Modals with several error sources (stepper, balance check, form validation…) keep each in its own named **channel** instead of one shared `errorMessage` state. One alert is shown at a time, picked by priority.
+
+```tsx
+import { useFormAlerts } from "@/hooks/useFormAlerts";
+import { resolveAlert } from "@/core/alerts";
+
+const { set, get, clear, clearAll, setOrClear } =
+    useFormAlerts<"stepper" | "balance" | "highFee" | "form">();
+
+set("balance", { msg: t("..."), type: "warning" });
+setOrClear("form", maybeMessage);          // sets if truthy, clears otherwise
+clearAll();                                // on modal close (modals are keepMounted)
+
+const activeAlert = resolveAlert([         // array order = priority
+    get("stepper"), get("balance"), get("highFee"), get("form"),
+]);
+<FormAlert message={activeAlert?.msg} type={activeAlert?.type} />
+```
+
+- `IAlertMessage = { msg: string; type?: "error" | "warning" | "info" }` (from `FormAlert.tsx`)
+- A channel is cleared by whoever owns it — e.g. the balance channel clears on a successful refetch, the XRPL form clears its channel when the destination address changes
+- Used in: `MintModal`, `BridgeModal`, `DepositToPoolModal`, `WithdrawalFromPoolModal`, `ClaimRewardsFromPoolModal`. Other modals still use a local `errorMessage` state + `FormAlert`
+
 ### Modal Async Guard (`useModalGuard`)
 
 **Problem:** async callbacks (contract calls, polling intervals) don't know when the modal has been closed. Without guarding, state updates fire on a closed modal → React warnings, stale UI on next open.
@@ -1054,4 +1109,4 @@ useEffect(() => {
 
 ---
 
-*For product decisions, edge cases, and roadmap context: see `docs/PRODUCT.md`*
+*For product decisions, edge cases, and roadmap context: see `docs/PRODUCT_OWNER.md`*

@@ -163,6 +163,4 @@ npm (uses `package-lock.json`). The Dockerfile runs `npm ci` — keep the lockfi
 - Coston2 app (testnet - COSTON2): https://fasset-coston2.matheo.si/
 - API Swagger (testnet - COSTON2): https://fasset-coston2.matheo.si/api-doc
 - Technical spec: `docs/DEV_SPEC.md` (contract functions, events, flows, domain knowledge)
-- Business rules: `docs/BUSINESS_RULES.md`
-- Product spec: `docs/PRODUCT_OWNER.md`
 - WalletConnect dashboard: https://cloud.walletconnect.com/app

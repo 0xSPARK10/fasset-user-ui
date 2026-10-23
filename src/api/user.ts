@@ -52,7 +52,8 @@ export function useAssetManagerAddress(fAsset: string, enabled: boolean = true) 
             const response = await apiClient.get(`assetManagerAddress/${fAsset}`);
             return response.data as IAssetManagerAddress;
         },
-        enabled: enabled
+        enabled: enabled,
+        staleTime: Infinity
     });
 }
 

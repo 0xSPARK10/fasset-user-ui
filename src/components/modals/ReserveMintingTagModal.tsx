@@ -17,8 +17,10 @@ import { useTagReservationFee } from "@/api/tags";
 import { useNativeBalance } from "@/api/balance";
 import { useReserveTag } from "@/hooks/useContracts";
 import { FASSET_COIN } from "@/config/coin";
-import { formatNumber, formatUnit, toNumber, findBalanceBySymbol } from "@/utils";
+import { formatUnit, toNumber, findBalanceBySymbol } from "@/utils";
 import FormAlert from "@/components/elements/FormAlert";
+import FeeBreakdown from "@/components/elements/FeeBreakdown";
+import { useReserveMintingTagFees } from "@/hooks/fees/useReserveMintingTagFees";
 import { isError } from "ethers";
 import { WALLET } from "@/constants";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
@@ -129,6 +131,11 @@ export default function ReserveMintingTagModal({
 		onClose();
 	};
 
+	const feeItems = useReserveMintingTagFees({
+		mainToken,
+		reservationFee: reservationFee.data?.reservationFee,
+	});
+
 	return (
 		<FAssetModal
 			opened={opened}
@@ -162,38 +169,10 @@ export default function ReserveMintingTagModal({
 						<Text className="text-14" fw={400} c="var(--flr-black)" mb="xl">
 							{t("reserve_minting_tag_modal.info_description")}
 						</Text>
-						<Text
-							className="text-12"
-							fw={400}
-							c="var(--flr-gray)"
-							mb={5}
-							style={{ letterSpacing: "0.05em" }}
-						>
-							{t("reserve_minting_tag_modal.fees_label")}
-						</Text>
-						<Group justify="space-between" align="center">
-							<Text className="text-16" fw={400} c="var(--flr-black)">
-								{t("reserve_minting_tag_modal.reservation_fee_label")}
-							</Text>
-							<Group gap="xs" align="center">
-								{mainToken?.icon?.({ width: "16", height: "16" })}
-								<Text className="text-16" fw={400} c="var(--flr-black)">
-									{reservationFee.data?.reservationFee ? (
-										formatNumber(
-											formatUnit(
-												BigInt(reservationFee.data.reservationFee),
-												18,
-											),
-										)
-									) : (
-										<span>&mdash;</span>
-									)}
-								</Text>
-								<Text className="text-16" fw={400} c="var(--flr-gray)">
-									{mainToken?.type}
-								</Text>
-							</Group>
-						</Group>
+						<FeeBreakdown
+							feesLabel={t("reserve_minting_tag_modal.fees_label")}
+							items={feeItems}
+						/>
 					</Stepper.Step>
 
 					{/* Step 1: CONFIRM */}

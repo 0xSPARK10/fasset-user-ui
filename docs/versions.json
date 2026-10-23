@@ -1,6 +1,6 @@
 {
-  "DEV_SPEC": { "doc": "1.10", "app": "v1.3", "updated": "2026-07-29" },
+  "DEV_SPEC": { "doc": "1.11", "app": "v1.4", "updated": "2026-10-20" },
   "PRODUCT_OWNER": { "doc": "1.2", "app": "v1.3", "updated": "2026-05-06" },
-  "BUSINESS_RULES": { "doc": "1.9", "app": "v1.3", "updated": "2026-07-30" },
-  "CHANGELOG": { "doc": "1.11", "app": "v1.3.17", "updated": "2026-08-31" }
+  "BUSINESS_RULES": { "doc": "1.11", "app": "v1.4", "updated": "2026-10-20" },
+  "CHANGELOG": { "doc": "1.17", "app": "v1.4", "updated": "2026-10-22" }
 }

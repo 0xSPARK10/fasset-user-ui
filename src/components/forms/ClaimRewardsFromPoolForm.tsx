@@ -1,8 +1,6 @@
 import {
-    Divider,
     NumberInput,
     Text,
-    Loader,
     Button,
     alpha
 } from "@mantine/core";
@@ -15,8 +13,7 @@ import React, {
 } from "react";
 import {
     useDebouncedCallback,
-    useElementSize,
-    useMediaQuery
+    useElementSize
 } from "@mantine/hooks";
 import { yupResolver } from "mantine-form-yup-resolver";
 import { formatNumber, truncateString, ALLOWED_DECIMAL_SEPARATORS } from "@/utils";
@@ -24,33 +21,35 @@ import CopyIcon from "@/components/icons/CopyIcon";
 import * as yup from "yup";
 import { useTranslation, Trans } from "react-i18next";
 import { CoinEnum, IPool } from "@/types";
+import FeeBreakdown from "@/components/elements/FeeBreakdown";
+import { useNativeFee } from "@/hooks/fees/useNativeFee";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useWithdrawFeesCollateralPool } from "@/hooks/useContracts";
 import { parseUnits, formatUnit, toNumber } from "@/utils";
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { ErrorDecoder } from "ethers-decode-error";
 import { CollateralPoolTokenAbi } from "@/abi";
+import ModalDivider from "../elements/ModalDivider";
 
 interface IClaimRewardsFromPoolForm {
-    collateralPool: IPool
+    collateralPool: IPool;
+    isFormDisabled?: (status: boolean) => void;
 }
 
 export type FormRef = {
     form: () => UseFormReturnType<any>;
 }
 
-const ClaimRewardsFromPoolForm = forwardRef<FormRef, IClaimRewardsFromPoolForm>(({ collateralPool }: IClaimRewardsFromPoolForm, ref)  => {
+const ClaimRewardsFromPoolForm = forwardRef<FormRef, IClaimRewardsFromPoolForm>(({ collateralPool, isFormDisabled }: IClaimRewardsFromPoolForm, ref)  => {
     const [amount, setAmount] = useState<number>();
     const [fee, setFee] = useState<number>();
     const [maxWithdrawal, setMaxWithdrawal] = useState<number>();
     const { t } = useTranslation();
-    const mediaQueryMatches = useMediaQuery('(max-width: 40em)');
     const { mainToken, getConnectedCoin } = useWeb3();
     const claimRewardsCollateralPool = useWithdrawFeesCollateralPool();
 
     const withdrawLabelSize = useElementSize();
-    const feeLabelSize = useElementSize();
-    const labelWidth = Math.max(withdrawLabelSize.width, feeLabelSize.width);
+    const labelWidth = withdrawLabelSize.width;
 
     const fAssetCoin = getConnectedCoin(collateralPool.vaultType as CoinEnum);
     const inputStep = collateralPool.vaultType.toLowerCase().includes('btc') || collateralPool.vaultType.toLowerCase().includes('doge')
@@ -62,6 +61,7 @@ const ClaimRewardsFromPoolForm = forwardRef<FormRef, IClaimRewardsFromPoolForm>(
 
     const schema = yup.object().shape({
         amount: yup.number()
+            .transform((value) => (Number.isNaN(value) ? undefined : value))
             .required(t('validation.messages.required', { field: t('claim_rewards_from_pool_modal.form.amount_label') }))
             .min(inputStep)
     });
@@ -75,6 +75,8 @@ const ClaimRewardsFromPoolForm = forwardRef<FormRef, IClaimRewardsFromPoolForm>(
     });
 
     form.watch('amount', ({ value }) => {
+        const isEmpty = value === undefined || value === '' || Number.isNaN(Number(value));
+        if (isEmpty && isFormDisabled) isFormDisabled(true);
         debounceSetAmount(value);
     });
 
@@ -90,7 +92,15 @@ const ClaimRewardsFromPoolForm = forwardRef<FormRef, IClaimRewardsFromPoolForm>(
     }, [collateralPool]);
 
     const debounceSetAmount = useDebouncedCallback(async (value) => {
-        if (!value || value === amount) return;
+        if (value === undefined || value === '' || Number.isNaN(Number(value))) {
+            setAmount(undefined);
+            if (isFormDisabled) isFormDisabled(true);
+            return;
+        }
+        if (value === amount) {
+            if (isFormDisabled) isFormDisabled(false);
+            return;
+        }
 
         setAmount(value);
         try {
@@ -106,12 +116,22 @@ const ClaimRewardsFromPoolForm = forwardRef<FormRef, IClaimRewardsFromPoolForm>(
                 getGasFee: true
             });
             setFee(Number(formatUnit(estimatedGas, 9)));
+            if (isFormDisabled) isFormDisabled(false);
         } catch (error: any) {
             const errorDecoder = ErrorDecoder.create([CollateralPoolTokenAbi]);
             const decodedError = await errorDecoder.decode(error);
             showErrorNotification(decodedError.reason as string);
+            if (isFormDisabled) isFormDisabled(true);
         }
     }, 500);
+
+    const feeItems = useNativeFee({
+        labelKey: 'claim_rewards_from_pool_modal.form.fee_label',
+        mainToken,
+        fee,
+        isLoading: claimRewardsCollateralPool.isPending,
+        decimals: decimalScale,
+    });
 
     return (
         <>
@@ -197,15 +217,7 @@ const ClaimRewardsFromPoolForm = forwardRef<FormRef, IClaimRewardsFromPoolForm>(
                     />
                 </Text>
             </div>
-            <Divider
-                className="my-8"
-                styles={{
-                    root: {
-                        marginLeft: mediaQueryMatches ? '-1rem' : '-2.75rem',
-                        marginRight: mediaQueryMatches ? '-1rem' : '-2.75rem'
-                    }
-                }}
-            />
+            <ModalDivider />
             <Text
                 fw={400}
                 c="var(--flr-gray)"
@@ -249,46 +261,11 @@ const ClaimRewardsFromPoolForm = forwardRef<FormRef, IClaimRewardsFromPoolForm>(
                     </Text>
                 </div>
             </div>
-            <Text
-                fw={400}
-                c="var(--flr-gray)"
-                className="mb-1 mt-5 uppercase text-12"
-            >
-                {t('claim_rewards_from_pool_modal.form.fees_label')}
-            </Text>
-            <div className="flex justify-between">
-                <Text
-                    className="text-16"
-                    fw={400}
-                    c="var(--flr-black)"
-                >
-                    {t('claim_rewards_from_pool_modal.form.fee_label')}
-                </Text>
-                <div className="flex items-center">
-                    {mainToken?.icon && mainToken.icon({ width: "18", height: "18" })}
-                    <Text
-                        className="text-16 mx-2"
-                        fw={400}
-                        c="var(--flr-black)"
-                    >
-                        {claimRewardsCollateralPool.isPending
-                            ? <Loader size={14} />
-                            : fee
-                                ? formatNumber(fee, decimalScale)
-                                : <span>&mdash;</span>
-                        }
-                    </Text>
-                    <Text
-                        ref={feeLabelSize.ref}
-                        className="text-16"
-                        fw={400}
-                        c="var(--flr-gray)"
-                        style={{ width: labelWidth > 0 ? `${labelWidth}px` : 'auto' }}
-                    >
-                        {mainToken?.type}
-                    </Text>
-                </div>
-            </div>
+            <FeeBreakdown
+                feesLabel={t('claim_rewards_from_pool_modal.form.fees_label')}
+                iconSize={18}
+                items={feeItems}
+            />
         </>
     );
 });

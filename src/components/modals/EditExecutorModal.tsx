@@ -17,7 +17,7 @@ import { useSetAllowedExecutor } from "@/hooks/useContracts";
 import { formatTimestamp, isValidEvmAddress } from "@/utils";
 import apiClient from "@/api/apiClient";
 import { FASSET_COIN } from "@/config/coin";
-import PasteClipboard from "../elements/PasteClipboard";
+import PasteClipboard from "@/components/elements/PasteClipboard";
 import { WALLET } from "@/constants";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
 

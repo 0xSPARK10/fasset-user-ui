@@ -1,5 +1,4 @@
 import {
-    Divider,
     NumberInput,
     Text,
     Loader,
@@ -13,13 +12,15 @@ import React, {
     useImperativeHandle,
     useState
 } from "react";
-import { useDebouncedCallback, useMediaQuery } from "@mantine/hooks";
+import { useDebouncedCallback } from "@mantine/hooks";
 import { yupResolver } from "mantine-form-yup-resolver";
-import { formatNumber, formatUnit, parseUnits, truncateString, ALLOWED_DECIMAL_SEPARATORS } from "@/utils";
+import { formatUnit, parseUnits, truncateString, ALLOWED_DECIMAL_SEPARATORS } from "@/utils";
 import CopyIcon from "@/components/icons/CopyIcon";
 import * as yup from "yup";
 import { useTranslation, Trans } from "react-i18next";
 import { IPool } from "@/types";
+import FeeBreakdown from "@/components/elements/FeeBreakdown";
+import { useNativeFee } from "@/hooks/fees/useNativeFee";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useMaxCptWithdraw, useMaxWithdraw } from "@/api/pool";
 import { AxiosError } from "axios";
@@ -28,6 +29,7 @@ import { toNumber } from "@/utils";
 import { useExitCollateralPool } from "@/hooks/useContracts";
 import { ErrorDecoder } from "ethers-decode-error";
 import { CollateralPoolAbi } from "@/abi";
+import ModalDivider from "../elements/ModalDivider";
 
 interface IWithdrawalFromPoolForm {
     collateralPool: IPool;
@@ -43,7 +45,6 @@ const WithdrawalFromPoolForm = forwardRef<FormRef, IWithdrawalFromPoolForm>(({ c
     const [maxWithdrawal, setMaxWithdrawal] = useState<number>();
     const [fee, setFee] = useState<number>();
     const { t } = useTranslation();
-    const mediaQueryMatches = useMediaQuery('(max-width: 40em)');
     const { mainToken } = useWeb3();
     const maxWithdraw = useMaxWithdraw(collateralPool?.vaultType!, collateralPool?.pool!, mainToken?.address!, amount!, false);
     const maxCptWithdraw = useMaxCptWithdraw(collateralPool?.vaultType!, collateralPool?.pool!);
@@ -51,6 +52,7 @@ const WithdrawalFromPoolForm = forwardRef<FormRef, IWithdrawalFromPoolForm>(({ c
 
     const schema = yup.object().shape({
         amount: yup.number()
+            .transform((value) => (Number.isNaN(value) ? undefined : value))
             .required(t('validation.messages.required', { field: t('withdrawal_from_pool_modal.form.amount_label') }))
             .min(maxWithdrawal !== undefined && maxWithdrawal < 1 ? maxWithdrawal : 1)
     });
@@ -62,15 +64,12 @@ const WithdrawalFromPoolForm = forwardRef<FormRef, IWithdrawalFromPoolForm>(({ c
             natReturn: '',
             isMaxAmount: false
         },
-        validate: yupResolver(schema),
-        onValuesChange: (values: any) => {
-            if (values?.amount?.length === 0) {
-                form.setFieldValue('amount', undefined);
-            }
-        }
+        validate: yupResolver(schema)
     });
 
     form.watch('amount', ({ value }) => {
+        const isEmpty = value === undefined || value === '' || Number.isNaN(Number(value));
+        if (isEmpty && isFormDisabled) isFormDisabled(true);
         debounceSetAmount(value);
     });
 
@@ -86,7 +85,10 @@ const WithdrawalFromPoolForm = forwardRef<FormRef, IWithdrawalFromPoolForm>(({ c
     }, [collateralPool, maxCptWithdraw]);
 
     useEffect(() => {
-        if (!amount) return;
+        if (!amount) {
+            if (isFormDisabled) isFormDisabled(true);
+            return;
+        }
 
         const fetch = async() => {
             if (isFormDisabled) {
@@ -106,6 +108,9 @@ const WithdrawalFromPoolForm = forwardRef<FormRef, IWithdrawalFromPoolForm>(({ c
                 } else {
                     //@ts-ignore
                     showErrorNotification(error?.response?.data?.message);
+                    if (isFormDisabled) {
+                        isFormDisabled(true);
+                    }
                 }
 
                 return;
@@ -123,7 +128,15 @@ const WithdrawalFromPoolForm = forwardRef<FormRef, IWithdrawalFromPoolForm>(({ c
     }, [amount]);
 
     const debounceSetAmount = useDebouncedCallback(async (value) => {
-        if (value === amount || value.length === 0) return;
+        if (value === undefined || value === '' || Number.isNaN(Number(value))) {
+            setAmount(undefined);
+            if (isFormDisabled) isFormDisabled(true);
+            return;
+        }
+        if (value === amount) {
+            if (isFormDisabled) isFormDisabled(false);
+            return;
+        }
 
         setAmount(value);
         try {
@@ -140,8 +153,18 @@ const WithdrawalFromPoolForm = forwardRef<FormRef, IWithdrawalFromPoolForm>(({ c
             const errorDecoder = ErrorDecoder.create([CollateralPoolAbi]);
             const decodedError = await errorDecoder.decode(error);
             showErrorNotification(decodedError.reason as string);
+            if (isFormDisabled) isFormDisabled(true);
         }
     }, 500);
+
+    const feeItems = useNativeFee({
+        labelKey: 'withdrawal_from_pool_modal.form.fee_label',
+        mainToken,
+        fee,
+        amount,
+        requireAmount: true,
+        isLoading: exitCollateralPool.isPending,
+    });
 
     return (
         <>
@@ -225,15 +248,7 @@ const WithdrawalFromPoolForm = forwardRef<FormRef, IWithdrawalFromPoolForm>(({ c
                     />
                 </Text>
             </div>
-            <Divider
-                className="my-8"
-                styles={{
-                    root: {
-                        marginLeft: mediaQueryMatches ? '-1rem' : '-2.75rem',
-                        marginRight: mediaQueryMatches ? '-1rem' : '-2.75rem'
-                    }
-                }}
-            />
+            <ModalDivider />
             <Text
                 fw={400}
                 c="var(--flr-gray)"
@@ -272,44 +287,11 @@ const WithdrawalFromPoolForm = forwardRef<FormRef, IWithdrawalFromPoolForm>(({ c
                     </Text>
                 </div>
             </div>
-            <Text
-                fw={400}
-                c="var(--flr-gray)"
-                className="text-12 mb-1 mt-5 uppercase"
-            >
-                {t('withdrawal_from_pool_modal.form.fees_label')}
-            </Text>
-            <div className="flex justify-between">
-                <Text
-                    className="text-16"
-                    fw={400}
-                    c="var(--flr-black)"
-                >
-                    {t('withdrawal_from_pool_modal.form.fee_label')}
-                </Text>
-                <div className="flex items-center">
-                    {mainToken?.icon && mainToken.icon({ width: "18", height: "18" })}
-                    <Text
-                        className="text-16 mx-2"
-                        fw={400}
-                        c="var(--flr-black)"
-                    >
-                        {exitCollateralPool.isPending
-                            ? <Loader size={14}/>
-                            : amount && fee
-                                ? formatNumber(fee, 4)
-                                : <span>&mdash;</span>
-                        }
-                    </Text>
-                    <Text
-                        c="var(--flr-gray)"
-                        fw={400}
-                        className="text-16 w-12"
-                    >
-                        {mainToken?.type}
-                    </Text>
-                </div>
-            </div>
+            <FeeBreakdown
+                feesLabel={t('withdrawal_from_pool_modal.form.fees_label')}
+                iconSize={18}
+                items={feeItems}
+            />
         </>
     );
 });

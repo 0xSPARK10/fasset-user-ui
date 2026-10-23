@@ -18,7 +18,7 @@ import { useModalGuard } from "@/hooks/useModalGuard";
 import { WALLET } from "@/constants";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
 import { isMobile } from "react-device-detect";
-import PasteClipboard from "../elements/PasteClipboard";
+import PasteClipboard from "@/components/elements/PasteClipboard";
 
 interface ITransferTagModal {
 	opened: boolean;

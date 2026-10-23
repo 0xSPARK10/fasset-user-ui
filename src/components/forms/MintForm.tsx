@@ -7,7 +7,6 @@ import React, {
 } from "react";
 import {
 	Divider,
-	Loader,
 	LoadingOverlay,
 	Text,
 	FocusTrap,
@@ -28,10 +27,12 @@ import { toNumber, isZeroAddress, isValidEvmAddress } from "@/utils";
 import { createLogger } from "@/utils/debug";
 
 const log = createLogger('MINT:FORM');
-import { formatInputAmount, formatFeeAmount } from "@/core/fees/format";
+import { Fees, formatInputAmount, formatFeeAmount } from "@/core/fees";
 import { IFAssetCoin } from "@/types";
 import { IAlertMessage } from "@/components/elements/FormAlert";
 import AmountInput from "@/components/elements/AmountInput";
+import FeeBreakdown from "@/components/elements/FeeBreakdown";
+import { useMintFees } from "@/hooks/fees/useMintFees";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useUnderlyingBalance } from "@/api/balance";
 import { useFassetPrice } from "@/api/user";
@@ -45,6 +46,8 @@ interface IMintForm {
 	refreshBalance: () => void;
 	setHighMintingFee: (fee: number | undefined, transfer?: number) => void;
 	onError: (alert?: IAlertMessage) => void;
+	/** Fires on every amount edit, so the parent can expire alerts tied to a previous attempt. */
+	onAmountChange?: () => void;
 }
 
 export type FormRef = {
@@ -61,6 +64,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 			refreshBalance,
 			setHighMintingFee,
 			onError,
+			onAmountChange,
 		}: IMintForm,
 		ref,
 	) => {
@@ -81,7 +85,6 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 		const { walletConnectConnector, getConnectedCoin, mainToken } = useWeb3();
 		const addressForTagLookup = mainToken?.address ?? "";
 		const transferLabelSize = useElementSize();
-		const mintingFeeLabelSize = useElementSize();
 		const { t } = useTranslation();
 		const isMobile = useMediaQuery("(max-width: 640px)");
 
@@ -297,7 +300,8 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 				);
 		});
 
-		const feeRate = Number(mintingData.data?.mintingFeeBIPS ?? 0) / 10000;
+		const mintingFeeBips = Number(mintingData.data?.mintingFeeBIPS ?? 0);
+		const feeRate = mintingFeeBips / 10000;
 		const minimumMintingFee =
 			Number(mintingData.data?.minimumMintingFeeUBA ?? 0) / 10 ** 6;
 		// TODO: use API value once backend returns minMintingAmount
@@ -326,16 +330,18 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 		//
 		// required = minMintingAmount + minFee + executorFee + minWalletBalance
 		//   minFee  = max((minMintingAmount + executorFee) × feeRate / (1 − feeRate), minimumMintingFee)
-		const percentageMintingFee =
-			hasValidTransfer ? (transfer + executorFee) * feeRate / (1 - feeRate) : undefined;
-		const mintingFee =
-			hasValidTransfer
-				? Math.max(percentageMintingFee ?? 0, minimumMintingFee)
-				: undefined;
+		const mintingFee = hasValidTransfer
+			? Fees.mintingFee(transfer, executorFee, mintingFeeBips, minimumMintingFee)
+			: undefined;
 		const totalFees =
 			hasValidTransfer && mintingFee !== undefined
 				? mintingFee + executorFee
 				: undefined;
+		const feeItems = useMintFees({
+			fAssetCoin,
+			totalFees,
+			isLoading: mintingData.isPending,
+		});
 		const totalSend =
 			hasValidTransfer && mintingFee !== undefined
 				? transfer + mintingFee + executorFee
@@ -347,7 +353,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 		const isMintingFeeHigh = mintFeePercentage > MINTING_FEE_LIMIT;
 
 		const rawBalance = toNumber(underlyingBalance.data?.balance ?? "0");
-		const minFee = Math.max((minMintingAmount + executorFee) * feeRate / (1 - feeRate), minimumMintingFee);
+		const minFee = Fees.mintingFee(minMintingAmount, executorFee, mintingFeeBips, minimumMintingFee);
 		const required =
 			minMintingAmount +
 			minFee +
@@ -392,10 +398,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 			tokenName: fAssetCoin.type,
 		})}`;
 
-		const labelWidth = Math.max(
-			transferLabelSize.width,
-			mintingFeeLabelSize.width,
-		);
+		const labelWidth = transferLabelSize.width;
 
 		useEffect(() => {
 			if (mintingCapInfo.isLoading) return;
@@ -559,6 +562,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 		}));
 
 		form.watch("amount", ({ value }) => {
+			onAmountChange?.();
 			debounceSetAmount(value);
 		});
 
@@ -661,36 +665,10 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 							</Text>
 						</div>
 					</div>
-					<Text fw={400} c="var(--flr-gray)" className="mb-1 mt-5 uppercase text-12">
-						{t("mint_modal.form.fees_label")}
-					</Text>
-					<div className="flex justify-between items-center">
-						<Text className="text-16" fw={400} c="var(--flr-black)">
-							{t("mint_modal.form.minting_fee_label")}
-						</Text>
-						<div className="flex items-center">
-							{fAssetCoin.nativeIcon &&
-								fAssetCoin.nativeIcon({ width: "16", height: "16" })}
-							<Text className="mx-2 text-16" fw={400}>
-								{mintingData.isPending ? (
-									<Loader size={14} />
-								) : totalFees !== undefined ? (
-									formatFeeAmount(totalFees, fAssetCoin.decimals)
-								) : (
-									<span>&mdash;</span>
-								)}
-							</Text>
-							<Text
-								ref={mintingFeeLabelSize.ref}
-								className="text-16"
-								fw={400}
-								c="var(--flr-gray)"
-								style={{ width: labelWidth > 0 ? `${labelWidth}px` : "auto" }}
-							>
-								{fAssetCoin.nativeName}
-							</Text>
-						</div>
-					</div>
+					<FeeBreakdown
+						feesLabel={t("mint_modal.form.fees_label")}
+						items={feeItems}
+					/>
 				</div>
 			</div>
 		);

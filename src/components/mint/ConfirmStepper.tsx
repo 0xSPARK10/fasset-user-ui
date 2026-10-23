@@ -19,6 +19,7 @@ import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransa
 import WalletConnectOpenWalletCard from "@/components/cards/WalletConnectOpenWalletCard";
 import XamanOpenWalletCard from "@/components/cards/XamanOpenWalletCard";
 import { IFAssetCoin } from "@/types";
+import { Fees } from "@/core/fees";
 import { IAlertMessage } from "@/components/elements/FormAlert";
 import { WALLET, WALLET_ID } from "@/constants";
 import { useSignTransaction } from "@/hooks/useContracts";
@@ -60,30 +61,6 @@ function encodeDirectMintingMemo(recipient: string, executor: string) {
     return `0x${DIRECT_MINTING_EX_PREFIX}${r}${e}`.toUpperCase();
 }
 
-function calculateDirectMintPaymentAmount(
-    amount: number,
-    underlyingDecimals: number,
-    mintingFeeBIPS: string,
-    minimumMintingFeeUBA: string,
-    fassetsExecutorFee: string,
-) {
-    // Direct mint payment amount must be encoded in underlying smallest units
-    // (for XRP this is drops = 6 decimals), not UI display precision.
-    const mintAmountUba = Math.round(amount * 10 ** underlyingDecimals);
-    const feeBIPS = Number(mintingFeeBIPS ?? "0");
-    const minimumFee = Number(minimumMintingFeeUBA ?? "0");
-    const executorFee = Number(fassetsExecutorFee ?? "0");
-    // systemFee = max(receivedXRP * feeBIPS / 10000, minimumFee)
-    // receivedXRP = mintAmount + systemFee + executorFee
-    // → systemFee = (mintAmount + executorFee) * feeBIPS / (10000 - feeBIPS)
-    const percentageFee = Math.round(
-        ((mintAmountUba + executorFee) * feeBIPS) / (10000 - feeBIPS),
-    );
-    const mintingFee = Math.max(percentageFee, minimumFee);
-
-    return (mintAmountUba + mintingFee + executorFee).toString();
-}
-
 export default function ConfirmStepper({
     opened,
     fAssetCoin,
@@ -112,7 +89,7 @@ export default function ConfirmStepper({
     const paymentAmount = useMemo(() => {
         if (!formValues?.amount || !directMintingInfo.data) return "";
 
-        return calculateDirectMintPaymentAmount(
+        return Fees.mintPaymentRaw(
             Number(formValues.amount),
             fAssetCoin.contractDecimals ?? 6,
             directMintingInfo.data.mintingFeeBIPS,

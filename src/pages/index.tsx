@@ -76,7 +76,7 @@ export default function Home() {
 					<Title className="text-32" ml={{ base: 16, sm: 0 }} fw={300}>
 						{t("home.title")}
 					</Title>
-						{isConnected && (
+						{isConnected && mainToken?.address && (
 							<Box w={{ base: "100%", sm: 510 }}>
 								<FAssetPositionCard
 									balance={balance.data}

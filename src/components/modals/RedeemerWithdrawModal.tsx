@@ -26,7 +26,7 @@ import { COINS } from "@/config/coin";
 import { BALANCE_KEY } from "@/api/balance";
 import { useQueryClient } from "@tanstack/react-query";
 import { OFT_KEY } from "@/api/oft";
-import ModalDivider from "../elements/ModalDivider";
+import ModalDivider from "@/components/elements/ModalDivider";
 
 interface IRedeemerWithdrawModal {
     opened: boolean;

@@ -1,7 +1,7 @@
 import { Avatar, Button, Divider, lighten, rem, Stepper, Text, Title } from "@mantine/core";
 import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { IconCheck, IconCircleCheck, IconExclamationCircle, IconFilePlus } from "@tabler/icons-react";
+import { IconCheck, IconCircleCheck, IconFilePlus } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { modals } from "@mantine/modals";
 import DepositToPoolForm, { FormRef } from "@/components/forms/DepositToPoolForm";
@@ -22,6 +22,8 @@ import { POOL_KEY, useUserPool } from "@/api/pool";
 import { COINS } from "@/config/coin";
 import LogoIcon from "@/components/icons/LogoIcon";
 import CopyIcon from "@/components/icons/CopyIcon";
+import FormAlert from "@/components/elements/FormAlert";
+import { useFormAlerts } from "@/hooks/useFormAlerts";
 
 interface IDepositToPoolModal {
     opened: boolean;
@@ -42,13 +44,14 @@ const FINISHED_MODAL = 'finished_modal;'
 export default function DepositToPoolModal({ opened, onClose, collateralPool }: IDepositToPoolModal) {
     const [currentStep, setCurrentStep] = useState<number>(STEP_AMOUNT);
     const [currentWalletStep, setCurrentWalletStep] = useState<number>(STEP_WALLET_DEPOSIT);
-    const [errorMessage, setErrorMessage] = useState<string>();
+    const { get, setOrClear, clear, clearAll } = useFormAlerts<"submit">();
     const { t } = useTranslation();
     const formRef = useRef<FormRef>(null);
     const { mainToken } = useWeb3();
     const nativeBalances = useNativeBalance(mainToken?.address ?? '', mainToken !== undefined && opened);
     const enterCollateralPool = useEnterCollateralPool();
-    const [isFormDisabled, setIsFormDisabled] = useState<boolean>(false);
+    const [isEstimating, setIsEstimating] = useState<boolean>(false);
+    const [isNextButtonDisabled, setIsNextButtonDisabled] = useState<boolean>(true);
     const [formValues, setFormValues] = useState<any>();
     const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
 
@@ -56,7 +59,7 @@ export default function DepositToPoolModal({ opened, onClose, collateralPool }: 
     const queryClient = useQueryClient();
 
     const closeModal = () => {
-        setErrorMessage(undefined);
+        clearAll();
         setCurrentStep(STEP_AMOUNT);
         setCurrentWalletStep(STEP_WALLET_DEPOSIT);
         onClose();
@@ -99,11 +102,11 @@ export default function DepositToPoolModal({ opened, onClose, collateralPool }: 
 
             setCurrentStep(STEP_AMOUNT);
             if (isError(error, 'ACTION_REJECTED')) {
-                setErrorMessage(t('notifications.request_rejected_by_user_label'));
+                setOrClear("submit", t('notifications.request_rejected_by_user_label'));
             } else {
                 const errorDecoder = ErrorDecoder.create([CollateralPoolAbi]);
                 const decodedError = await errorDecoder.decode(error);
-                setErrorMessage(error?.error?.message || decodedError.reason as string);
+                setOrClear("submit", error?.error?.message || decodedError.reason as string);
             }
             modals.closeAll();
         } finally {
@@ -112,7 +115,7 @@ export default function DepositToPoolModal({ opened, onClose, collateralPool }: 
     }
 
     const onNextStepClick = async() => {
-        setErrorMessage(undefined);
+        clear("submit");
         const form = formRef.current?.form();
         const status = form?.validate();
 
@@ -120,7 +123,7 @@ export default function DepositToPoolModal({ opened, onClose, collateralPool }: 
 
         const nativeBalance = nativeBalances?.data?.find(nativeBalance => 'wrapped' in nativeBalance);
         if (nativeBalance && toNumber(nativeBalance.balance) < MIN_DEPOSIT) {
-            setErrorMessage(t('deposit_to_pool_modal.error_not_enough_balance', { tokenName: nativeBalance.symbol }));
+            setOrClear("submit", t('deposit_to_pool_modal.error_not_enough_balance', { tokenName: nativeBalance.symbol }));
             return;
         }
 
@@ -207,22 +210,7 @@ export default function DepositToPoolModal({ opened, onClose, collateralPool }: 
                         withIcon={false}
                     >
                         <div>
-                            {errorMessage &&
-                                <div className="flex items-center mb-5 border border-red-700 p-3 bg-red-100">
-                                    <IconExclamationCircle
-                                        style={{ width: rem(25), height: rem(25) }}
-                                        color="var(--flr-red)"
-                                        className="mr-3"
-                                    />
-                                    <Text
-                                        className="text-16"
-                                        fw={400}
-                                        c="var(--flr-red)"
-                                    >
-                                        {errorMessage}
-                                    </Text>
-                                </div>
-                            }
+                            <FormAlert message={get("submit")?.msg} type={get("submit")?.type} />
                             <Title
                                 fw={300}
                                 className="text-24 mb-5"
@@ -234,8 +222,8 @@ export default function DepositToPoolModal({ opened, onClose, collateralPool }: 
                                 <DepositToPoolForm
                                     ref={formRef}
                                     collateralPool={collateralPool}
-                                    isFormDisabled={isFormDisabled}
-                                    setIsFormDisabled={setIsFormDisabled}
+                                    isFormDisabled={(status) => setIsNextButtonDisabled(status)}
+                                    setIsEstimating={setIsEstimating}
                                 />
                             }
                         </div>
@@ -374,8 +362,8 @@ export default function DepositToPoolModal({ opened, onClose, collateralPool }: 
                         radius="xl"
                         size="sm"
                         fullWidth
-                        disabled={isFormDisabled}
-                        loading={isFormDisabled}
+                        disabled={isNextButtonDisabled || isEstimating}
+                        loading={isEstimating}
                         className="hover:text-white"
                     >
                         {t('deposit_to_pool_modal.next_button')}

@@ -684,34 +684,6 @@
         "error_title": "Error",
         "request_rejected_by_user_label": "The request was rejected by the user."
     },
-    "pay_debt_modal": {
-        "approval_description_label": "Approve FAsset spending for the collateral pool to which you are paying your fee debt.",
-        "approval_label": "Approval",
-        "confirm_step_description": "Please open your wallet app and confirm both dialogues to complete the process.",
-        "confirm_step_title": "Confirm in wallet app",
-        "error_not_enough_cflr": "Insufficient CFLR balance",
-        "finished_modal": {
-            "confirm_button": "OK",
-            "description_label": "You have successfully paid your FAsset fee debt.",
-            "title": "Finished"
-        },
-        "form": {
-            "address_label": "Address",
-            "agent_label": "to <bold>{{agent}}</bold>",
-            "amount_label": "Amount",
-            "fee_label": "Gas fee (estimated)",
-            "fees_label": "Fees",
-            "max_button": "Max",
-            "min_balance_label": "You have {{amount}} {{coinName}} fee debt. By paying fee debt, your collateral pool tokens will get unlocked and transferable. Your FAsset balance is {{fassetBalance}}.\nA balance of at least 2 {{mainTokenName}} is required for the transaction.",
-            "transfer_label": "Transfer",
-            "you_will_send_label": "You will send"
-        },
-        "next_button": "Next",
-        "pay_debt_label": "I want to pay fee debt",
-        "title": "Pay FAsset fee debt",
-        "transfer_description_label": "Transfer approved FAssets to the collateral pool, which will pay your fee debt and unlock collateral pool tokens.",
-        "transfer_label": "Transfer FAssets"
-    },
     "pools_position_card": {
         "ecosystem_activity_label": "Ecosystem Pools Activity",
         "lifetime_earned_label": "Lifetime Earned ${{amount}}",
@@ -872,33 +844,6 @@
         "other_options_label": "Other options",
         "try_again_label": "Try again?",
         "user_rejected_request_label": "The request was rejected by the user"
-    },
-    "send_cpt_modal": {
-        "confirm_step_description": "Please open your wallet app and confirm dialogue to complete the process.",
-        "confirm_step_title": "Confirm in wallet app",
-        "error_not_enough_cflr": "Insufficient CFLR balance",
-        "finished_modal": {
-            "confirm_button": "OK",
-            "description_label": "{{amount}} collateral pool tokens were sent to address {{address}}.",
-            "title": "Finished"
-        },
-        "form": {
-            "address_label": "Address",
-            "agent_label": "from <bold>{{agent}}</bold>",
-            "amount_label": "Amount (CPT)",
-            "fee_label": "Gas fee (estimated)",
-            "fees_label": "Fees",
-            "min_balance_label": "You can transfer <bold>{{amount}}</bold> out of <bold>{{outOfAmount}}</bold> collateral pool tokens.\nA balance of at least <bold>2 {{tokenName}}</bold> is required for the transaction.",
-            "transfer_label": "Transfer"
-        },
-        "next_button": "Next",
-        "pay_debt_description_label": "Tokens that are not transferable are either timelocked or debt-locked. You can use Pay Debt functionality and add FAsset to the pool to make more collateral pool tokens transferable.",
-        "pay_debt_learn_more": "To learn more about Fee Debt please visit official docs. <a>Here<icon></icon></a>",
-        "pay_debt_title": "FAsset Fee Debt",
-        "title": "Transfer collateral pool tokens",
-        "transfer_collateral_pool_step_description": "Confirm transaction to start process.",
-        "transfer_collateral_pool_step_label": "Transfer collateral pool tokens",
-        "want_to_transfer": "I want to transfer"
     },
     "session_expired_modal": {
         "confirm_button": "OK",

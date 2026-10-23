@@ -10,7 +10,6 @@ import { modals } from "@mantine/modals";
 import {
     IconCheck,
     IconCircleCheck,
-    IconExclamationCircle,
     IconFilePlus
 } from "@tabler/icons-react";
 import React, { useRef, useState } from "react";
@@ -32,6 +31,8 @@ import { showErrorNotification } from "@/hooks/useNotifications";
 import { POOL_KEY, useUserPool } from "@/api/pool";
 import { useQueryClient } from "@tanstack/react-query";
 import { COINS } from "@/config/coin";
+import FormAlert from "@/components/elements/FormAlert";
+import { useFormAlerts } from "@/hooks/useFormAlerts";
 
 interface IWithdrawalFromPoolModal {
     opened: boolean;
@@ -50,10 +51,10 @@ const MIN_DEPOSIT = 2;
 const FINISHED_MODAL = 'finished_modal';
 
 export default function WithdrawalFromPoolModal({ opened, onClose, collateralPool }: IWithdrawalFromPoolModal) {
-    const [isNextButtonDisabled, setIsNextButtonDisabled] = useState<boolean>(false);
+    const [isNextButtonDisabled, setIsNextButtonDisabled] = useState<boolean>(true);
     const [currentStep, setCurrentStep] = useState<number>(STEP_AMOUNT);
     const [currentWalletStep, setCurrentWalletStep] = useState<number>(STEP_WALLET_WITHDRAWAL);
-    const [errorMessage, setErrorMessage] = useState<string>();
+    const { get, setOrClear, clear, clearAll } = useFormAlerts<"submit">();
     const [isLedgerButtonDisabled, setIsLedgerButtonDisabled] = useState<boolean>(false);
     const formValues = useRef<any>(null);
 
@@ -66,7 +67,7 @@ export default function WithdrawalFromPoolModal({ opened, onClose, collateralPoo
     const queryClient = useQueryClient();
 
     const closeModal = () => {
-        setErrorMessage(undefined);
+        clearAll();
         setCurrentStep(STEP_AMOUNT);
         setCurrentWalletStep(STEP_WALLET_WITHDRAWAL);
         onClose();
@@ -111,11 +112,11 @@ export default function WithdrawalFromPoolModal({ opened, onClose, collateralPoo
 
             setCurrentStep(STEP_AMOUNT);
             if (isError(error, 'ACTION_REJECTED')) {
-                setErrorMessage(t('notifications.request_rejected_by_user_label'));
+                setOrClear("submit", t('notifications.request_rejected_by_user_label'));
             } else {
                 const errorDecoder = ErrorDecoder.create([CollateralPoolAbi]);
                 const decodedError = await errorDecoder.decode(error);
-                setErrorMessage(error?.error?.message || decodedError.reason as string);
+                setOrClear("submit", error?.error?.message || decodedError.reason as string);
             }
             modals.closeAll();
         } finally {
@@ -123,7 +124,7 @@ export default function WithdrawalFromPoolModal({ opened, onClose, collateralPoo
         }
     }
     const onNextStepClick = async() => {
-        setErrorMessage(undefined);
+        clear("submit");
         const form = formRef.current?.form();
         const status = form?.validate();
 
@@ -131,12 +132,12 @@ export default function WithdrawalFromPoolModal({ opened, onClose, collateralPoo
 
         const nativeBalance = nativeBalances?.data?.find(nativeBalance => 'wrapped' in nativeBalance);
         if (nativeBalance && toNumber(nativeBalance.balance) < MIN_DEPOSIT) {
-            setErrorMessage(t('withdrawal_from_pool_modal.error_not_enough_balance', { tokenName: nativeBalance.symbol }));
+            setOrClear("submit", t('withdrawal_from_pool_modal.error_not_enough_balance', { tokenName: nativeBalance.symbol }));
             return;
         }
 
         if (Number(collateralPool?.poolExitCR) > Number(collateralPool?.poolCR)) {
-            setErrorMessage(t('withdrawal_from_pool_modal.error_pool_collateral_ratio'));
+            setOrClear("submit", t('withdrawal_from_pool_modal.error_pool_collateral_ratio'));
             return;
         }
 
@@ -224,22 +225,7 @@ export default function WithdrawalFromPoolModal({ opened, onClose, collateralPoo
                         withIcon={false}
                     >
                         <div>
-                            {errorMessage &&
-                                <div className="flex items-center mb-5 border border-red-700 p-3 bg-red-100">
-                                    <IconExclamationCircle
-                                        style={{ width: rem(25), height: rem(25) }}
-                                        color="var(--flr-red)"
-                                        className="mr-3 flex-shrink-0"
-                                    />
-                                    <Text
-                                        className="text-16"
-                                        fw={400}
-                                        c="var(--flr-red)"
-                                    >
-                                        {errorMessage}
-                                    </Text>
-                                </div>
-                            }
+                            <FormAlert message={get("submit")?.msg} type={get("submit")?.type} />
                             <Title
                                 fw={300}
                                 className="text-24 mb-5"

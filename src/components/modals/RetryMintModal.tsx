@@ -25,6 +25,7 @@ import { useNativeBalance, useUnderlyingBalance } from "@/api/balance";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
 import XamanOpenWalletCard from "@/components/cards/XamanOpenWalletCard";
 import { useRequestMinting } from "@/api/minting";
+import FormAlert from "@/components/elements/FormAlert";
 
 interface IRetryMintModal {
     opened: boolean;
@@ -211,22 +212,7 @@ export default function RetryMintModal({ opened, onClose, underlyingTransaction 
                 title={t('retry_mint_modal.title', { coinName: underlyingTransaction.fAsset })}
             >
                 <FAssetModal.Body>
-                    {errorMessage &&
-                        <div className="flex items-center mb-5 border border-red-700 p-3 bg-red-100">
-                            <IconExclamationCircle
-                                style={{ width: rem(25), height: rem(25) }}
-                                color="var(--flr-red)"
-                                className="mr-3 flex-shrink-0"
-                            />
-                            <Text
-                                className="text-16"
-                                fw={400}
-                                c="var(--flr-red)"
-                            >
-                                {errorMessage}
-                            </Text>
-                        </div>
-                    }
+                    <FormAlert message={errorMessage} />
                     <Text
                         fw={300}
                         c="var(--flr-black)"

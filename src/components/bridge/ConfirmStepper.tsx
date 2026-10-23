@@ -15,6 +15,7 @@ import { IconCheck, IconCircleCheck, IconFilePlus, IconSettings } from "@tabler/
 import { useInterval, useMediaQuery } from "@mantine/hooks";
 import { CONTRACT_KEY, useBridgeApprove, useBridgeSend } from "@/hooks/useContracts";
 import { parseDestinationTag, parseUnits } from "@/utils";
+import { Fees } from "@/core/fees";
 import { createLogger } from "@/utils/debug";
 
 const log = createLogger('BRIDGE');
@@ -198,10 +199,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
 
             const netAmount = parseUnits(formValues.amount, 6);
             const composerFeePPM = BigInt(formValues.composerFeePPM ?? '0');
-            const PPM_DENOMINATOR = BigInt(1_000_000);
-            const grossAmount = composerFeePPM > BigInt(0)
-                ? (netAmount * PPM_DENOMINATOR) / (PPM_DENOMINATOR - composerFeePPM)
-                : netAmount;
+            const grossAmount = Fees.totalToBridgeRaw(netAmount, composerFeePPM);
             log.log('send params:', {
                 netAmount: netAmount.toString(),
                 grossAmount: grossAmount.toString(),
