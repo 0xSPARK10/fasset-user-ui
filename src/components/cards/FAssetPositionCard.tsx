@@ -1,6 +1,5 @@
 import React from "react";
 import {
-    Button,
     Text,
     Loader,
     Grid,
@@ -12,6 +11,7 @@ import { useMediaQuery, useMounted } from "@mantine/hooks";
 import { formatNumberWithSuffix } from "@/utils";
 import { INativeBalance } from "@/types";
 import { COINS } from "@/config/coin";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 
 interface IFAssetPositionCard {
@@ -91,21 +91,19 @@ export default function FAssetPositionCard({ balance, isLoading }: IFAssetPositi
                                 </div>
                             </Flex>
                             <div>
-                                <Button
-                                    variant="gradient"
+                                <FAssetButton
+                                    variant="secondary"
                                     component={Link}
                                     href="/mint"
-                                    radius="xl"
                                     size="sm"
                                     h={isMobile ? 34 : 41}
-                                    fw={400}
                                     disabled={isMintButtonDisabled}
                                     onClick={(e) => {
                                         if (isMintButtonDisabled) e.preventDefault();
                                     }}
                                 >
                                     {t('fasset_position_card.mint_button', {fasset: token?.token?.type})}
-                                </Button>
+                                </FAssetButton>
                             </div>
                         </Grid.Col>
                     ))

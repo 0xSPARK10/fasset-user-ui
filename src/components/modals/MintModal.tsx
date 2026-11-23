@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from "react";
-import { Stepper, Button, Text } from "@mantine/core";
+import { Stepper, Text } from "@mantine/core";
 import ConfirmStepper from "@/components/mint/ConfirmStepper";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -12,6 +12,7 @@ import { useWeb3 } from "@/hooks/useWeb3";
 import { MINTING_KEY } from "@/api/minting";
 import { resolveAlert } from "@/core/alerts";
 import { useFormAlerts } from "@/hooks/useFormAlerts";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface IMintModal {
 	opened: boolean;
@@ -155,17 +156,14 @@ export default function MintModal({ opened, onClose, fAssetCoin }: IMintModal) {
 									type={activeAlert?.type}
 								/>
 								{isRefreshButtonVisible && (
-									<Button
+									<FAssetButton
+										variant="secondary"
 										onClick={fetchBalance}
-										variant="gradient"
-										size="xs"
-										radius="xl"
 										className="flex-shrink-0 mb-3"
-										fw={400}
 										loading={isRefreshButtonLoading}
 									>
 										{t("underlying_balance_card.refresh_button")}
-									</Button>
+									</FAssetButton>
 								)}
 								<Text className="text-24" fw={300} c="var(--flr-black)">
 									{t("mint_modal.amount_step_title")}
@@ -226,18 +224,14 @@ export default function MintModal({ opened, onClose, fAssetCoin }: IMintModal) {
 				</FAssetModal.Body>
 				{currentStep == STEP_AMOUNT && (
 					<FAssetModal.Footer>
-						<Button
+						<FAssetButton
 							onClick={onNextStepClick}
-							variant="filled"
-							color="var(--mantine-color-black)"
-							radius="xl"
-							size="sm"
 							fullWidth
 							className="hover:text-white"
 							disabled={isNextButtonDisabled}
 						>
 							{t("mint_modal.next_button")}
-						</Button>
+						</FAssetButton>
 					</FAssetModal.Footer>
 				)}
 			</FAssetModal>

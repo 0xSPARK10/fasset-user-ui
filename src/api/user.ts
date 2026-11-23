@@ -115,15 +115,22 @@ export function useTimeData(time: string, enabled: boolean = true) {
     })
 }
 
+// FAsset emergency pause per FAsset — shared by the hook and fresh fetches (bridge CTA click)
+export const fassetStateQuery = {
+    queryKey: [USER_KEY.FASSET_STATE],
+    queryFn: async () => {
+        const response = await apiClient.get('fassetState');
+        return response.data as IFassetState[];
+    },
+};
+
 export function useFassetState(enabled: boolean = true) {
     return useQuery({
-        queryKey: [USER_KEY.FASSET_STATE],
-        queryFn: async () => {
-            const response = await apiClient.get('fassetState');
-            return response.data as IFassetState[];
-        },
-        enabled: enabled
-    })
+        ...fassetStateQuery,
+        enabled,
+        // While a FAsset is paused, every minute — so the banner and the bridge page notice the unpause
+        refetchInterval: query => (query.state.data?.some(item => item.state) ? 60000 : false),
+    });
 }
 
 export function useFassetPrice(fAsset: string, enabled: boolean = true) {

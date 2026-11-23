@@ -1,4 +1,4 @@
-import { Avatar, Button, Divider, lighten, rem, Stepper, Text, Title } from "@mantine/core";
+import { Avatar, Divider, lighten, rem, Stepper, Text, Title } from "@mantine/core";
 import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IconCheck, IconCircleCheck, IconFilePlus } from "@tabler/icons-react";
@@ -24,6 +24,7 @@ import LogoIcon from "@/components/icons/LogoIcon";
 import CopyIcon from "@/components/icons/CopyIcon";
 import FormAlert from "@/components/elements/FormAlert";
 import { useFormAlerts } from "@/hooks/useFormAlerts";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface IDepositToPoolModal {
     opened: boolean;
@@ -164,22 +165,18 @@ export default function DepositToPoolModal({ opened, onClose, collateralPool }: 
                         </Text>
                     </div>
                     <Divider
-                        className="my-8"
+                        className="mt-8 mb-10"
                         classNames={{
                             root: 'mx-[-1rem] sm:mx-[-2.7rem]'
                         }}
                     />
-                    <Button
+                    <FAssetButton
                         onClick={() => { modals.closeAll() }}
-                        variant="filled"
-                        color="black"
-                        radius="xl"
-                        size="sm"
                         fullWidth
-                        className="hover:text-white font-normal mb-5"
+                        className="hover:text-white mb-6"
                     >
                         {t('deposit_to_pool_modal.finished_modal.confirm_button')}
-                    </Button>
+                    </FAssetButton>
                 </div>
             ),
             centered: true,
@@ -355,19 +352,15 @@ export default function DepositToPoolModal({ opened, onClose, collateralPool }: 
             </FAssetModal.Body>
             {currentStep === STEP_AMOUNT &&
                 <FAssetModal.Footer>
-                    <Button
+                    <FAssetButton
                         onClick={onNextStepClick}
-                        variant="filled"
-                        color="black"
-                        radius="xl"
-                        size="sm"
                         fullWidth
                         disabled={isNextButtonDisabled || isEstimating}
                         loading={isEstimating}
                         className="hover:text-white"
                     >
                         {t('deposit_to_pool_modal.next_button')}
-                    </Button>
+                    </FAssetButton>
                 </FAssetModal.Footer>
             }
         </FAssetModal>

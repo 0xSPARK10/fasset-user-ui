@@ -2,17 +2,15 @@ import React from "react";
 import { Text, rem } from "@mantine/core";
 import { IconExclamationCircle, IconInfoCircle } from "@tabler/icons-react";
 
-export type AlertType = "error" | "warning" | "info";
-
-export interface IAlertMessage {
-    msg: string;
-    type?: AlertType;
-}
+import type { AlertType } from "@/core/alerts/types";
+export type { AlertType, IAlertMessage } from "@/core/alerts/types";
 
 interface IFormAlert {
     message: string | undefined;
     type?: AlertType;
     className?: string;
+    // Optional control on the right (e.g. a button that resolves the alert)
+    action?: React.ReactNode;
 }
 
 const styles: Record<AlertType, { border: string; bg: string; color: string }> = {
@@ -33,7 +31,7 @@ const styles: Record<AlertType, { border: string; bg: string; color: string }> =
     },
 };
 
-export default function FormAlert({ message, type = "error", className = "" }: IFormAlert) {
+export default function FormAlert({ message, type = "error", className = "", action }: IFormAlert) {
     if (!message) return null;
 
     const { border, bg, color } = styles[type];
@@ -49,6 +47,7 @@ export default function FormAlert({ message, type = "error", className = "" }: I
             <Text className="text-16" fw={400} c={color}>
                 {message}
             </Text>
+            {action && <div className="ml-auto pl-3 flex-shrink-0">{action}</div>}
         </div>
     );
 }

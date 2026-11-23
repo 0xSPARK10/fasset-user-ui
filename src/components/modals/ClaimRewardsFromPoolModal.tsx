@@ -1,7 +1,6 @@
 import {
     Title,
     Divider,
-    Button,
     rem,
     Text,
     Stepper,
@@ -32,6 +31,7 @@ import { COINS } from "@/config/coin";
 import { USER_KEY } from "@/api/user";
 import FormAlert from "@/components/elements/FormAlert";
 import { useFormAlerts } from "@/hooks/useFormAlerts";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface IClaimRewardsFromPoolModal {
     opened: boolean;
@@ -177,22 +177,18 @@ export default function ClaimRewardsFromPoolModal({ opened, onClose, collateralP
                         </Text>
                     </div>
                     <Divider
-                        className="my-8"
+                        className="mt-8 mb-10"
                         classNames={{
                             root: 'mx-[-1rem] sm:mx-[-2.7rem]'
                         }}
                     />
-                    <Button
+                    <FAssetButton
                         onClick={() => { modals.closeAll() }}
-                        variant="filled"
-                        color="black"
-                        radius="xl"
-                        size="sm"
                         fullWidth
-                        className="hover:text-white font-normal mb-5"
+                        className="hover:text-white mb-6"
                     >
                         {t('claim_rewards_from_pool_modal.finished_modal.confirm_button')}
-                    </Button>
+                    </FAssetButton>
                 </div>
             ),
             centered: true,
@@ -330,18 +326,14 @@ export default function ClaimRewardsFromPoolModal({ opened, onClose, collateralP
             </FAssetModal.Body>
             {currentStep === STEP_AMOUNT &&
                 <FAssetModal.Footer>
-                    <Button
+                    <FAssetButton
                         onClick={onNextStepClick}
-                        variant="filled"
-                        color="black"
-                        radius="xl"
-                        size="sm"
                         fullWidth
                         disabled={isNextButtonDisabled}
                         className="hover:text-white"
                     >
                         {t('claim_rewards_from_pool_modal.next_button')}
-                    </Button>
+                    </FAssetButton>
                 </FAssetModal.Footer>
             }
         </FAssetModal>

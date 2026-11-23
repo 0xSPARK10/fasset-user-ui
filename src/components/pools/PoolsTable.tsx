@@ -8,7 +8,6 @@ import {
     Table,
     Text,
     Menu,
-    Button,
     Drawer,
     ScrollArea,
     Avatar,
@@ -47,6 +46,7 @@ import { useNetworks } from "@/hooks/useNetworks";
 import { truncateString, formatNumber, isMaxCRValue, toNumber, formatNumberWithSuffix } from "@/utils";
 import { COINS } from "@/config/coin";
 import classes from "@/styles/pages/Agents.module.scss";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 const TYPE_ACTIVE_POOLS = 'active';
 const TYPE_OTHER_POOLS = 'others';
@@ -802,12 +802,10 @@ export default function PoolsTable({ pools, className, style, type, showAll }: I
                             </div>
                             <div className="fau-hover-content">
                                 {actions.map(action =>
-                                    <Button
+                                    <FAssetButton
+                                        variant="secondary"
                                         key={action.name}
-                                        variant="gradient"
-                                        radius="xl"
                                         size="sm"
-                                        fw={400}
                                         className="mr-2"
                                         disabled={action.disabled ? action.disabled(pool) : undefined}
                                         onClick={() => action.click ? action.click(pool) : undefined}
@@ -815,7 +813,7 @@ export default function PoolsTable({ pools, className, style, type, showAll }: I
                                         leftSection={action.leftSection}
                                     >
                                         {action.name}
-                                    </Button>
+                                    </FAssetButton>
                                 )}
                             </div>
                         </div>
@@ -1019,15 +1017,12 @@ export default function PoolsTable({ pools, className, style, type, showAll }: I
                     <Divider
                         color="var(--flr-light-gray)"
                         label={
-                            <Button
-                                variant="gradient"
-                                radius="xl"
-                                size="xs"
-                                fw={400}
+                            <FAssetButton
+                                variant="secondary"
                                 onClick={() => setIsShowAllActive(true)}
                             >
                                 {t('agents.load_all_button')}
-                            </Button>
+                            </FAssetButton>
                         }
                         className="w-full max-w-md"
                         classNames={{

@@ -58,6 +58,9 @@ function FeeRow({
 		onMeasure(index, width);
 	}, [index, width, onMeasure]);
 
+	// A removed row must not keep widening the column
+	useEffect(() => () => onMeasure(index, 0), [index]); // eslint-disable-line react-hooks/exhaustive-deps
+
 	return (
 		<div className={`flex justify-between ${marginTop ? "mt-2" : ""}`}>
 			<Text className="text-16" fw={400} c="var(--flr-black)">
@@ -72,13 +75,14 @@ function FeeRow({
 					{renderFeeValue(item)}
 				</Text>
 				<Text
-					ref={ref}
-					className="text-16"
+					className="text-16 whitespace-nowrap"
 					fw={400}
 					c="var(--flr-gray)"
 					style={{ width: labelWidth > 0 ? `${labelWidth}px` : "auto" }}
 				>
-					{item.currencyName}
+					{/* Measure the label's own width, not the sized box — measuring the box
+					    keeps the column at a stale width and a longer currency (C2FLR after XRP) overflows */}
+					<span ref={ref} className="inline-block">{item.currencyName}</span>
 				</Text>
 			</div>
 		</div>

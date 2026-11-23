@@ -1,11 +1,11 @@
 import FAssetModal from "@/components/modals/FAssetModal";
 import { useTranslation } from "react-i18next";
-import { Button, Divider, lighten, Paper, rem, Stepper, Text } from "@mantine/core";
+import { Divider, lighten, Paper, rem, Stepper, Text } from "@mantine/core";
 import { IconCheck, IconCircleCheck, IconExclamationCircle, IconSettings } from "@tabler/icons-react";
 import WalletConnectOpenWalletCard from "@/components/cards/WalletConnectOpenWalletCard";
 import React, { useRef, useState } from "react";
 import { useWeb3 } from "@/hooks/useWeb3";
-import { WALLET, WALLET_ID } from "@/constants";
+import { getWalletId, WALLET } from "@/constants";
 import { useUnderlyingStatus, useUserProgress } from "@/api/user";
 import XrpIcon from "@/components/icons/XrpIcon";
 import { formatNumber, toNumber } from "@/utils";
@@ -25,7 +25,10 @@ import { useNativeBalance, useUnderlyingBalance } from "@/api/balance";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
 import XamanOpenWalletCard from "@/components/cards/XamanOpenWalletCard";
 import { useRequestMinting } from "@/api/minting";
+import { OFT_KEY } from "@/api/oft";
+import { useQueryClient } from "@tanstack/react-query";
 import FormAlert from "@/components/elements/FormAlert";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface IRetryMintModal {
     opened: boolean;
@@ -60,6 +63,12 @@ export default function RetryMintModal({ opened, onClose, underlyingTransaction 
     const underlyingStatus = useUnderlyingStatus(underlyingTransaction.fAsset, underlyingTransaction.paymentReference, opened);
     const signTransaction = useSignTransaction(fAssetCoin?.address!);
     const userProgress = useUserProgress(mainToken?.address ?? '', false);
+    const queryClient = useQueryClient();
+    // The Mint page table reads userProgress, the bridge page's the combined OFT history
+    const refetchHistory = () => {
+        userProgress.refetch();
+        void queryClient.invalidateQueries({ queryKey: [OFT_KEY.FULL_HISTORY] });
+    };
     const requestMinting = useRequestMinting();
 
     const mintRequest = async () => {
@@ -103,8 +112,8 @@ export default function RetryMintModal({ opened, onClose, underlyingTransaction 
             const walletRegistrationPayload = {
                 userUnderlyingAddress: fAssetCoin?.address!,
                 userAddress: mainToken?.address!,
-                nativeWalletId: WALLET_ID[mainToken?.connectedWallet ?? ''] ?? 0,
-                underlyingWalletId: WALLET_ID[fAssetCoin?.connectedWallet ?? ''] ?? 0,
+                nativeWalletId: getWalletId(mainToken?.connectedWallet),
+                underlyingWalletId: getWalletId(fAssetCoin?.connectedWallet),
             };
             try {
                 await requestMinting.mutateAsync(walletRegistrationPayload);
@@ -116,7 +125,7 @@ export default function RetryMintModal({ opened, onClose, underlyingTransaction 
             setIsMintWaitingModalActive(true);
             setSignedTransactionTxHash(txId);
             setTimeout(() => {
-                userProgress.refetch();
+                refetchHistory();
             }, 1000);
         } catch (error: any) {
             if (error.cause === 'ledger') {
@@ -126,6 +135,8 @@ export default function RetryMintModal({ opened, onClose, underlyingTransaction 
 
             if (isError(error, 'ACTION_REJECTED')) {
                 setErrorMessage(t('notifications.request_rejected_by_user_label'));
+            } else if (error instanceof Error && error.message.startsWith('fireblocks.')) {
+                setErrorMessage(t(error.message));
             } else {
                 const errorDecoder = ErrorDecoder.create([AssetManagerAbi]);
                 const decodedError = await errorDecoder.decode(error);
@@ -143,7 +154,7 @@ export default function RetryMintModal({ opened, onClose, underlyingTransaction 
         onClose(true);
         nativeBalances.refetch();
         underlyingBalance.refetch();
-        userProgress.refetch();
+        refetchHistory();
 
         if (isCompleted) {
             modals.open({
@@ -174,7 +185,7 @@ export default function RetryMintModal({ opened, onClose, underlyingTransaction 
                             </Text>
                         </div>
                         <Divider
-                            className="my-8"
+                            className="mt-8 mb-10"
                             styles={{
                                 root: {
                                     marginLeft: '-2.7rem',
@@ -182,17 +193,13 @@ export default function RetryMintModal({ opened, onClose, underlyingTransaction 
                                 }
                             }}
                         />
-                        <Button
+                        <FAssetButton
                             onClick={() => { modals.close(FINISHED_MODAL) }}
-                            variant="filled"
-                            color="black"
-                            radius="xl"
-                            size="sm"
                             fullWidth
-                            className="hover:text-white font-normal mb-5"
+                            className="hover:text-white mb-6"
                         >
                             {t('mint_modal.return_to_home_button')}
-                        </Button>
+                        </FAssetButton>
                     </div>
                 ),
                 centered: true
@@ -319,24 +326,20 @@ export default function RetryMintModal({ opened, onClose, underlyingTransaction 
                                 </Text>
                             </div>
                         </Paper>
-                        {[WALLET.WALLET_CONNECT, WALLET.XAMAN].includes(fAssetCoin?.connectedWallet!) && (
+                        {(fAssetCoin?.connectedWallet === WALLET.WALLET_CONNECT || fAssetCoin?.connectedWallet === WALLET.XAMAN) && (
                             isLoading ? (
                                 fAssetCoin?.connectedWallet === WALLET.WALLET_CONNECT
                                     ? <WalletConnectOpenWalletCard />
                                     : <XamanOpenWalletCard />
 
                             ) : (
-                                <Button
-                                    variant="filled"
-                                    color="black"
-                                    radius="xl"
-                                    size="sm"
+                                <FAssetButton
                                     fullWidth
                                     onClick={mintRequest}
                                     className="hover:text-white mt-8"
                                 >
                                     {t('retry_mint_modal.continue_button')}
-                                </Button>
+                                </FAssetButton>
                             )
                         )}
                         {fAssetCoin?.connectedWallet === WALLET.LEDGER &&

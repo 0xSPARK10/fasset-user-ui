@@ -21,8 +21,9 @@ export default function ModalDivider({
     return (
         <Divider
             className={className}
-            mb={mb}
-            my={my}
+            // Top / bottom set separately — `mb` alongside `my` would depend on Mantine's prop order
+            mt={my}
+            mb={mb ?? my}
             styles={{
                 root: {
                     marginLeft: isMobile ? marginXMobile : marginX,

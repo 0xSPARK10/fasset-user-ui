@@ -22,6 +22,7 @@ import LedgerConnector, {
 	ILedgerConnector,
 } from "@/connectors/LedgerConnector";
 import XamanConnector, { IXamanConnector } from "@/connectors/XamanConnector";
+import FireblocksConnector, { IFireblocksConnector } from "@/connectors/FireblocksConnector";
 
 interface IWeb3Context {
 	connect: (wallet: string, networks: INetwork[]) => Promise<boolean>;
@@ -38,6 +39,7 @@ interface IWeb3Context {
 	walletConnectConnector: IWalletConnectConnector;
 	metaMaskConnector: IMetaMaskConnector;
 	xamanConnector: IXamanConnector;
+	fireblocksConnector: IFireblocksConnector;
 	getConnectedCoin: (type: CoinEnum) => ICoin | undefined;
 }
 
@@ -55,6 +57,7 @@ export function Web3Provider({
 	const walletConnectConnector = WalletConnectConnector();
 	const metaMaskConnector = MetaMaskConnector();
 	const xamanConnector = XamanConnector();
+	const fireblocksConnector = FireblocksConnector();
 
 	// Computed values
 	const connectedCoins: ICoin[] = localConnectedCoins
@@ -102,6 +105,8 @@ export function Web3Provider({
 			await metaMaskConnector.disconnect();
 		} else if (wallet === WALLET.XAMAN) {
 			await xamanConnector.disconnect();
+		} else if (wallet === WALLET.FIREBLOCKS) {
+			await fireblocksConnector.disconnect();
 		}
 
 		await resetApp(redirect);
@@ -176,6 +181,7 @@ export function Web3Provider({
 		if (!xamanConnector.client) {
 			xamanConnector.init();
 		}
+		fireblocksConnector.init();
 	}, []);
 
 	const value = useMemo(
@@ -194,6 +200,7 @@ export function Web3Provider({
 			walletConnectConnector,
 			metaMaskConnector,
 			xamanConnector,
+			fireblocksConnector,
 			getConnectedCoin,
 		}),
 		[
@@ -209,6 +216,7 @@ export function Web3Provider({
 			walletConnectConnector,
 			metaMaskConnector,
 			xamanConnector,
+			fireblocksConnector,
 		],
 	);
 

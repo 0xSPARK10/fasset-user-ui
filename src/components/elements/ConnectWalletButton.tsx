@@ -9,6 +9,7 @@ import { useMediaQuery } from "@mantine/hooks";
 import MetaMaskIcon from "@/components/icons/MetaMaskIcon";
 import WalletConnectIcon from "@/components/icons/WalletConnectIcon";
 import LedgerIcon from "@/components/icons/LedgerIcon";
+import FireblocksIcon from "@/components/icons/FireblocksIcon";
 import { WALLET } from "@/constants";
 
 export default function ConnectWalletButton() {
@@ -45,6 +46,9 @@ export default function ConnectWalletButton() {
                             }
                             {mainToken.connectedWallet === WALLET.LEDGER &&
                                 <LedgerIcon width="30" height="30" />
+                            }
+                            {mainToken.connectedWallet === WALLET.FIREBLOCKS &&
+                                <FireblocksIcon width="30" height="30" />
                             }
                         </span>
                     <span className="hidden min-[800px]:block">{truncateString(mainToken.address!)}</span>

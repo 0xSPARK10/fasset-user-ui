@@ -1,5 +1,6 @@
-import { Button, Paper, Text } from "@mantine/core";
+import { Paper, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface ILedgerConfirmTransactionCard {
     isLoading: boolean;
@@ -30,19 +31,15 @@ export default function LedgerConfirmTransactionCard({ isLoading, isDisabled, on
             >
                 {t('ledger.launch_ledger_app_label', { appName: appName })}
             </Text>
-            <Button
-                variant="filled"
-                color="black"
-                radius="xl"
-                size="sm"
+            <FAssetButton
                 fullWidth
-                className="hover:text-white font-normal mt-5"
+                className="hover:text-white mt-5"
                 onClick={onClick}
                 loading={isLoading}
                 disabled={isDisabled}
             >
                 {confirmLabel ? confirmLabel : t('ledger.confirm_transaction_button')}
-            </Button>
+            </FAssetButton>
         </Paper>
     );
 }

@@ -1,9 +1,9 @@
 import {
-    Button,
     Text
 } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 import FAssetModal from "@/components/modals/FAssetModal";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface ISessionExpiredModal {
     opened: boolean;
@@ -29,17 +29,13 @@ export default function SessionExpiredModal({ opened, onClose }: ISessionExpired
                 </Text>
             </FAssetModal.Body>
             <FAssetModal.Footer>
-                <Button
+                <FAssetButton
                     onClick={onClose}
-                    variant="filled"
-                    color="black"
-                    radius="xl"
-                    size="sm"
                     fullWidth
-                    className="hover:text-white font-normal mb-5"
+                    className="hover:text-white"
                 >
                     {t('session_expired_modal.confirm_button')}
-                </Button>
+                </FAssetButton>
             </FAssetModal.Footer>
         </FAssetModal>
     );

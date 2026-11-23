@@ -1,6 +1,5 @@
 import {
     Anchor,
-    Button,
     Divider,
     Loader,
     LoadingOverlay,
@@ -31,6 +30,7 @@ import { useNetworks } from "@/hooks/useNetworks";
 import { BALANCE_FETCH_INTERVAL, WALLET } from "@/constants";
 import CryptoJS from "crypto-js";
 import BalanceRow from "@/components/cards/BalanceRow";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface IBalanceCard {
     className?: string;
@@ -311,16 +311,13 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                                     </Text>
                                 </div>
                             </div>
-                            <Button
+                            <FAssetButton
+                                variant="secondary"
                                 component={Link}
                                 href="/pools"
-                                variant="gradient"
-                                size="xs"
-                                radius="xl"
-                                fw={400}
                             >
                                 {t('balance_card.providing_collateral_button')}
-                            </Button>
+                            </FAssetButton>
                         </div>
                     </div>
                     <Divider
@@ -347,15 +344,12 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                                 >
                                     {t('balance_card.pending_transactions_label', { count: pendingTransactions })}
                                 </Text>
-                                <Button
-                                    variant="gradient"
-                                    size="xs"
-                                    radius="xl"
-                                    fw={400}
+                                <FAssetButton
+                                    variant="secondary"
                                     onClick={onViewPendingTransactionsClick}
                                 >
                                     {t('balance_card.view_button')}
-                                </Button>
+                                </FAssetButton>
                             </div>
                         }
                     </div>
@@ -372,11 +366,8 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                                         withArrow
                                         disabled={fAssetCoin.enabled}
                                     >
-                                        <Button
-                                            variant="gradient"
-                                            size="xs"
-                                            radius="xl"
-                                            fw={400}
+                                        <FAssetButton
+                                            variant="secondary"
                                             disabled={!fAssetCoin.enabled || disabledFassets.includes(fAssetCoin.type)}
                                             onClick={() => {
                                                 activeFAssetCoin.current = fAssetCoin;
@@ -384,20 +375,17 @@ export default function BalanceCard({ className, onViewPendingTransactionsClick,
                                             }}
                                         >
                                             {t('balance_card.mint_button')}
-                                        </Button>
+                                        </FAssetButton>
                                     </Tooltip>
-                                    <Button
-                                        variant="gradient"
-                                        size="xs"
-                                        radius="xl"
-                                        fw={400}
+                                    <FAssetButton
+                                        variant="secondary"
                                         onClick={() => {
                                             activeFAssetCoin.current = fAssetCoin;
                                             setIsRedeemModalActive(true);
                                         }}
                                     >
                                         {t('balance_card.redeem_button')}
-                                    </Button>
+                                    </FAssetButton>
                                 </>
                             }
                         />

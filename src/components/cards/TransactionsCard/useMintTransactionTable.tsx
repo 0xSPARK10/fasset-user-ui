@@ -1,14 +1,15 @@
 import React from "react";
-import { IconInfoHexagon } from "@tabler/icons-react";
+import { IconArrowNarrowRight, IconArrowUpRight, IconInfoHexagon } from "@tabler/icons-react";
 import Link from "next/link";
-import { Text, Table, rem, Popover, lighten, Button, Tooltip, Anchor } from "@mantine/core";
+import { Text, Table, rem, Popover, lighten, Tooltip, Anchor } from "@mantine/core";
 import { Trans, useTranslation } from "react-i18next";
 import moment from "moment";
 import Badge from "@/components/elements/Badge";
 import CopyIcon from "@/components/icons/CopyIcon";
+import XrpIcon from "@/components/icons/XrpIcon";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { COINS } from "@/config/coin";
-import { toNumber, truncateString } from "@/utils";
+import { formatNumberDown, toNumber, truncateString } from "@/utils";
 import { CoinEnum, IFAssetCoin } from "@/types";
 import { FASSETS_EXPLORER_URL } from "@/constants";
 import { IFAssetColumn } from "@/components/elements/FAssetTable";
@@ -19,6 +20,8 @@ import {
     ACTION_TYPE_MINT,
     ACTION_TYPE_REDEEM,
 } from "./transactionTypes";
+import FAssetButton from "@/components/elements/FAssetButton";
+import NetworkIcon from "./NetworkIcon";
 
 interface UseMintTransactionTableOptions {
     className?: string;
@@ -26,6 +29,9 @@ interface UseMintTransactionTableOptions {
     mintingTransaction: { [id: string]: boolean };
     onRetryMintClick: (data: IUnderlyingTransactionData) => void;
     isMobile: boolean;
+    // Bridge table: "XRP → FXRP" / "FXRP → XRP" icons instead of the "Mint" / "Redeem" label,
+    // and no left indent in the Type column (the bridge table's own rows have none)
+    isBridgeTable?: boolean;
 }
 
 interface MintTransactionTable {
@@ -39,6 +45,7 @@ export function useMintTransactionTable({
     mintingTransaction,
     onRetryMintClick,
     isMobile,
+    isBridgeTable = false,
 }: UseMintTransactionTableOptions): MintTransactionTable {
     const { t } = useTranslation();
     const { mainToken, getConnectedCoin } = useWeb3();
@@ -133,11 +140,8 @@ export function useMintTransactionTable({
                     withArrow
                     disabled={!isTryAgainDisabled}
                 >
-                    <Button
-                        variant="gradient"
-                        size="xs"
-                        radius="xl"
-                        fw={400}
+                    <FAssetButton
+                        variant="secondary"
                         disabled={isTryAgainDisabled}
                         onClick={() => {
                             onRetryMintClick({
@@ -149,20 +153,36 @@ export function useMintTransactionTable({
                         className="sm:ml-auto px-2"
                     >
                         {t('latest_transactions_card.try_again_button')}
-                    </Button>
+                    </FAssetButton>
                 </Tooltip>
             }
         </div>
     };
+
+    // XRP ↔ FXRP on Flare — mints and redeems always run between XRPL and the FAsset on Flare
+    const xrpIcon = <NetworkIcon icon={<XrpIcon width={'26'} height={'26'} />} labelKey="xrpl" />;
+    const flareIcon = (coin: (typeof COINS)[number] | undefined) =>
+        <NetworkIcon icon={coin?.icon({ width: '26', height: '26' })} labelKey="flare" />;
+
+    const renderRouteIcons = (coin: (typeof COINS)[number] | undefined, isMint: boolean) => (
+        <div className="flex items-center">
+            {isMint ? xrpIcon : flareIcon(coin)}
+            <IconArrowNarrowRight size={20} className="mx-2" />
+            {isMint ? flareIcon(coin) : xrpIcon}
+        </div>
+    );
 
     const renderAction = (progress: ITransaction) => {
         const coin = COINS.find(coin => coin.type.toLowerCase() === progress.fasset.toLowerCase());
 
         if (progress.action.toLowerCase() === ACTION_TYPE_MINT) {
             return <div>
-                <Text className="text-14" fw={400}>
-                    {t('latest_transactions_card.mint_label')}
-                </Text>
+                {isBridgeTable
+                    ? renderRouteIcons(coin, true)
+                    : <Text className="text-14" fw={400}>
+                        {t('latest_transactions_card.mint_label')}
+                    </Text>
+                }
                 {progress.directMinting && progress.directMintingStatus === 'DELAYED' && progress.delayTimestamp &&
                     <div className="flex items-baseline mt-1">
                         <Text className="text-10 mr-1 whitespace-nowrap" fw={400} c="var(--flr-gray)">
@@ -179,7 +199,10 @@ export function useMintTransactionTable({
         return <div className="flex flex-col gap-2">
             {progress.remainingLots !== null && progress.remainingLots !== undefined &&
                 <Text className="text-14 flex items-center h-[26px]" fw={400}>
-                    <span className="flex-shrink-0">{t('latest_transactions_card.partial_redeem_label')}</span>
+                    {isBridgeTable
+                        ? renderRouteIcons(coin, false)
+                        : <span className="flex-shrink-0">{t('latest_transactions_card.partial_redeem_label')}</span>
+                    }
                     <Popover
                         withArrow
                         width="auto"
@@ -199,7 +222,7 @@ export function useMintTransactionTable({
                                 <div className="flex items-center">
                                     {coin && coin.icon && coin.icon({ width: "18", height: "18" })}
                                     <Text className="text-12 mx-2" fw={400}>
-                                        {toNumber(progress.amount) + (toNumber(progress.remainingLots) * coin?.lotSize!)}
+                                        {formatNumberDown(toNumber(progress.amount) + (toNumber(progress.remainingLots) * coin?.lotSize!))}
                                     </Text>
                                     <Text
                                         className="text-12"
@@ -217,7 +240,7 @@ export function useMintTransactionTable({
                                 <div className="flex items-center">
                                     {coin && coin.icon && coin.icon({ width: "18", height: "18" })}
                                     <Text className="text-12 mx-2" fw={400}>
-                                        {progress.amount}
+                                        {formatNumberDown(progress.amount)}
                                     </Text>
                                     <Text
                                         className="text-12"
@@ -234,9 +257,12 @@ export function useMintTransactionTable({
             }
             {progress.remainingLots == null &&
                 <div className="h-[26px] flex items-center">
-                    <Text className="text-14" fw={400}>
-                        {t('latest_transactions_card.redeem_label')}
-                    </Text>
+                    {isBridgeTable
+                        ? renderRouteIcons(coin, false)
+                        : <Text className="text-14" fw={400}>
+                            {t('latest_transactions_card.redeem_label')}
+                        </Text>
+                    }
                 </div>
             }
             {progress?.tickets?.map((ticket, index) => (
@@ -247,12 +273,14 @@ export function useMintTransactionTable({
                     >
                         {t('latest_transactions_card.table.ticket_id_label')}
                     </Text>
-                    <Text
-                        className="text-14"
-                        fw={400}
+                    <Link
+                        href={`${FASSETS_EXPLORER_URL}/tx/${progress.txhash}?network=${mainToken?.nativeName?.toLowerCase()?.includes('sgb') ? 'sgb' : 'flr'}`}
+                        target="_blank"
+                        className="text-14 underline font-normal flex items-center"
                     >
                         {ticket.ticketId}
-                    </Text>
+                        <IconArrowUpRight size={14} className="ml-0.5" />
+                    </Link>
                 </div>
             ))}
         </div>
@@ -262,20 +290,20 @@ export function useMintTransactionTable({
         if (progress.action.toLowerCase() === ACTION_TYPE_MINT) {
             const isDelayed = progress.directMintingStatus === 'DELAYED';
             return <div className={`flex ${isDelayed ? 'items-start' : 'items-center'} md:justify-end h-[26px]`}>
-                <Text className="text-14 mr-1" fw={400}>{progress.amount}</Text>
+                <Text className="text-14 mr-1" fw={400}>{formatNumberDown(progress.amount)}</Text>
                 <Text c="var(--flr-gray)" className="text-14 w-16" fw={400}>{progress.fasset}</Text>
             </div>
         }
 
         return <div className="flex flex-col items-start md:items-end gap-2">
             <div className="flex items-center whitespace-nowrap h-[26px]">
-                <Text className="text-14 mr-1" fw={400}>{progress.amount}</Text>
+                <Text className="text-14 mr-1" fw={400}>{formatNumberDown(progress.amount)}</Text>
                 <Text c="var(--flr-gray)" className="text-14 w-16" fw={400}>{progress.fasset}</Text>
             </div>
             {progress?.tickets?.map((ticket, index) => (
                 ticket.value
                     ? <div className="hidden md:flex items-center whitespace-nowrap" key={`${ticket.ticketId}-${index}`}>
-                        <Text className="text-14 mr-1" fw={400}>{ticket.value}</Text>
+                        <Text className="text-14 mr-1" fw={400}>{formatNumberDown(ticket.value)}</Text>
                         <Text c="var(--flr-gray)" className="text-14 w-16">{ticket.type}</Text>
                     </div>
                     : null
@@ -386,7 +414,7 @@ export function useMintTransactionTable({
                         </Badge>
                     </div>
                     <div className="flex items-center mt-1">
-                        <Text className="text-14 mr-1" fw={400}>{ticket.value}</Text>
+                        <Text className="text-14 mr-1" fw={400}>{formatNumberDown(ticket.value)}</Text>
                         <Text c="var(--flr-gray)" className="text-14 w-16">{ticket.type}</Text>
                     </div>
                 </Table.Td>
@@ -456,7 +484,7 @@ export function useMintTransactionTable({
                     {t('latest_transactions_card.table.type_label')}
                 </Text>,
                 thClass: 'pl-8',
-                tdClass: (item: ITransaction) => `pl-8${item.directMinting && item.directMintingStatus === 'DELAYED' ? ' !align-top' : ''}`,
+                tdClass: (item: ITransaction) => `${isBridgeTable ? '' : 'pl-8'}${item.directMinting && item.directMintingStatus === 'DELAYED' ? ' !align-top' : ''}`,
                 render: renderAction,
             },
             {

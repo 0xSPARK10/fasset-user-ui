@@ -133,10 +133,14 @@ ol {
 // Prevent iOS Safari from auto-zooming the viewport on input focus.
 // iOS zooms when font-size < 16px; overrides Mantine's default 14px (--mantine-font-size-sm) back to 16px.
 // If Mantine raises its default input font-size above 16px this rule becomes a no-op — verify after Mantine upgrades.
-// @supports (-webkit-touch-callout: none) matches iOS Safari only.
+// @supports (-webkit-touch-callout: none) matches every Safari, desktop macOS included —
+// (any-pointer: coarse) narrows it to touch devices (an iPad with a trackpad too), so desktop
+// Safari keeps 14px like Chrome.
 @supports (-webkit-touch-callout: none) {
-    .mantine-Input-input {
-        font-size: 16px;
+    @media (any-pointer: coarse) {
+        .mantine-Input-input {
+            font-size: 16px;
+        }
     }
 }
 

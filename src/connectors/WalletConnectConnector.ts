@@ -7,10 +7,13 @@ import UniversalProvider, { ConnectParams } from "@walletconnect/universal-provi
 import { ethers, JsonRpcSigner } from "ethers";
 import { getAccountsFromNamespaces } from "@walletconnect/utils";
 import { useConnectedCoin } from "@/store/coin";
-import { ETH_NAMESPACE, HYPERLIQUID_EVM, HYPERLIQUID_EVM_TESTNET, NETWORK_ETHEREUM, NETWORK_ETHEREUM_SEPOLIA, XRP_NAMESPACE } from "@/config/networks";
+import { ETH_NAMESPACE, XRP_NAMESPACE } from "@/config/networks";
+import { BRIDGE_FASSET_COIN } from "@/config/coin";
 import { COINS } from "@/config/coin";
 import { CoinEnum, ICoin, INetwork } from "@/types";
 import { WALLET } from "@/constants";
+import { getRedirectPath } from "@/utils";
+import { devLog } from "@/utils/debug";
 
 export interface IWalletConnectConnector {
     connect: (networks: INetwork[]) => Promise<boolean>;
@@ -55,9 +58,8 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
             const localNetworks = [...networks];
 
             if (isBridgeEnabled) {
-                const isMainnet = mainToken?.network?.mainnet;
-                localNetworks.push(isMainnet ? HYPERLIQUID_EVM : HYPERLIQUID_EVM_TESTNET);
-                localNetworks.push(isMainnet ? NETWORK_ETHEREUM : NETWORK_ETHEREUM_SEPOLIA);
+                // Every remote bridge chain, so a send from it needs no new session
+                Object.values(BRIDGE_FASSET_COIN).forEach(coin => localNetworks.push(coin.network!));
             }
 
             localNetworks.forEach(network => {
@@ -80,6 +82,11 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
             });
 
             const providerSession = await universalProvider.connect(connectionParams);
+            // Which chains the wallet actually granted — a chain missing here (e.g. Coston2 from Fireblocks) connects no coin
+            devLog('[WALLET_CONNECT] session', {
+                wallet: providerSession?.peer.metadata.name,
+                accounts: Object.values(providerSession?.namespaces ?? {}).flatMap(namespace => namespace.accounts),
+            });
             if (providerSession) {
                 COINS.forEach(coin => {
                     if (coin.enabled) {
@@ -103,7 +110,10 @@ export default function WalletConnectConnector(): IWalletConnectConnector {
                 });
                 setSession(providerSession);
                 web3Modal?.closeModal();
-                await router.push((router.query?.redirect ?? '/mint') as string);
+                // Only the /connect page navigates on; connecting from another page stays on it
+                if (router.pathname === '/connect') {
+                    await router.push(getRedirectPath(router.query));
+                }
                 return true;
             }
 

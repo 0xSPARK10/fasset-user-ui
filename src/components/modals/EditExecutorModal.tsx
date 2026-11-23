@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Button, Divider, Stepper, Text, TextInput } from "@mantine/core";
+import { Divider, Stepper, Text, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { yupResolver } from "mantine-form-yup-resolver";
 import * as yup from "yup";
@@ -20,6 +20,7 @@ import { FASSET_COIN } from "@/config/coin";
 import PasteClipboard from "@/components/elements/PasteClipboard";
 import { WALLET } from "@/constants";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface IEditExecutorModal {
 	opened: boolean;
@@ -264,33 +265,25 @@ export default function EditExecutorModal({
 
 			{currentStep === STEP_FORM && (
 				<FAssetModal.Footer>
-					<Button
+					<FAssetButton
 						onClick={handleSaveButton}
-						variant="filled"
-						color="var(--mantine-color-black)"
-						radius="xl"
-						size="sm"
 						fullWidth
 						className="hover:text-white"
 					>
 						{t("edit_executor_modal.save_button")}
-					</Button>
+					</FAssetButton>
 				</FAssetModal.Footer>
 			)}
 
 			{currentStep === STEP_SUCCESS && (
 				<FAssetModal.Footer>
-					<Button
+					<FAssetButton
 						onClick={handleDone}
-						variant="filled"
-						color="var(--mantine-color-black)"
-						radius="xl"
-						size="sm"
 						fullWidth
 						className="hover:text-white"
 					>
 						{t("edit_executor_modal.done_button")}
-					</Button>
+					</FAssetButton>
 				</FAssetModal.Footer>
 			)}
 		</FAssetModal>

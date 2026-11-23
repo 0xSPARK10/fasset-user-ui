@@ -2,9 +2,11 @@ import WalletConnectIcon from '@/components/icons/WalletConnectIcon';
 import MetaMaskIcon from "@/components/icons/MetaMaskIcon";
 import LedgerIcon from "@/components/icons/LedgerIcon";
 import XamanIcon from "@/components/icons/XamanIcon";
+import FireblocksIcon from "@/components/icons/FireblocksIcon";
 import { WALLET } from "@/constants";
+import { isWalletEnabled } from "@/config/enabledWallets";
 
-export type SupportedWallets = 'walletConnect' | 'metaMask' | 'ledger' | 'xaman';
+export type SupportedWallets = 'walletConnect' | 'metaMask' | 'ledger' | 'xaman' | 'fireblocks';
 
 export interface IIconProps {
     width?: string;
@@ -18,36 +20,35 @@ export interface IWallet {
     enabled: boolean;
 }
 
-const isEnabled = (wallet: string) => {
-    const enabledWallets = process.env.ENABLED_WALLETS !== undefined
-        ? process.env.ENABLED_WALLETS.split(',').map(wallet => wallet.toLowerCase())
-        : [];
-    return enabledWallets.includes(wallet.toLowerCase());
-}
-
 export const wallets: { [wallet in SupportedWallets]: IWallet; } = {
     walletConnect: {
         id: WALLET.WALLET_CONNECT,
         name: 'Wallet Connect',
         icon: WalletConnectIcon,
-        enabled: isEnabled(WALLET.WALLET_CONNECT)
+        enabled: isWalletEnabled(WALLET.WALLET_CONNECT)
     },
     metaMask: {
         id: WALLET.META_MASK,
         name: 'MetaMask',
         icon: MetaMaskIcon,
-        enabled: isEnabled(WALLET.META_MASK)
+        enabled: isWalletEnabled(WALLET.META_MASK)
     },
     ledger: {
         id: WALLET.LEDGER,
         name: 'Ledger',
         icon: LedgerIcon,
-        enabled: isEnabled(WALLET.LEDGER)
+        enabled: isWalletEnabled(WALLET.LEDGER)
     },
     xaman: {
         id: WALLET.XAMAN,
         name: 'Xaman Wallet',
         icon: XamanIcon,
-        enabled: isEnabled(WALLET.XAMAN)
+        enabled: isWalletEnabled(WALLET.XAMAN)
+    },
+    fireblocks: {
+        id: WALLET.FIREBLOCKS,
+        name: 'Fireblocks',
+        icon: FireblocksIcon,
+        enabled: isWalletEnabled(WALLET.FIREBLOCKS)
     }
 }

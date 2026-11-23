@@ -1,7 +1,8 @@
-import { Button, Text, Title } from "@mantine/core";
+import { Text, Title } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 import FAssetModal from "@/components/modals/FAssetModal";
 import React from "react";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface IAlreadyConnectedModal {
     opened: boolean;
@@ -29,17 +30,13 @@ export default function AlreadyConnectedModal({ opened, onClose }: IAlreadyConne
                 <Text fw={300}>{t('already_connected_modal.description_label')}</Text>
             </FAssetModal.Body>
             <FAssetModal.Footer>
-                <Button
+                <FAssetButton
                     onClick={onClose}
-                    variant="filled"
-                    color="black"
-                    radius="xl"
-                    size="sm"
                     fullWidth
-                    className="hover:text-white font-normal"
+                    className="hover:text-white"
                 >
                     {t('already_connected_modal.confirm_button')}
-                </Button>
+                </FAssetButton>
             </FAssetModal.Footer>
         </FAssetModal>
     );

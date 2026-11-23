@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-	Button,
 	Combobox,
 	Grid,
 	Loader,
@@ -18,12 +17,15 @@ import formClasses from "@/styles/components/forms/MintForm.module.scss";
 import DiscountCheckIcon from "../icons/DiscountCheckIcon";
 import { useRouter } from "next/router";
 import { ITagsByAddress } from "@/types";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface IMintDestinationEditor {
 	form: UseFormReturnType<any>;
 	isAddressTagLoading?: boolean;
 	userTags?: ITagsByAddress[];
 	onTagSelect?: (tagId: string, mintingRecipient: string) => void;
+	// Start in edit mode — the bridge page opens the editor from its own "Custom" link
+	initialEditMode?: boolean;
 }
 
 const LABEL_CLASSNAMES = { label: "uppercase text-12" };
@@ -38,12 +40,14 @@ export default function MintDestinationEditor({
 	isAddressTagLoading = false,
 	userTags = [],
 	onTagSelect,
+	initialEditMode = false,
 }: IMintDestinationEditor) {
 	const { t } = useTranslation();
 	const router = useRouter();
 
-	const [isEditMode, setIsEditMode] = useState(false);
-	const [editTab, setEditTab] = useState<"address" | "tag">("address");
+	const [isEditMode, setIsEditMode] = useState(initialEditMode);
+	// Follows the form — after a remount it must show the mode the destination is actually in
+	const [editTab, setEditTab] = useState<"address" | "tag">(form.getValues().destinationMode ?? "address");
 
 	const currentAddress = form.getValues().destinationAddress;
 	const { addressTag } = form.getValues();
@@ -84,15 +88,13 @@ export default function MintDestinationEditor({
 				</Grid.Col>
 
 				<Grid.Col span={{ base: 12, xs: 1.5 }}>
-					<Button
-						variant="gradient"
+					<FAssetButton
+						variant="secondary"
 						size="sm"
-						radius="xl"
-						fw={400}
 						onClick={() => setIsEditMode(true)}
 					>
 						{t("mint_modal.form.edit_button")}
-					</Button>
+					</FAssetButton>
 				</Grid.Col>
 			</Grid>
 		);
@@ -123,16 +125,13 @@ export default function MintDestinationEditor({
 				</div>
 
 				{editTab === "tag" && (
-					<Button
-						variant="gradient"
-						size="xs"
-						radius="xl"
-						fw={400}
+					<FAssetButton
+						variant="secondary"
 						color="var(--flr-black)"
 						onClick={() => router.push('/tags')}
 					>
 						{t("mint_modal.form.register_new_tag_button")}
-					</Button>
+					</FAssetButton>
 				)}
 			</div>
 

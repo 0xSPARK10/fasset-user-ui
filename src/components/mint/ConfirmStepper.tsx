@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
     Stepper,
     Title,
-    Button,
     Text,
     Divider,
     lighten
@@ -18,10 +17,11 @@ import MintWaitingModal from "@/components/modals/MintWaitingModal";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
 import WalletConnectOpenWalletCard from "@/components/cards/WalletConnectOpenWalletCard";
 import XamanOpenWalletCard from "@/components/cards/XamanOpenWalletCard";
+import FireblocksPaymentCard from "@/components/cards/FireblocksPaymentCard";
 import { IFAssetCoin } from "@/types";
 import { Fees } from "@/core/fees";
 import { IAlertMessage } from "@/components/elements/FormAlert";
-import { WALLET, WALLET_ID } from "@/constants";
+import { getWalletId, WALLET } from "@/constants";
 import { useSignTransaction } from "@/hooks/useContracts";
 import { showErrorNotification } from "@/hooks/useNotifications";
 import { useDirectMintingInfo, useRequestMinting } from "@/api/minting";
@@ -32,6 +32,7 @@ import { useWeb3 } from "@/hooks/useWeb3";
 import { isMobile } from "react-device-detect";
 import MintLimitReachedModal from "../modals/MintLimitReachedModal";
 import { useModalGuard } from "@/hooks/useModalGuard";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 const log = createLogger('MINT');
 
@@ -46,6 +47,13 @@ interface IConfirmStepper {
     formValues: any;
     onError: (alert?: IAlertMessage) => void;
     onClose: (isWaitingMintModalActive: boolean) => void;
+    // Bridge page wording: no "open your wallet app" sentence, the step says where the XRP goes
+    isBridgePage?: boolean;
+}
+
+// Tag mode sends the tag the user typed; address mode sends the address's registered tag, if any.
+function getMintTag(formValues: { destinationMode?: string; destinationTag?: string; addressTag?: string }): string {
+    return (formValues.destinationMode === "tag" ? formValues.destinationTag : formValues.addressTag) ?? "";
 }
 
 function encodeDirectMintingMemo(recipient: string, executor: string) {
@@ -67,6 +75,7 @@ export default function ConfirmStepper({
     formValues,
     onError,
     onClose,
+    isBridgePage = false,
 }: IConfirmStepper) {
     const [currentStep, setCurrentStep] = useState<number>(STEP_WALLET_PAYMENT);
     const [isMintWaitingModalActive, setIsMintWaitingModalActive] = useState<boolean>(false);
@@ -83,8 +92,15 @@ export default function ConfirmStepper({
     const nativeBalances = useNativeBalance(mainToken?.address ?? "", false);
     const underlyingBalance = useUnderlyingBalance(fAssetCoin.address!, fAssetCoin.type, false);
     const signTransaction = useSignTransaction(fAssetCoin.address!);
-    const directMintingInfo = useDirectMintingInfo(fAssetCoin.type, false);
+    const isFireblocks = fAssetCoin.connectedWallet === WALLET.FIREBLOCKS;
+    // Fireblocks needs the core vault address up front to check its whitelist
+    const directMintingInfo = useDirectMintingInfo(fAssetCoin.type, isFireblocks);
     const requestMinting = useRequestMinting();
+
+    const fireblocksTag = getMintTag(formValues ?? {});
+    const fireblocksTarget = directMintingInfo.data?.paymentAddress && fireblocksTag
+        ? { address: directMintingInfo.data.paymentAddress, tag: Number(fireblocksTag) }
+        : undefined;
 
     const paymentAmount = useMemo(() => {
         if (!formValues?.amount || !directMintingInfo.data) return "";
@@ -101,6 +117,7 @@ export default function ConfirmStepper({
     useEffect(() => {
         if (
             fAssetCoin.connectedWallet === WALLET.LEDGER ||
+            isFireblocks ||
             (fAssetCoin.connectedWallet === WALLET.XAMAN && isMobile)
         ) {
             return;
@@ -137,9 +154,7 @@ export default function ConfirmStepper({
             }
 
             const isTagMode = formValues.destinationMode === "tag";
-            const tagToSend = isTagMode
-                ? (formValues.destinationTag as string)
-                : (formValues.addressTag as string);
+            const tagToSend = getMintTag(formValues);
             const useTag = !!tagToSend;
             const paymentReference = !useTag && formValues.destinationAddress
                 ? encodeDirectMintingMemo(
@@ -183,8 +198,8 @@ export default function ConfirmStepper({
             const walletRegistrationPayload = {
                 userUnderlyingAddress: fAssetCoin.address!,
                 userAddress: mainToken?.address!,
-                underlyingWalletId: WALLET_ID[fAssetCoin.connectedWallet ?? ''] ?? 0,
-                nativeWalletId: WALLET_ID[mainToken?.connectedWallet ?? ''] ?? 0,
+                underlyingWalletId: getWalletId(fAssetCoin.connectedWallet),
+                nativeWalletId: getWalletId(mainToken?.connectedWallet),
             };
             log.log('wallet registration request:', walletRegistrationPayload);
             try {
@@ -201,6 +216,8 @@ export default function ConfirmStepper({
                 onError({ msg: t("notifications.request_rejected_by_user_label") });
             } else if (error.cause === "ledger") {
                 showErrorNotification(error.message);
+            } else if (typeof error?.message === "string" && error.message.startsWith("fireblocks.")) {
+                onError({ msg: t(error.message) });
             } else {
                 onError({ msg: error?.response?.data?.message ?? error.message });
             }
@@ -253,17 +270,13 @@ export default function ConfirmStepper({
                                 }
                             }}
                         />
-                        <Button
+                        <FAssetButton
                             onClick={() => { modals.close(FINISHED_MODAL); }}
-                            variant="filled"
-                            color="black"
-                            radius="xl"
-                            size="sm"
                             fullWidth
-                            className="hover:text-white font-normal mb-5"
+                            className="hover:text-white mb-5"
                         >
                             {t("mint_modal.return_to_home_button")}
-                        </Button>
+                        </FAssetButton>
                     </div>
                 ),
                 centered: true
@@ -278,16 +291,19 @@ export default function ConfirmStepper({
                 fw={300}
                 c="var(--flr-black)"
             >
-                 {t("mint_modal.confirm_step_title")}
+                 {t(isBridgePage ? "bridge_modal.confirm_step_title" : "mint_modal.confirm_step_title")}
             </Title>
-            <Text
-                className="my-5 text-16"
-                fw={400}
-                c="var(--flr-black)"
-            >
-                {t("mint_modal.confirm_step_description")}
-            </Text>
+            {!isBridgePage &&
+                <Text
+                    className="my-5 text-16"
+                    fw={400}
+                    c="var(--flr-black)"
+                >
+                    {t("mint_modal.confirm_step_description")}
+                </Text>
+            }
             <Stepper
+                className={isBridgePage ? "mt-5" : undefined}
                 active={currentStep}
                 iconSize={32}
                 size="sm"
@@ -312,7 +328,10 @@ export default function ConfirmStepper({
                             fw={400}
                             c={lighten("var(--flr-gray)", 0.378)}
                         >
-                            {t("mint_modal.confirm_deposit_label", { tokenName: fAssetCoin.nativeName })}
+                            {isBridgePage
+                                ? t("bridge_modal.mint_step_description", { tokenName: fAssetCoin.nativeName, fAsset: fAssetCoin.type })
+                                : t("mint_modal.confirm_deposit_label", { tokenName: fAssetCoin.nativeName })
+                            }
                         </Text>
                     }
                     icon={
@@ -353,6 +372,14 @@ export default function ConfirmStepper({
                     />
                     <WalletConnectOpenWalletCard />
                 </>
+            }
+            {currentStep === STEP_WALLET_PAYMENT && isFireblocks &&
+                <FireblocksPaymentCard
+                    target={fireblocksTarget}
+                    isTargetError={directMintingInfo.isError}
+                    onPay={submitDirectMintPayment}
+                    isPaying={isLoading}
+                />
             }
             {currentStep === STEP_WALLET_PAYMENT && fAssetCoin?.connectedWallet === WALLET.XAMAN &&
                 <XamanOpenWalletCard

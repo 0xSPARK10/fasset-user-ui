@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Button, Divider, List, Stepper, Text, TextInput } from "@mantine/core";
+import { Divider, List, Stepper, Text, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { yupResolver } from "mantine-form-yup-resolver";
 import * as yup from "yup";
@@ -19,6 +19,7 @@ import { WALLET } from "@/constants";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
 import { isMobile } from "react-device-detect";
 import PasteClipboard from "@/components/elements/PasteClipboard";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface ITransferTagModal {
 	opened: boolean;
@@ -233,33 +234,25 @@ export default function TransferTagModal({
 
 			{currentStep === STEP_FORM && (
 				<FAssetModal.Footer>
-					<Button
+					<FAssetButton
 						onClick={handleTransferButton}
-						variant="filled"
-						color="var(--mantine-color-black)"
-						radius="xl"
-						size="sm"
 						fullWidth
 						className="hover:text-white"
 					>
 						{t("transfer_tag_modal.transfer_button")}
-					</Button>
+					</FAssetButton>
 				</FAssetModal.Footer>
 			)}
 
 			{currentStep === STEP_SUCCESS && (
 				<FAssetModal.Footer>
-					<Button
+					<FAssetButton
 						onClick={handleDone}
-						variant="filled"
-						color="var(--mantine-color-black)"
-						radius="xl"
-						size="sm"
 						fullWidth
 						className="hover:text-white"
 					>
 						{t("transfer_tag_modal.done_button")}
-					</Button>
+					</FAssetButton>
 				</FAssetModal.Footer>
 			)}
 		</FAssetModal>

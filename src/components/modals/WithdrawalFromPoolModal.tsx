@@ -1,5 +1,4 @@
 import {
-    Button,
     Divider, lighten,
     rem,
     Stepper,
@@ -33,6 +32,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { COINS } from "@/config/coin";
 import FormAlert from "@/components/elements/FormAlert";
 import { useFormAlerts } from "@/hooks/useFormAlerts";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface IWithdrawalFromPoolModal {
     opened: boolean;
@@ -184,17 +184,13 @@ export default function WithdrawalFromPoolModal({ opened, onClose, collateralPoo
                             root: 'mx-[-1rem] sm:mx-[-2.7rem]'
                         }}
                     />
-                    <Button
+                    <FAssetButton
                         onClick={() => modals.closeAll()}
-                        variant="filled"
-                        color="black"
-                        radius="xl"
-                        size="sm"
                         fullWidth
-                        className="hover:text-white font-normal mb-5"
+                        className="hover:text-white mb-5"
                     >
                         {t('withdrawal_from_pool_modal.finished_modal.confirm_button')}
-                    </Button>
+                    </FAssetButton>
                 </div>
             ),
             centered: true,
@@ -329,18 +325,14 @@ export default function WithdrawalFromPoolModal({ opened, onClose, collateralPoo
             </FAssetModal.Body>
             {currentStep === STEP_AMOUNT &&
                 <FAssetModal.Footer>
-                    <Button
+                    <FAssetButton
                         onClick={onNextStepClick}
-                        variant="filled"
-                        color="black"
-                        radius="xl"
-                        size="sm"
                         fullWidth
                         className="hover:text-white"
                         disabled={isNextButtonDisabled}
                     >
                         {t('withdrawal_from_pool_modal.next_button')}
-                    </Button>
+                    </FAssetButton>
                 </FAssetModal.Footer>
             }
         </FAssetModal>

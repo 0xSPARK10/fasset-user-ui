@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { BALANCE_KEY } from "@/api/balance";
 import { BRIDGE_KEY } from "@/api/bridge";
+import { OFT_KEY } from "@/api/oft";
 import { CONTRACT_KEY } from "@/hooks/useContracts";
 import { devLog } from "@/utils/debug";
 
@@ -15,6 +16,7 @@ const BRIDGE_KEYS = [
     CONTRACT_KEY.HYPE_BALANCE,
     CONTRACT_KEY.HYPER_EVM_BALANCE,
     BRIDGE_KEY.BALANCE,
+    OFT_KEY.REDEEMER_ACCOUNT,
 ] as const;
 
 type SignatureItem = { txhash: string; status: boolean };

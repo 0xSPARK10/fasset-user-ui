@@ -10,6 +10,10 @@ import { INamespaceMethods, INetwork } from "@/types";
 import { LEDGER_APP } from "@/constants";
 import FXrpHypeCoreIcon from "@/components/icons/FXrpHypeCoreIcon";
 import EthIcon from "@/components/icons/EthIcon";
+import BnbIcon from "@/components/icons/BnbIcon";
+import BaseIcon from "@/components/icons/BaseIcon";
+import KatanaIcon from "@/components/icons/KatanaIcon";
+import MonadIcon from "@/components/icons/MonadIcon";
 
 export const ETH_NAMESPACE = 'eip155';
 export const XRP_NAMESPACE = 'xrpl';
@@ -18,7 +22,8 @@ export const BTC_NAMESPACE = 'bip122';
 export const ETH_NAMESPACE_METODS: INamespaceMethods = [
     'eth_sign',
     'eth_sendTransaction',
-    'eth_requestAccounts'
+    'eth_requestAccounts',
+    'eth_signTypedData_v4'
 ];
 
 export const XRP_NAMESPACE_METHODS: INamespaceMethods = [
@@ -230,6 +235,143 @@ export const NETWORK_ETHEREUM_SEPOLIA: INetwork = {
     mainnet: false,
     explorerAddressUrl: 'https://sepolia.etherscan.io/address',
     explorerTxUrl: 'https://sepolia.etherscan.io/tx',
+    ledgerApp: LEDGER_APP.ETH
+}
+
+export const NETWORK_BSC: INetwork = {
+    chainId: '56',
+    name: 'BNB Smart Chain',
+    shortName: 'BNB Chain',
+    brandName: 'BNB Chain',
+    rpcUrl: 'https://bsc-rpc.publicnode.com',
+    namespace: ETH_NAMESPACE,
+    methods: ETH_NAMESPACE_METODS,
+    addRpcMap: true,
+    icon: (props) => <BnbIcon width="32" height="32" {...props} />,
+    isMandatory: false,
+    mainnet: true,
+    explorerAddressUrl: 'https://bscscan.com/address',
+    explorerTxUrl: 'https://bscscan.com/tx',
+    ledgerApp: LEDGER_APP.ETH
+}
+
+export const NETWORK_BSC_TESTNET: INetwork = {
+    chainId: '97',
+    name: 'BNB Smart Chain Testnet',
+    shortName: 'BNB Testnet',
+    brandName: 'BNB Chain',
+    // bsc-testnet-rpc.publicnode.com stopped resolving on some DNS resolvers (ERR_NAME_NOT_RESOLVED, 2026-10-28)
+    rpcUrl: 'https://bsc-testnet.publicnode.com',
+    namespace: ETH_NAMESPACE,
+    methods: ETH_NAMESPACE_METODS,
+    addRpcMap: true,
+    icon: (props) => <BnbIcon width="32" height="32" {...props} />,
+    isMandatory: false,
+    mainnet: false,
+    explorerAddressUrl: 'https://testnet.bscscan.com/address',
+    explorerTxUrl: 'https://testnet.bscscan.com/tx',
+    ledgerApp: LEDGER_APP.ETH
+}
+
+export const NETWORK_BASE: INetwork = {
+    chainId: '8453',
+    name: 'Base',
+    shortName: 'Base',
+    brandName: 'Base',
+    rpcUrl: 'https://base-rpc.publicnode.com',
+    namespace: ETH_NAMESPACE,
+    methods: ETH_NAMESPACE_METODS,
+    addRpcMap: true,
+    icon: (props) => <BaseIcon width="32" height="32" {...props} />,
+    isMandatory: false,
+    mainnet: true,
+    explorerAddressUrl: 'https://basescan.org/address',
+    explorerTxUrl: 'https://basescan.org/tx',
+    ledgerApp: LEDGER_APP.ETH
+}
+
+export const NETWORK_BASE_SEPOLIA: INetwork = {
+    chainId: '84532',
+    name: 'Base Sepolia',
+    shortName: 'Base Sepolia',
+    brandName: 'Base',
+    rpcUrl: 'https://sepolia.base.org',
+    namespace: ETH_NAMESPACE,
+    methods: ETH_NAMESPACE_METODS,
+    addRpcMap: true,
+    icon: (props) => <BaseIcon width="32" height="32" {...props} />,
+    isMandatory: false,
+    mainnet: false,
+    explorerAddressUrl: 'https://sepolia.basescan.org/address',
+    explorerTxUrl: 'https://sepolia.basescan.org/tx',
+    ledgerApp: LEDGER_APP.ETH
+}
+
+export const NETWORK_KATANA: INetwork = {
+    chainId: '747474',
+    name: 'Katana',
+    shortName: 'Katana',
+    brandName: 'Katana',
+    rpcUrl: 'https://rpc.katana.network',
+    namespace: ETH_NAMESPACE,
+    methods: ETH_NAMESPACE_METODS,
+    addRpcMap: true,
+    icon: (props) => <KatanaIcon width="32" height="32" {...props} />,
+    isMandatory: false,
+    mainnet: true,
+    explorerAddressUrl: 'https://katanascan.com/address',
+    explorerTxUrl: 'https://katanascan.com/tx',
+    ledgerApp: LEDGER_APP.ETH
+}
+
+export const NETWORK_KATANA_TESTNET: INetwork = {
+    chainId: '737373',
+    name: 'Katana Bokuto',
+    shortName: 'Bokuto',
+    brandName: 'Katana',
+    rpcUrl: 'https://rpc-bokuto.katanarpc.com',
+    namespace: ETH_NAMESPACE,
+    methods: ETH_NAMESPACE_METODS,
+    addRpcMap: true,
+    icon: (props) => <KatanaIcon width="32" height="32" {...props} />,
+    isMandatory: false,
+    mainnet: false,
+    explorerAddressUrl: 'https://bokuto.katanascan.com/address',
+    explorerTxUrl: 'https://bokuto.katanascan.com/tx',
+    ledgerApp: LEDGER_APP.ETH
+}
+
+export const NETWORK_MONAD: INetwork = {
+    chainId: '143',
+    name: 'Monad',
+    shortName: 'Monad',
+    brandName: 'Monad',
+    rpcUrl: 'https://rpc.monad.xyz',
+    namespace: ETH_NAMESPACE,
+    methods: ETH_NAMESPACE_METODS,
+    addRpcMap: true,
+    icon: (props) => <MonadIcon width="32" height="32" {...props} />,
+    isMandatory: false,
+    mainnet: true,
+    explorerAddressUrl: 'https://monadscan.com/address',
+    explorerTxUrl: 'https://monadscan.com/tx',
+    ledgerApp: LEDGER_APP.ETH
+}
+
+export const NETWORK_MONAD_TESTNET: INetwork = {
+    chainId: '10143',
+    name: 'Monad Testnet',
+    shortName: 'Monad Testnet',
+    brandName: 'Monad',
+    rpcUrl: 'https://testnet-rpc.monad.xyz',
+    namespace: ETH_NAMESPACE,
+    methods: ETH_NAMESPACE_METODS,
+    addRpcMap: true,
+    icon: (props) => <MonadIcon width="32" height="32" {...props} />,
+    isMandatory: false,
+    mainnet: false,
+    explorerAddressUrl: 'https://testnet.monadscan.com/address',
+    explorerTxUrl: 'https://testnet.monadscan.com/tx',
     ledgerApp: LEDGER_APP.ETH
 }
 

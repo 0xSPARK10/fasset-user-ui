@@ -141,6 +141,11 @@ export default function ConnectWalletModal({ opened, onClose }: IConnectWalletMo
                                     wallet={wallets.xaman}
                                 />
                             }
+                            {wallets.fireblocks.enabled &&
+                                <SelectWalletButton
+                                    wallet={wallets.fireblocks}
+                                />
+                            }
                         </Stack>
                     </Stack>
                 </FAssetModal.Body>

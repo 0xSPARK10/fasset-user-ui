@@ -1,9 +1,10 @@
-import { Button, NumberInput, Text, TextInput } from "@mantine/core";
+import { NumberInput, Text, TextInput } from "@mantine/core";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import classes from "@/styles/components/elements/DestinationAddressField.module.scss";
 import PasteClipboard from "./PasteClipboard";
 import FormAlert from "./FormAlert";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface IRedeemDestinationEditor {
     label: string;
@@ -17,7 +18,6 @@ interface IRedeemDestinationEditor {
     destinationTagLabel: string;
     destinationTagInputProps: Record<string, any>;
     destinationTagInputKey: string;
-    maxTagLength?: number;
     containerClassName?: string;
     labelClassName?: string;
     inputClassName?: string;
@@ -37,7 +37,6 @@ export default function RedeemDestinationEditor({
     destinationTagLabel,
     destinationTagInputProps,
     destinationTagInputKey,
-    maxTagLength,
     containerClassName,
     labelClassName,
     inputClassName,
@@ -57,16 +56,13 @@ export default function RedeemDestinationEditor({
                         {readOnlyValue}
                     </Text>
                 </div>
-                <Button
-                    variant="gradient"
-                    size="xs"
-                    radius="xl"
-                    fw={400}
+                <FAssetButton
+                    variant="secondary"
                     className={editButtonClassName}
                     onClick={onEdit}
                 >
                     {editButtonLabel}
-                </Button>
+                </FAssetButton>
             </div>
         );
     }
@@ -104,7 +100,6 @@ export default function RedeemDestinationEditor({
                         className={inputClassName}
                         placeholder="Optional"
                         hideControls
-                        maxLength={maxTagLength}
                         min={0}
                     />
                 </div>

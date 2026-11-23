@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-	Button,
 	Divider,
 	Group,
 	Stack,
@@ -24,6 +23,7 @@ import { useReserveMintingTagFees } from "@/hooks/fees/useReserveMintingTagFees"
 import { isError } from "ethers";
 import { WALLET } from "@/constants";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface IReserveMintingTagModal {
 	opened: boolean;
@@ -248,12 +248,8 @@ export default function ReserveMintingTagModal({
 
 			{currentStep === STEP_INFO && (
 				<FAssetModal.Footer>
-					<Button
+					<FAssetButton
 						onClick={handleNextButton}
-						variant="filled"
-						color="var(--mantine-color-black)"
-						radius="xl"
-						size="sm"
 						fullWidth
 						disabled={
 							reservationFee.isPending ||
@@ -263,23 +259,19 @@ export default function ReserveMintingTagModal({
 						className="hover:text-white"
 					>
 						{t("reserve_minting_tag_modal.next_button")}
-					</Button>
+					</FAssetButton>
 				</FAssetModal.Footer>
 			)}
 
 			{currentStep === STEP_SUCCESS && (
 				<FAssetModal.Footer>
-					<Button
+					<FAssetButton
 						onClick={handleDone}
-						variant="filled"
-						color="var(--mantine-color-black)"
-						radius="xl"
-						size="sm"
 						fullWidth
 						className="hover:text-white"
 					>
 						{t("reserve_minting_tag_modal.done_button")}
-					</Button>
+					</FAssetButton>
 				</FAssetModal.Footer>
 			)}
 		</FAssetModal>

@@ -158,91 +158,133 @@
         "view_on_explorer_button": "View on Explorer"
     },
     "bridge": {
-        "hyperliquid_trading_platform_label": "Want to go to Hyperliquid trading platform? Follow this<a>link<icon></icon></a>",
-        "latest_transactions_subtitle": "Displaying all transactions in last 7 days.",
+        "latest_transactions_subtitle": "Showing transactions from the last 7 days.",
         "latest_transactions_title": "Latest transactions",
         "title": "Bridge"
     },
-    "bridge_balance_card": {
-        "bridge_to_hype_button": "Bridge to Hyperliquid",
-        "bridge_to_ethereum_button": "Bridge to Ethereum",
-        "flr_address_label": "FLR Address",
-        "sgb_address_label": "SGB Address",
-        "view_on_explorer_button": "View on Explorer"
-    },
-    "bridge_account_balance_card": {
-        "asset_recovery": "Asset Recovery:",
-        "asset_recovery_description": "Funds from an incomplete bridge transaction were safely secured on the intermediate account. Transfer them back to your wallet.",
-        "flr_bridge_account": "FLR - Bridge account",
-        "sgb_bridge_account": "SGB - Bridge account",
-        "transfer_button": "Transfer"
+    "bridge_page": {
+        "link_recipient_hint": "Pre-filled. Verify before sending.",
+        "bridge_button": "Bridge",
+        "select_network_button": "Select network",
+        "available_label": "{{amount}} available",
+        "mintable_label": "{{amount}} mintable",
+        "redeemable_label": "{{amount}} redeemable",
+        "chains": {
+            "base": "Base",
+            "bsc": "BNB Chain",
+            "ethereum": "Ethereum",
+            "flare": "Flare",
+            "hyper_core": "Hyperliquid",
+            "hyper_evm": "HyperEVM",
+            "katana": "Katana",
+            "monad": "Monad",
+            "xrpl": "XRPL"
+        },
+        "connect_wallet_button": "Connect wallet",
+        "custom_button": "Change",
+        "custom_recipient_label": "Destination address",
+        "destination_tag_label": "Dest. tag",
+        "direct_mint_evm_wallet_required_label": "Connect an EVM wallet. Latest transactions and recovery of a stuck transfer need it.",
+        "direct_mint_fee_label": "Minting fee",
+        "direct_mint_layerzero_fee_label": "LayerZero fee",
+        "direct_mint_quote_failed_label": "Couldn't get the fee for this transfer. Try again later.",
+        "route_unavailable_label": "This route is not available yet.",
+        "fees_label": "Fees",
+        "from_label": "From",
+        "gas_balance_unavailable_label": "Couldn't load your {{tokenName}} balance for the fees. Try again later.",
+        "insufficient_fee_balance_label": "Not enough {{tokenName}} to cover the fees. You need about {{fee}} {{tokenName}} plus a small amount for gas, but you have {{balance}} {{tokenName}}.",
+        "insufficient_balance_min_label": "Insufficient balance (min {{min}} {{coinName}})",
+        "no_address_label": "No address",
+        "asset_recovery_title": "Recovery needed:",
+        "asset_recovery_description": "Your previous bridge transaction didn’t complete, but your funds are safe – they’re held in a recovery account. Transfer them back to your wallet.",
+        "asset_recovery_transfer_button": "Transfer",
+        "mint_recovery_description": "Recovery needed: Your Mint & Bridge didn’t complete, but your funds are safe. Recover your {{fAsset}} here, then access it in the <fsa>FSA app<icon/></fsa>",
+        "submit_failed_label": "Couldn't prepare the transaction. Try again.",
+        "delivery_failed_label": "The bridge transaction was sent but LayerZero could not deliver it.",
+        "not_selected_label": "Not selected",
+        "oft_limit_exceeded_label": "The bridge limit for this route is {{max}} {{fAsset}} right now.",
+        "oft_paused_label": "Bridging is temporarily paused. Please try again later.",
+        "on_chain_label": "on {{chain}}",
+        "remove_button": "Use my wallet",
+        "swap_button": "Swap direction",
+        "swap_unsupported_label": "Bridging from {{from}} to {{to}} isn't supported",
+        "wallet_block": {
+            "evm_chain": "{{wallet}} can't sign on {{chain}}. Connect another wallet to bridge from {{chain}}.",
+            "no_xrpl": "{{wallet}} can't sign XRPL payments. Connect an XRPL wallet.",
+            "typed_data": "{{wallet}} can't sign Hyperliquid transfers. Use another wallet for this route.",
+            "xrpl_memo": "{{wallet}} can't add a memo to XRP payments, so this route isn't available. Mint to Flare first, then bridge."
+        },
+        "to_label": "To",
+        "hypercore": {
+            "fee_label": "Bridge fee",
+            "fee_on_core_label": "Bridge fee",
+            "ledger_not_supported_label": "This transfer is not supported with Ledger yet.",
+            "no_hype_on_core_label": "You need HYPE on Hyperliquid to pay the transfer fee.",
+            "unavailable_label": "Couldn't load FXRP from Hyperliquid. Try again later.",
+            "title": "Bridge {{fAsset}} to {{destination}}",
+            "step_label": "Bridge {{fAsset}} to {{destination}}",
+            "step_sign_description": "Sign the transfer in your wallet. Nothing is sent on-chain from your wallet, Hyperliquid moves the {{fAsset}}.",
+            "step_tx_description": "Confirm the transaction in your wallet.",
+            "finished_title": "Finished",
+            "finished_description": "{{amount}} {{fAsset}} is on its way to {{destination}}. It usually arrives within a few seconds.",
+            "core_balance_unavailable_label": "Couldn't load your Hyperliquid account. Try again later.",
+            "core_account_missing_label": "Your Hyperliquid account isn’t active yet — visit Hyperliquid to activate it.",
+            "recipient_check_failed_label": "Couldn't check the destination address on Hyperliquid. Try again later.",
+            "recipient_not_active_label": "The destination address has no active Hyperliquid account. Activate it on Hyperliquid first, or the FXRP arrives on HyperEVM instead.",
+            "unconfirmed_title": "Transfer submitted",
+            "unconfirmed_description": "Your {{amount}} {{fAsset}} transfer to {{destination}} was submitted, but we couldn't confirm it yet. Check Latest transactions before trying again."
+        }
     },
     "bridge_modal": {
-        "approve_step_description": "Confirm the transaction to approve OFT adapter to spend your FXRP and to approve the Composer.",
+        "approve_step_description": "Confirm the approval that allows the bridge to move your {{fAsset}}.",
         "approve_step_label": "1. Approve OFT Adapter",
-        "bridge_flare_step_description": "Confirm the send transaction to transfer your {{fAsset}} from {{sourceChain}} to Flare Network.",
+        "bridge_flare_step_description": "Confirm the transaction to move your {{fAsset}} from {{sourceChain}} to Flare.",
         "bridge_flare_step_label": "Bridge {{fAsset}}",
-        "bridge_xrpl_step_description": "Confirm the bridge transaction to transfer your {{fAsset}} from {{sourceChain}} to Flare network and redeem to XRPL.",
+        "mint_step_description": "Confirm the transaction to move your {{tokenName}} from XRPL to Flare and receive {{fAsset}}.",
+        "redeem_step_description": "Confirm the transaction to redeem your {{fAsset}} as XRP on XRPL.",
+        "redeem_step_label": "Redeem {{fAsset}}",
+        "bridge_xrpl_step_description": "Confirm the transaction to move your {{fAsset}} from {{sourceChain}} to Flare and redeem it as XRP on XRPL.",
         "bridge_xrpl_step_label": "Bridge {{fAsset}}",
-        "bridge_hyperliquid_step_description": "Confirm the send transaction to transfer your {{fAsset}} from the Flare Network to Hyperliquid.",
-        "bridge_hyperliquid_step_label": "2. Bridge {{fAsset}}",
-        "bridge_ethereum_step_description": "Confirm the send transaction to transfer your {{fAsset}} from the Flare Network to Ethereum.",
-        "bridge_ethereum_step_label": "2. Bridge {{fAsset}}",
-        "confirm_step_description": "Please open your wallet app and confirm dialogue to complete the process.",
-        "confirm_step_title": "Confirm in your wallet app",
-        "error_insufficient_balance_label": "Insufficient {{tokenName}} for LayerZero cross-chain fee",
+        "bridge_chain_step_description": "Confirm the transaction to move your {{fAsset}} from Flare to {{bridgeType}}.",
+        "bridge_chain_step_label": "2. Bridge {{fAsset}}",
+        "bridge_remote_step_description": "Confirm the transaction to move your {{fAsset}} from {{sourceChain}} to {{bridgeType}}.",
+        "bridge_remote_step_label": "Bridge {{fAsset}}",
+        "confirm_step_title": "Confirm in your wallet",
         "finished_modal": {
             "confirm_button": "OK",
             "description_flare_label": "Bridge completed. Your {{fAsset}} is now available on Flare Network.",
             "description_xrpl_label": "Bridge completed. Your {{underlying}} is now available on XRPL.",
-            "description_hyperliquid_label": "Bridge completed. Your {{fAsset}} is now available on {{bridgeType}}.",
-            "description_ethereum_label": "Bridge completed. Your {{fAsset}} is now available on Ethereum.",
+            "description_chain_label": "Bridge completed. Your {{fAsset}} is now available on {{bridgeType}}.",
             "title": "Finished",
             "title_xrpl": "Finished"
         },
         "flare_title": "Bridge {{fAsset}} to Flare Network",
         "xrpl_title": "Bridge {{fAsset}} to XRPL",
-        "ethereum_title": "Bridge {{fAsset}} to Ethereum",
+        "remote_title": "Bridge {{fAsset}} to {{bridgeType}}",
         "form": {
             "amount_label": "Amount",
-            "amount_step_title": "I want to bridge",
-            "balance_amount_label": "Your balance is {{balance}} {{token}}.",
-            "available_label": "{{amount}} available",
+            "composer_fee_label": "Composer fee",
             "cross_chain_fee_label": "LayerZero cross-chain fee",
-            "edit_button": "Edit",
-            "fees_label": "Fees",
-            "hyper_core_label": "Hyperliquid",
-            "hyper_evm_label": "HyperEVM",
-            "destination_address_label": "Destination Address (XRPL)",
-            "destination_tag_label": "Destination tag (XRP)",
             "max_button": "Max",
-            "max_lots_label": "{{lots}} lots",
-            "fee_limited_label": "Max lots reduced due to fees",
-            "redemption_fee_label": "Redemption fee",
-            "fees_error": "Failed to load fee data. Please close and try again.",
-            "to_label": "to"
+            "redemption_fee_label": "Redemption fee"
         },
-        "hyperliquid_title": "Bridge {{fAsset}} to Hyperliquid",
+        "chain_title": "Bridge {{fAsset}} to {{bridgeType}}",
+        "direct_mint_title": "Bridge XRP to {{destination}}",
+        "direct_mint_step_label": "Bridge XRP",
+        "direct_mint_step_description": "Confirm the transaction to move your XRP from XRPL to {{destination}} and receive {{fAsset}}.",
+        "direct_mint_quote_changed_label": "The fee changed: you now send {{total}} XRP and receive {{receive}} FXRP. Confirm to continue.",
+        "direct_mint_confirm_button": "Confirm",
+        "direct_mint_delayed_label": "Minting is delayed until {{time}}.",
+        "direct_mint_memo_skipped_label": "Your XRP was minted to FXRP, but the bridge did not run. The FXRP is on your Personal Account on Flare.",
+        "direct_mint_recovery_needed_label": "The bridge could not run. You can recover your FXRP from Latest transactions.",
+        "direct_mint_error_label": "Something went wrong with this transfer: {{error}}",
         "limited_deposit_auth_settings_label": "Your account has Deposit Authorization enabled. This may cause the redemption to fail — please check your XRPL account settings.",
         "limited_destination_tags_settings_label": "Your account requires a destination tag to receive XRP. This may cause the redemption to fail — please check your XRPL account settings.",
-        "next_button": "Next",
         "waiting_modal": {
             "description_label": "This action may take up to 2 minutes.",
             "description_xrpl_label": "This action may take up to 3 minutes.",
             "title": "Waiting"
         }
-    },
-    "bridge_underlying_balance_card": {
-        "bridge_to_flare_button": "Bridge to Flare",
-        "bridge_to_xrpl_button": "Bridge to XRPL",
-        "hype_label": "HYPE",
-        "hyper_core_label": "Hyperliquid - Spot",
-        "hyper_evm_label": "HyperEVM",
-        "know_more_label": "Want to know more about Hyperliquid? Follow this <a>link<icon></icon></a>",
-        "title": "Hyperliquid",
-        "eth_label": "ETH",
-        "ethereum_label": "Ethereum",
-        "ethereum_title": "Ethereum"
     },
     "claim_rewards_from_pool_modal": {
         "confirm_step_description": "Please open your wallet app and confirm the dialogue to complete the process.",
@@ -345,7 +387,7 @@
     "dashboard": {
         "balance_title": "Balance",
         "know_more_label": "Want to know more? Please see our video for <a>detailed instructions<icon></icon></a>",
-        "latest_transactions_subtitle": "Displaying all mints and redeems in last 7 days.",
+        "latest_transactions_subtitle": "Showing transactions from the last 7 days.",
         "latest_transactions_title": "Latest transactions",
         "refresh_button": "Refresh",
         "winddown_label": "We have successfully completed the testing of {{fAssets}} and are winding down. Details are in <a1>our blog post here.</a1> Have partial lots you’d like to redeem? Use our partner DEXs (<a2>Enosys</a2>, <a3>BlazeSwap</a3>)."
@@ -375,6 +417,24 @@
         "title": "Deposit to Pool",
         "want_to_deposit_title": "I want to deposit"
     },
+    "direct_mint_recovery_modal": {
+        "amount_label": "Amount",
+        "confirm_step_description": "Confirm the transaction to move your {{fAsset}} to your Flare Smart Account.",
+        "executed_label": "This transfer was bridged after all — there is nothing to recover.",
+        "loading_label": "Checking the transfer…",
+        "next_button": "Next",
+        "open_fsa_button": "Open FSA app",
+        "payment_label": "Recovery fee",
+        "personal_account_label": "Your Flare Smart Account",
+        "processing_label": "The recovery is being processed. This can take a few minutes — you can close this window.",
+        "processing_title": "Recovering",
+        "recovered_label": "Your {{fAsset}} is now available on <account>Flare Smart Account<icon/></account>",
+        "review_description": "You're recovering {{amount}} {{fAsset}} from a Mint & Bridge that didn't complete. The {{fAsset}} will be released to your FSA account on Flare. Once the recovery is confirmed, open the <fsa>FSA app<icon/></fsa> to move it to your wallet.",
+        "review_title": "Review",
+        "title": "Recover {{fAsset}}",
+        "unavailable_label": "Couldn't load the status of this transfer. Try again later.",
+        "wrong_wallet_label": "Connect the XRPL wallet that made the payment ({{address}}) to recover."
+    },
     "earn_card": {
         "borrow/lending_label": "Borrow/Lending",
         "dex_label": "DEX",
@@ -403,10 +463,12 @@
     "errors": {
         "abi_custom_error_label": "Execution reverted: {{error}}",
         "ledger_error_label": "Declined - Check ledger device for more information.",
+        "network_unavailable_label": "The network could not process the transaction right now. Please try again in a few minutes.",
         "transaction_failed_label": "Transaction failed.",
         "transaction_failed_with_hash_label": "Transaction failed. Transaction hash: {{hash}}",
         "try_reconnecting_label": "Could not coalesce error - Try reconnecting your wallet.",
-        "wallet_reconnect_required_label": "Your wallet is not connected to the network this transaction is signed on. Please disconnect and reconnect your wallet, then try again."
+        "wallet_reconnect_required_label": "Your wallet is not connected to the network this transaction is signed on. Please disconnect and reconnect your wallet, then try again.",
+        "wallet_switch_network_label": "MetaMask did not switch to {{network}}. Approve the network switch in MetaMask and try again."
     },
     "fasset_position_card": {
         "available_rewards_label": "Your available rewards",
@@ -456,6 +518,49 @@
         "testnet_label": "Testnet",
         "title": "Additional assets needed?"
     },
+    "fireblocks": {
+        "api_key_invalid_error": "Paste the API key ID from Fireblocks (a UUID).",
+        "api_key_label": "API key ID",
+        "awaiting_approval": "Approve the transaction in your Fireblocks workspace. It expires after 2 hours.",
+        "back_button": "Back",
+        "blocked_by_policy": "Your Fireblocks transfer policy blocked the payment. Add a rule that lets this API user send XRP from this vault to the whitelisted FAssets core vault, with you as the designated signer.",
+        "blocked_by_policy_contract_call": "Your Fireblocks policy blocked the transaction. Add a Contract call rule that lets this API user call contracts on {{network}} from this vault, with you as the designated signer.",
+        "command_copied_label": "Copied",
+        "connect_button": "Connect",
+        "connect_title": "Connect Fireblocks",
+        "continue_button": "Continue",
+        "copy_command_button": "Copy command",
+        "key_file_label": "Private key file (fireblocks.key)",
+        "key_instructions": "Create a key pair on your computer with the command below. In your Fireblocks Console open Developer center → API users → Add API user, choose the Editor role and upload fireblocks.csr. Then select fireblocks.key here.",
+        "key_invalid": "This is not a valid private key. Select fireblocks.key (it starts with BEGIN PRIVATE KEY), not the .csr file.",
+        "key_stays_local_note": "The key is saved in this browser and cannot be read back or exported. It is never sent to FAsset or anyone else; it only signs your Fireblocks API requests.",
+        "key_stored_note": "A key is already saved in this browser. Continue with it, or select a key file to replace it.",
+        "memo_not_supported": "Fireblocks can only pay with a minting tag. Register a tag for this address or switch to tag mode.",
+        "minting_info_failed": "Couldn't load the minting details. Close this window and try again.",
+        "network_flare_label": "{{network}} ({{token}}) — sign Flare transactions in Fireblocks",
+        "network_xrpl_label": "XRPL (XRP) — required for the direct mint",
+        "networks_label": "Networks",
+        "no_vaults_label": "No vault holds {{asset}}. Add the asset to a vault in Fireblocks and try again.",
+        "no_xrp_vault": "This vault has no {{asset}} address. Choose another vault.",
+        "region_label": "Workspace region",
+        "request_failed": "Fireblocks did not accept the request. Try again.",
+        "send_payment_button": "Send payment",
+        "storage_unavailable": "This browser cannot store the Fireblocks key. Private windows and blocked site data are not supported.",
+        "tag_required": "Fireblocks can only pay with a minting tag. Register a tag for this address or switch to tag mode.",
+        "tx_failed": "The Fireblocks transaction was rejected or failed. Check its status in your Fireblocks Console.",
+        "tx_status_unknown": "Fireblocks didn't report the result of the transaction. Check it in your Fireblocks Console before you try again.",
+        "tx_not_found": "Fireblocks sent the transaction ({{hash}}), but the network doesn't show it yet. Check it in the explorer before you try again.",
+        "unsupported_chain": "Fireblocks can sign only on {{network}} for now. Use another wallet for this network.",
+        "unauthorized": "Fireblocks rejected the API key ID. Check that it belongs to the API user created with this key's CSR and that the region is correct.",
+        "vault_label": "Vault",
+        "whitelist_approved": "The FAssets core vault with tag {{tag}} is whitelisted.",
+        "whitelist_check_button": "Check again",
+        "whitelist_missing": "Fireblocks only pays to whitelisted addresses. Add the FAssets core vault {{address}} with destination tag {{tag}} to your whitelist. Your workspace admins approve the entry once; after that every mint with this tag works.",
+        "whitelist_pending": "The whitelist entry for tag {{tag}} is waiting for approval in your Fireblocks workspace. Approve it, then check again.",
+        "whitelist_request_button": "Request whitelist entry",
+        "whitelist_required": "The FAssets core vault with this minting tag is not on your Fireblocks whitelist yet.",
+        "whitelist_title": "Fireblocks whitelist"
+    },
     "footer": {
         "be_version": "Backend API v{{version}}",
         "developer_hub": "Developer Hub",
@@ -499,13 +604,23 @@
         "delayed_label": "Delayed",
         "delayed_until_label": "Delayed until",
         "empty_label": "No transactions available",
+        "failed_label": "Failed",
         "finished_label": "Finished",
         "flare_label": "Flare",
         "hyper_core_label": "Hyperliquid",
         "hyper_evm_label": "HyperEVM",
         "in_progress_label": "In progress",
         "mint_label": "Mint",
+        "needs_recovery_label": "Needs recovery",
         "partial_redeem_label": "Partial Redeem",
+        "payment_too_small_label": "Payment too small",
+        "open_smart_accounts_link": "Open FSA app",
+        "recover_button": "Recover",
+        "recover_connect_tooltip": "Connect the XRPL wallet that made the payment to recover.",
+        "destination_unknown_tooltip": "Destination not available yet",
+        "recovered_label": "Recovered",
+        "recovering_label": "Recovering…",
+        "recovering_status_label": "Recovering",
         "redeem_label": "Redeem",
         "redemption_failed_label": "Redemption failed",
         "requested_label": "Requested",
@@ -517,12 +632,14 @@
             "status_label": "Status",
             "ticket_id_label": "Ticket ID",
             "transaction_label": "Transaction",
+            "transaction_hash_label": "Transaction hash",
             "type_label": "Type"
         },
         "try_again_button": "Try Again"
     },
     "layout": {
         "fasset_system_paused_label": "The FAsset System is currently paused for {{tokens}}.",
+        "oft_paused_label": "Bridging is temporarily paused. You can still mint and redeem on the Mint page.",
         "header": {
             "agents_label": "Pools",
             "beta_label": "beta",
@@ -538,6 +655,7 @@
     "ledger": {
         "confirm_transaction_button": "I’m ready to Confirm transaction",
         "errors": {
+            "blind_signing_disabled_error": "Enable Blind signing in the Ethereum app settings on your Ledger, then try again.",
             "bitcoin_app_not_running_error": "Error connecting to Ledger device. Make sure Bitcoin app is running on your Ledger device and device is unlocked.",
             "bitcoin_test_app_not_running_error": "Error connecting to Ledger device. Make sure Bitcoin Test app is running on your Ledger device and device is unlocked.",
             "dogecoin_app_not_running_error": "Error connecting to Ledger device. Make sure Dogecoin app is running on your Ledger device and device is unlocked.",
@@ -545,7 +663,7 @@
             "flare_network_app_not_running_error": "Error connecting to Ledger device. Make sure Flare Network app is running on your Ledger device and device is unlocked.",
             "xrp_app_not_running_error": "Error connecting to Ledger device. Make sure XRP app is running on your Ledger device and device is unlocked."
         },
-        "launch_ledger_app_label": "Please launch {{appName}} in Ledger before confirming transaction."
+        "launch_ledger_app_label": "Launch {{appName}} in Ledger before confirming the transaction."
     },
     "limit_card": {
         "title": "Minting Limits",
@@ -610,7 +728,7 @@
             },
             "error_agent_no_lots_available": "Agent ran out of lots",
             "error_insufficient_balance_amount_is_needed_label": "Insufficient balance. You need at least {{value}} {{tokenName}}",
-            "error_insufficient_balance_label": "Insufficient {{tokenName}} for reservation fee",
+            "error_insufficient_balance_label": "Insufficient {{tokenName}} balance (Xaman fee included)",
             "fees_label": "Fees",
             "handshake_required_label": "Handshake required",
             "input_label": "Input",
@@ -682,6 +800,7 @@
     "notifications": {
         "action_rejected_title": "Declined",
         "error_title": "Error",
+        "request_blocked_by_wallet_label": "Your wallet blocked the request after several rejections. Wait a minute or reload the page, then try again.",
         "request_rejected_by_user_label": "The request was rejected by the user."
     },
     "pools_position_card": {
@@ -714,25 +833,19 @@
         "title_partial_redemption": "Finished (partial redemption)"
     },
     "redeemer_withdraw_modal": {
-        "title": "Transfer to Main account",
-        "error_insufficient_balance": "Insufficient balance.",
+        "title": "Transfer {{symbol}}",
         "form": {
-            "step_title": "I want to transfer",
             "amount_label": "Amount",
-            "max_button": "Max",
-            "balance_label": "Your balance is {{balance}} {{token}}.",
-            "destination_address_label": "Destination Address (Flare Network)",
+            "destination_address_label": "Destination address",
             "next_button": "Next"
         },
         "confirm": {
-            "title": "Confirm in your wallet app",
-            "description": "Please open your wallet app and confirm dialogue to complete the process.",
-            "transfer_step_label": "Transfer",
-            "transfer_step_description": "Confirm the transaction to transfer your {{symbol}} from Bridge account to Main account on Flare network."
+            "transfer_step_label": "Transfer {{symbol}}",
+            "transfer_step_description": "Confirm the transaction to move your {{symbol}} from Bridge account to Main account on Flare."
         },
         "finished": {
-            "title": "Transfer completed",
-            "description": "Your {{symbol}} is now available on Main account.",
+            "title": "Finished",
+            "description": "Your {{symbol}} is now available on Flare account.",
             "confirm_button": "OK"
         }
     },
@@ -780,7 +893,6 @@
             "max_button": "Max",
             "min_amount_error": "Please enter at least {{min}} {{coinName}}.",
             "redeeming_fee_label": "Redemption fee",
-            "single_redemption_limit_error": "Current limitation for a single redemption request is {{amount}} {{fAsset}}.",
             "you_will_receive_label": "You will receive"
         },
         "limited_deposit_auth_settings_label": "Your account has Deposit Authorization enabled. This may cause the redemption to fail — please check your XRPL account settings.",
@@ -925,7 +1037,7 @@
         }
     },
     "wallet_connect_open_wallet_card": {
-        "title": "Please open your {{wallet}} and confirm the transaction."
+        "title": "Open {{wallet}} and confirm the transaction."
     },
     "withdrawal_from_pool_modal": {
         "confirm_step_description": "Please open your wallet app and confirm dialog to complete the process.",
@@ -957,8 +1069,8 @@
     },
     "xaman_open_wallet_card": {
         "confirm_button": "Continue",
-        "description_label": "Please open your Xaman Wallet, check under Events -> Requests and confirm the transaction.",
-        "mobile_description_label": "Please click 'Continue' to proceed with your XRP deposit. If you did not receive a notification, please open your Xaman Wallet, go to Events -> Requests, and confirm the transaction."
+        "description_label": "Open Xaman Wallet, check under Events -> Requests and confirm the transaction.",
+        "mobile_description_label": "Click 'Continue' to proceed with the XRP deposit. If you did not receive a notification, open Xaman Wallet, go to Events -> Requests and confirm the transaction."
     },
     "my_tags": {
         "no_tags_title": "No tags yet.",
@@ -998,7 +1110,7 @@
         "confirm_title": "Please confirm in your wallet app",
         "confirm_step_label": "Update tag settings",
         "confirm_step_description": "Confirm the transaction to add a new recipient.",
-        "wallet_info_label": "Please open your {{wallet}} and confirm the transaction.",
+        "wallet_info_label": "Open {{wallet}} and confirm the transaction.",
         "success_title": "Tag #{{tagId}} updated successfully!",
         "success_description": "You can now use destination tag for Minting FAssets.",
         "done_button": "Done"
@@ -1012,7 +1124,7 @@
         "confirm_title": "Please confirm in your wallet app",
         "confirm_step_label": "Update tag settings",
         "confirm_step_description": "Confirm the transaction to add a new executor.",
-        "wallet_info_label": "Please open your {{wallet}} and confirm the transaction.",
+        "wallet_info_label": "Open {{wallet}} and confirm the transaction.",
         "success_title": "Tag #{{tagId}} updated successfully!",
         "success_description": "The new executor will become effective starting {{date}} at {{time}}.",
         "success_description_immediate": "The executor has been updated and is now active.",
@@ -1034,7 +1146,7 @@
         "confirm_title": "Please confirm in your wallet app",
         "confirm_step_label": "Transfer tag",
         "confirm_step_description": "Confirm the transfer transaction.",
-        "wallet_info_label": "Please open your {{wallet}} and confirm the transaction.",
+        "wallet_info_label": "Open {{wallet}} and confirm the transaction.",
         "success_title": "Tag #{{tagId}} updated successfully!",
         "success_description": "Tag transferred to {{address}}",
         "done_button": "Done"
@@ -1049,7 +1161,7 @@
         "confirm_title": "Please confirm in your wallet app",
         "confirm_step_label": "Reservation",
         "confirm_step_description": "Confirm the reservation transaction.",
-        "wallet_info_label": "Please open your {{wallet}} and confirm the transaction.",
+        "wallet_info_label": "Open {{wallet}} and confirm the transaction.",
         "success_title": "Tag #{{tagNumber}} reserved successfully!",
         "success_description": "You can now use destination tag for Minting FAssets.",
         "summary_label": "SUMMARY",

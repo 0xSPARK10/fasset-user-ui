@@ -28,8 +28,9 @@ import { createLogger } from "@/utils/debug";
 
 const log = createLogger('MINT:FORM');
 import { Fees, formatInputAmount, formatFeeAmount } from "@/core/fees";
+import { XamanFee } from "@/core/mint";
 import { IFAssetCoin } from "@/types";
-import { IAlertMessage } from "@/components/elements/FormAlert";
+import FormAlert, { IAlertMessage } from "@/components/elements/FormAlert";
 import AmountInput from "@/components/elements/AmountInput";
 import FeeBreakdown from "@/components/elements/FeeBreakdown";
 import { useMintFees } from "@/hooks/fees/useMintFees";
@@ -90,7 +91,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 
 		const mintingData = useDirectMintingInfo(fAssetCoin.type);
 		const mintingCapInfo = useMintingCapInfo(fAssetCoin.type);
-		const fAssetPrice = useFassetPrice(fAssetCoin.type, false);
+		const fAssetPrice = useFassetPrice(fAssetCoin.type, fAssetCoin.connectedWallet === WALLET.XAMAN);
 
 		const connectedCoin = getConnectedCoin(fAssetCoin.type);
 		const underlyingBalance = useUnderlyingBalance(
@@ -177,6 +178,11 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 
 		// Single source of truth for the Next button disabled state.
 		// Overrides let callers pass freshly-set form values that may not yet be readable via form.getValues().
+		// Fireblocks XRP transfers carry a destination tag but no memo, so address mode
+		// works only when the address has a registered tag.
+		const isFireblocksWithoutTag = (mode: "address" | "tag" | undefined): boolean =>
+			fAssetCoin.connectedWallet === WALLET.FIREBLOCKS && mode === "address" && !form.getValues().addressTag;
+
 		const computeIsDisabled = (overrides: {
 			destinationAddress?: string;
 			resolvedAddress?: string;
@@ -196,6 +202,7 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 			if (mode === "address") {
 				const addr = overrides.destinationAddress ?? values.destinationAddress;
 				if (!isValidEvmAddress(addr)) return true;
+				if (isFireblocksWithoutTag(mode)) return true;
 			} else {
 				const resolvedAddress = overrides.resolvedAddress ?? values.resolvedAddress;
 				if (!resolvedAddress) return true;
@@ -359,8 +366,11 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 			minFee +
 			executorFee +
 			fAssetCoin.minWalletBalance;
+		// Xaman adds its own fee on top of the payment — Max leaves room for it
+		const xamanPrice = fAssetCoin.connectedWallet === WALLET.XAMAN ? fAssetPrice.data?.price : undefined;
+		const spendable = rawBalance - fAssetCoin.minWalletBalance;
 		const availableToSpend =
-			rawBalance - fAssetCoin.minWalletBalance - executorFee;
+			(xamanPrice ? XamanFee.maxSpendable(spendable, xamanPrice) : spendable) - executorFee;
 		const mintingFeeThreshold =
 			feeRate > 0 ? minimumMintingFee / feeRate : Number.POSITIVE_INFINITY;
 		const effectiveMax =
@@ -379,6 +389,8 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 
 		const maxAmount = (() => {
 			if (underlyingBalance.data?.balance == null) return undefined;
+			// Xaman: no Max until the price is known — without it Max would leave no room for Xaman's fee
+			if (fAssetCoin.connectedWallet === WALLET.XAMAN && !xamanPrice) return undefined;
 			if (rawBalance < required) return 0;
 			if (!hasMintCap) return effectiveMax;
 			const capped = Math.min(effectiveMax, Math.max(mintCapRemaining, 0));
@@ -627,6 +639,9 @@ const MintForm = forwardRef<FormRef, IMintForm>(
 					}}
 				/>
 				<MintDestinationEditor form={form} isAddressTagLoading={tagsByAddressQuery.isFetching} userTags={tagsByAddressQuery.data ?? []} onTagSelect={handleTagSelect} />
+				{!tagsByAddressQuery.isFetching && isFireblocksWithoutTag(destinationMode) &&
+					<FormAlert message={t("fireblocks.tag_required")} className="mt-3" />
+				}
 				<Divider
 					className="my-8"
 					styles={{

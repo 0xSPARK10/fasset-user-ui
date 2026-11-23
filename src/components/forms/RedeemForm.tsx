@@ -16,7 +16,7 @@ import { useTranslation } from "react-i18next";
 import { useRedemptionFee, useRedemptionQueue } from "@/api/redemption";
 import { useNativeBalance } from "@/api/balance";
 import { useDirectMintingExecutor } from "@/api/user";
-import { toNumber, formatNumber } from "@/utils";
+import { toNumber, formatNumber, isValidDestinationTag } from "@/utils";
 import { Fees, formatFeeAmount, formatInputAmount } from "@/core/fees";
 import { IFAssetCoin } from "@/types";
 import { useWeb3 } from "@/hooks/useWeb3";
@@ -64,7 +64,6 @@ const RedeemForm = forwardRef<FormRef, IRedeemForm>(
 		);
 
 		const maxRedemptionAmount = useRef<number>();
-		const maxAmountOneRedemption = useRef<number>();
 		const hasInsufficientBalance = useRef(false);
 		const hasMinAmountError = useRef(false);
 
@@ -93,10 +92,6 @@ const RedeemForm = forwardRef<FormRef, IRedeemForm>(
 			? Number(redemptionQueue.data.maxAmountXRP)
 			: undefined;
 
-		const queueMaxSingleAmount = redemptionQueue.data?.maxAmountOneRedemptionXRP != null
-			? Number(redemptionQueue.data.maxAmountOneRedemptionXRP)
-			: undefined;
-
 		const schema = yup.object().shape({
 			amount: yup.number().required(
 				t("validation.messages.required", {
@@ -108,11 +103,7 @@ const RedeemForm = forwardRef<FormRef, IRedeemForm>(
 				.test(
 					"valid-destination-tag",
 					t("redeem_modal.form.destination_tag_invalid") as string,
-					(value) => {
-						if (!value || value.trim() === "") return true;
-						const num = Number(value.trim());
-						return Number.isInteger(num) && num >= 0 && num <= 4294967295;
-					},
+					isValidDestinationTag,
 				),
 			destinationAddress: yup
 				.string()
@@ -227,14 +218,10 @@ const RedeemForm = forwardRef<FormRef, IRedeemForm>(
 		}, [nativeBalance.data, minAmount, queueMaxAmount]);
 
 		useEffect(() => {
-			if (queueMaxSingleAmount !== undefined) {
-				maxAmountOneRedemption.current = queueMaxSingleAmount;
-			}
-
 			if (queueMaxAmount !== undefined) {
 				maxRedemptionAmount.current = queueMaxAmount;
 			}
-		}, [queueMaxAmount, queueMaxSingleAmount]);
+		}, [queueMaxAmount]);
 
 		useEffect(() => {
 			if (!executor.data) return;
@@ -271,31 +258,6 @@ const RedeemForm = forwardRef<FormRef, IRedeemForm>(
 						}),
 						type: "info",
 					});
-				if (isFormDisabled) isFormDisabled(true);
-			} else if (
-				maxAmountOneRedemption.current !== undefined &&
-				maxRedemptionAmount.current !== undefined &&
-				rawAmount > maxAmountOneRedemption.current &&
-				rawAmount < maxRedemptionAmount.current
-			) {
-				if (hasMinAmountError.current) {
-					hasMinAmountError.current = false;
-					if (!hasInsufficientBalance.current && onFormAlert)
-						onFormAlert(undefined);
-				}
-				setErrorMessage(
-					t("redeem_modal.form.single_redemption_limit_error", {
-						amount: formatFeeAmount(
-							maxAmountOneRedemption.current,
-							fAssetCoin.decimals,
-						),
-						fAsset: fAssetCoin.type,
-					}),
-				);
-				form.setFieldError(
-					"amount",
-					t("redeem_modal.form.adjust_amount_label"),
-				);
 				if (isFormDisabled) isFormDisabled(true);
 			} else if (
 				(maxRedemptionAmount.current !== undefined &&
@@ -392,7 +354,6 @@ const RedeemForm = forwardRef<FormRef, IRedeemForm>(
 					destinationTagLabel={t("redeem_modal.form.destination_tag_label")}
 					destinationTagInputProps={form.getInputProps("destinationTag")}
 					destinationTagInputKey={form.key("destinationTag")}
-					maxTagLength={10}
 				/>
 				<ModalDivider/>
 				<div className="mt-2">

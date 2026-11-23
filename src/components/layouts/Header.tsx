@@ -28,7 +28,7 @@ const BASE_NAV_LINKS: NavLink[] = [
 const BRIDGE_NAV_LINK: NavLink = {
     href: '/bridge',
     labelKey: 'layout.header.bridge_label',
-    matchPathname: p => p.includes('bridge'),
+    matchPathname: p => p === '/bridge',
 };
 
 export default function Header() {
@@ -39,7 +39,9 @@ export default function Header() {
     const { mainToken, isBridgeEnabled } = useWeb3();
     const { isMainnet } = useNetworks();
 
-    const navLinks = isBridgeEnabled ? [...BASE_NAV_LINKS, BRIDGE_NAV_LINK] : BASE_NAV_LINKS;
+    const navLinks = isBridgeEnabled
+        ? [...BASE_NAV_LINKS, BRIDGE_NAV_LINK]
+        : BASE_NAV_LINKS;
 
     return (
         <>

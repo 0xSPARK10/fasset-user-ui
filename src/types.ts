@@ -1,9 +1,20 @@
 import React, { ReactNode } from "react";
 import { MantineSize } from "@mantine/core";
-import { BRIDGE_CHAIN, BRIDGE_TYPE } from "./constants";
+import { BRIDGE_CHAIN, BRIDGE_ROUTE_ACTION, BRIDGE_ROUTE_CHAIN, WalletId } from "./constants";
 
-export type BridgeType = typeof BRIDGE_TYPE[keyof typeof BRIDGE_TYPE];
 export type BridgeChain = typeof BRIDGE_CHAIN[keyof typeof BRIDGE_CHAIN];
+// How composeMsg + extraOptions are encoded: 'plain' = a straight transfer, 'xrpl' = the redeem
+// composer on Flare, 'hyper_core' = the Hyperliquid composer on HyperEVM.
+export type BridgeComposeKind = 'plain' | 'xrpl' | 'hyper_core';
+// A LayerZero route, `<destination>_from_<source>` — see `bridgeTypeOf` in config/bridge.ts
+export type BridgeType = `${BridgeChain | 'xrpl' | 'hyper_core'}_from_${BridgeChain}`;
+export type BridgeRouteChain = typeof BRIDGE_ROUTE_CHAIN[keyof typeof BRIDGE_ROUTE_CHAIN];
+export type BridgeRouteAction = typeof BRIDGE_ROUTE_ACTION[keyof typeof BRIDGE_ROUTE_ACTION];
+
+// The wallet that signs (FROM) or receives (TO) on a bridge page chain.
+export interface IBridgeAccount {
+    address?: string;
+}
 
 export interface ITableRowAction<T> {
     name: string;
@@ -46,6 +57,8 @@ export const enum CoinEnum {
     FLR = 'FLR',
     HYPE = 'HYPE',
     ETH = 'ETH',
+    BNB = 'BNB',
+    MON = 'MON',
     WCFLR = 'WCFLR',
     WC2FLR = 'WC2FLR',
     WFLR = 'WFLR',
@@ -67,7 +80,7 @@ export interface ICoin {
     faucetUrl?: string | string[];
     supportedWallets?: string[];
     decimals: number;
-    connectedWallet?: string;
+    connectedWallet?: WalletId;
     isMainToken?: boolean;
     accountAddresses?: {
         receiveAddresses: string[];
@@ -674,6 +687,26 @@ export interface IHyperCoreInfo {
         hold: string;
         entryNtl: string;
     }[];
+    // Sent from HyperEVM, not credited on Core yet (e.g. the Core account does not exist)
+    evmEscrows?: {
+        coin: string;
+        token: number;
+        total: string;
+    }[];
+}
+
+// One entry of Hyperliquid `POST /info {type: "userNonFundingLedgerUpdates"}`
+export interface IHyperCoreLedgerUpdate {
+    time: number;
+    hash: string;
+    delta: {
+        type: string;
+        user?: string;
+        destination?: string;
+        token?: string;
+        amount?: string;
+        [key: string]: unknown;
+    };
 }
 
 export interface IOFTHistory {
@@ -696,6 +729,29 @@ export interface IOFTHistory {
     incomplete: boolean;
     remainingLots: string;
     redemptionBlocked: boolean;
+    // LayerZero message of a remote → Flare row (RECEIVE, REDEEM, REDEEMFAIL) — its `txhash` is the
+    // Flare tx, so this is what links it to the LayerZero Scan message
+    guid?: string;
+    // DIRECT_MINT_BRIDGE rows only (userHistory?xrpAddress=) — see dev-docs/DIRECT_MINT_BRIDGE_BACKEND.md
+    // Uppercase XRPL hash without 0x (same as txhash)
+    xrplTxHash?: string;
+    // The executor's source EVM tx; null until it ran
+    evmTxHash?: string | null;
+    // Source lifecycle — `status: true` only means the source was processed, not delivered
+    directMintingStatus?: "INPROGRESS" | "DELAYED" | "AWAITING_RECOVERY" | "RECOVERY_PENDING" | "RECOVERED" | "MINTING_PAYMENT_TOO_SMALL_FOR_FEE" | "EXECUTED_TO_SMART_ACCOUNT" | "EXECUTED";
+    // `amount` is an estimate until the OFT send matches
+    amountEstimated?: boolean;
+    // Unix seconds
+    delayTimestamp?: number | null;
+    // Null until matched — a row without it is provisional and may disappear
+    oftSent?: {
+        guid: string;
+        dstEid: number;
+        fromAddress: string;
+        amountSentLD: string;
+        amountReceivedLD: string;
+        txhash: string;
+    } | null;
 }
 
 export interface IOFTRedemptionFees{
@@ -740,4 +796,77 @@ export interface ILimitsData {
     dailyLimitDrops: string;
     dailyMintedDrops: string;
     decimals: number;
+}
+
+// Amount as the smart-accounts API returns it: `exact` in raw units (FXRP: 6 decimals, XRP: drops),
+// `value` the same as a decimal, `usd` its USD value. The backend may send `exact` as a number or a
+// string — read it through BigInt(String(exact)), never do maths on it as a number
+export interface ISmartAccountsBalance {
+    exact: number | string;
+    value: number;
+    usd: number;
+}
+
+// GET /direct_mint/fee?action=BRIDGE — nonbinding preview, /direct_mint/request re-quotes
+export interface IDirectMintFee {
+    action: string;
+    // What the user pays on top of the amount (minting_fee + operator_fee)
+    payable_fee: ISmartAccountsBalance;
+    overall_fee: ISmartAccountsBalance;
+    // FXRP that lands on the destination
+    to_receive: ISmartAccountsBalance;
+    breakdown: {
+        type: string;
+        minting_fee: ISmartAccountsBalance;
+        // Executor's fee — funds the LayerZero delivery
+        operator_fee: ISmartAccountsBalance;
+    };
+    payment_address: string;
+}
+
+// POST /direct_mint/request — authoritative: sign exactly this
+export interface IDirectMintRequestResult {
+    action: string;
+    amount: ISmartAccountsBalance;
+    total_fee: ISmartAccountsBalance;
+    to_receive: ISmartAccountsBalance | null;
+    payment_address: string;
+    // Goes in the XRP payment's memo as is
+    memo: string;
+    personal_account: string;
+}
+
+// GET /direct_mint/status/{xrplTxHash}
+// Recovery payment for a stuck direct mint — pay exactly this, the memo must not be rebuilt
+export interface IDirectMintRecoveryMemo {
+    type: "RecoveryMemo";
+    reason: string;
+    memo: string;
+    payment_address: string;
+    amount: ISmartAccountsBalance;
+    wallet_id: number;
+}
+
+export interface IDirectMintStatus {
+    // received | created | delayed | executed | memo_skipped | awaiting_recovery | recovery_pending | error | …
+    status: string;
+    // BRIDGE for direct mint & bridge
+    type: string;
+    payment?: {
+        // XRPL address that paid — the recovery must come from the same wallet
+        transaction_account: string;
+    };
+    action: {
+        action: string;
+        amount?: ISmartAccountsBalance;
+        destination_amount?: ISmartAccountsBalance;
+        // Where a recovery releases the FXRP (on Flare)
+        personal_account?: string;
+    };
+    // Source EVM tx of the bridge send — LayerZero Scan is polled with it
+    tx_hash: string | null;
+    error: string | null;
+    delayed_to: string | null;
+    // MintResult / RecoveryMemo / RecoveryReplayPending / RecoverySent / …
+    payload: IDirectMintRecoveryMemo | { type: string } | null;
 }

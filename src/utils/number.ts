@@ -61,6 +61,8 @@ export function formatNumberWithSuffix(
     }
 }
 
+export const MAX_DESTINATION_TAG = 4294967295;
+
 /**
  * Converts an XRPL destination tag from a form value into the number that goes into
  * the compose message.
@@ -78,10 +80,19 @@ export const parseDestinationTag = (
     if (raw === '') return undefined;
 
     const tag = Number(raw);
-    return Number.isInteger(tag) && tag >= 0 && tag <= 4294967295
+    return Number.isInteger(tag) && tag >= 0 && tag <= MAX_DESTINATION_TAG
         ? tag
         : undefined;
 };
+
+// Form check for an optional tag field: empty means "no tag" and is valid, anything
+// else must parse as a uint32.
+export const isValidDestinationTag = (
+    value: string | number | undefined | null,
+): boolean =>
+    value == null ||
+    String(value).trim() === '' ||
+    parseDestinationTag(value) !== undefined;
 
 export const roundToDecimals = (
     value: string | number,
@@ -101,6 +112,10 @@ export const roundDownToDecimals = (
 ) => {
     return roundToDecimals(value, fractionDigits, 'down');
 };
+
+// Amounts a user sent or received: cut, never rounded up (9.94801 → "9.94", not "9.95")
+export const formatNumberDown = (value: string | number, fractionDigits: number = 2): string =>
+    formatNumber(roundDownToDecimals(typeof value === 'string' ? toNumber(value) : value, fractionDigits), fractionDigits);
 
 export const roundUpToDecimals = (
     value: string | number,

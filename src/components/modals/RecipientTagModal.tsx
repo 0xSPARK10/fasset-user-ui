@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
     Anchor,
-    Button,
     Divider,
     Group,
     Stepper,
@@ -25,6 +24,7 @@ import { useSetMintingRecipient } from "@/hooks/useContracts";
 import { WALLET } from "@/constants";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
 import PasteClipboard from "@/components/elements/PasteClipboard";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface IRecipientTagModal {
     opened: boolean;
@@ -224,33 +224,25 @@ export default function RecipientTagModal({ opened, tag, onClose, onSuccess }: I
 
             {currentStep === STEP_FORM && (
                 <FAssetModal.Footer>
-                    <Button
+                    <FAssetButton
                         onClick={handleSaveButton}
-                        variant="filled"
-                        color="var(--mantine-color-black)"
-                        radius="xl"
-                        size="sm"
                         fullWidth
                         className="hover:text-white"
                     >
                         {t('edit_tag_modal.save_button')}
-                    </Button>
+                    </FAssetButton>
                 </FAssetModal.Footer>
             )}
 
             {currentStep === STEP_SUCCESS && (
                 <FAssetModal.Footer>
-                    <Button
+                    <FAssetButton
                         onClick={handleDone}
-                        variant="filled"
-                        color="var(--mantine-color-black)"
-                        radius="xl"
-                        size="sm"
                         fullWidth
                         className="hover:text-white"
                     >
                         {t('edit_tag_modal.done_button')}
-                    </Button>
+                    </FAssetButton>
                 </FAssetModal.Footer>
             )}
         </FAssetModal>

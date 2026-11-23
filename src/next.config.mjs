@@ -43,6 +43,16 @@ const nextConfig = {
             }
         ]
     },
+    // Deploys send every /api/* request to the backend, so the browser calls the Fireblocks
+    // relay on a path outside /api and Next maps it to the API route.
+    async rewrites() {
+        return [
+            {
+                source: '/fireblocks-proxy/:path*',
+                destination: '/api/fireblocks/:path*'
+            }
+        ];
+    },
     async redirects() {
         if (process.env.POOLS_ENABLED === 'false') {
             return [
@@ -90,10 +100,15 @@ const nextConfig = {
         BRIDGE_FXRP_OFT_ADAPTER_ADDRESS: process.env.BRIDGE_FXRP_OFT_ADAPTER_ADDRESS,
         BRIDGE_HYPE_FXRP_OFT_ADAPTER_ADDRESS: process.env.BRIDGE_HYPE_FXRP_OFT_ADAPTER_ADDRESS,
         BRIDGE_ETH_FXRP_OFT_ADDRESS: process.env.BRIDGE_ETH_FXRP_OFT_ADDRESS,
+        BRIDGE_BSC_FXRP_OFT_ADDRESS: process.env.BRIDGE_BSC_FXRP_OFT_ADDRESS,
+        BRIDGE_BASE_FXRP_OFT_ADDRESS: process.env.BRIDGE_BASE_FXRP_OFT_ADDRESS,
+        BRIDGE_KATANA_FXRP_OFT_ADDRESS: process.env.BRIDGE_KATANA_FXRP_OFT_ADDRESS,
+        BRIDGE_MONAD_FXRP_OFT_ADDRESS: process.env.BRIDGE_MONAD_FXRP_OFT_ADDRESS,
         ENABLED_BRIDGE_CHAINS: process.env.ENABLED_BRIDGE_CHAINS,
         HYPERLIQUID_COMPOSER_ADDRESS: process.env.HYPERLIQUID_COMPOSER_ADDRESS,
         FXRP_COMPOSER_ADDRESS: process.env.FXRP_COMPOSER_ADDRESS,
-        MINTING_TAG_MANAGER_ADDRESS: process.env.MINTING_TAG_MANAGER_ADDRESS
+        MINTING_TAG_MANAGER_ADDRESS: process.env.MINTING_TAG_MANAGER_ADDRESS,
+        SMART_ACCOUNTS_API_URL: process.env.SMART_ACCOUNTS_API_URL
     },
     output: "standalone",
 

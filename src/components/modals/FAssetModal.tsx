@@ -20,8 +20,9 @@ const FAssetModal: React.FC<IFAssetModal> & {
         >
             {React.Children.toArray(children).filter(child => React.isValidElement(child) && child.type === FAssetModal.Body)}
             {React.Children.toArray(children).filter(child => React.isValidElement(child) && child.type === FAssetModal.Footer).length > 0 &&
+                // 40px below the divider; Footer pb-6 + Mantine's 16px body padding = 40px under the button
                 <Divider
-                    className="my-8"
+                    className="mt-8 mb-10"
                     styles={{
                         root: {
                             marginLeft: '-1rem',
@@ -42,7 +43,7 @@ const Body = ({ children }: { children: React.ReactNode }) => (
 );
 
 const Footer = ({ children }: { children: React.ReactNode }) => (
-    <div className="px-0 sm:px-7 pb-3">
+    <div className="px-0 sm:px-7 pb-6">
         {children}
     </div>
 );

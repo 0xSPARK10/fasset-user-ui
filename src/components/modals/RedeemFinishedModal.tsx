@@ -1,6 +1,5 @@
 import {
     Title,
-    Button,
     Text,
     rem,
     Divider
@@ -13,6 +12,7 @@ import { formatNumber, toNumber } from "@/utils";
 import { COINS } from "@/config/coin";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useNativeBalance, useUnderlyingBalance } from "@/api/balance";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface IRedeemFinishedModal {
     opened: boolean;
@@ -251,17 +251,13 @@ export default function RedeemFinishedModal({
                 }
             </FAssetModal.Body>
             <FAssetModal.Footer>
-                <Button
+                <FAssetButton
                     onClick={onClose}
-                    variant="filled"
-                    color="black"
-                    radius="xl"
-                    size="sm"
                     fullWidth
-                    className="hover:text-white font-normal mb-5"
+                    className="hover:text-white"
                 >
                     {t('redeem_finished_modal.return_to_home_button')}
-                </Button>
+                </FAssetButton>
             </FAssetModal.Footer>
         </FAssetModal>
     );

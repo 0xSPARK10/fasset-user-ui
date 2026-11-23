@@ -1,5 +1,6 @@
-import { Button, Paper, Text } from "@mantine/core";
+import { Paper, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface IXamanOpenWalletCard {
     onClick?: () => void;
@@ -28,18 +29,14 @@ export default function XamanOpenWalletCard({ onClick, confirmButton = false, is
                 {confirmButton ? t('xaman_open_wallet_card.mobile_description_label') : t('xaman_open_wallet_card.description_label')}
             </Text>
             {confirmButton &&
-                <Button
-                    variant="filled"
-                    color="black"
-                    radius="xl"
-                    size="sm"
+                <FAssetButton
                     fullWidth
-                    className="hover:text-white font-normal mt-5"
+                    className="hover:text-white mt-5"
                     onClick={onClick}
                     loading={isLoading}
                 >
                     {t('xaman_open_wallet_card.confirm_button')}
-                </Button>
+                </FAssetButton>
             }
         </Paper>
     );

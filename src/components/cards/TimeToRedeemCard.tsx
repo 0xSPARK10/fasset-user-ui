@@ -19,6 +19,7 @@ import { IEcoSystemInfoSupplyByFasset } from "@/types";
 import { COINS } from "@/config/coin";
 import homeClasses from "@/styles/pages/Home.module.scss";
 import classes from "@/styles/components/cards/TimeToRedeemCard.module.scss";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface ITimeToRedeemCard {
     tokens: IEcoSystemInfoSupplyByFasset[] | undefined;
@@ -99,15 +100,13 @@ export default function TimeToRedeemCard({ tokens }: ITimeToRedeemCard) {
                             <span className="mr-2">1 .</span>
                             {t('time_to_redeem_card.incentives_modal.earn_rewards_via_redeeming_title')}
                         </Title>
-                        <Button
-                            variant="gradient"
+                        <FAssetButton
+                            variant="secondary"
                             onClick={() => redirectTo('/mint')}
-                            radius="xl"
                             size="sm"
-                            fw={400}
                         >
                             {t('time_to_redeem_card.incentives_modal.redeem_button')}
-                        </Button>
+                        </FAssetButton>
                     </div>
                     <Grid
                         className="mt-6"
@@ -319,15 +318,13 @@ export default function TimeToRedeemCard({ tokens }: ITimeToRedeemCard) {
                             <span className="mr-2">2 .</span>
                             {t('time_to_redeem_card.incentives_modal.earn_rewards_via_pools_title')}
                         </Title>
-                        <Button
-                            variant="gradient"
+                        <FAssetButton
+                            variant="secondary"
                             onClick={() => redirectTo('/pools')}
-                            radius="xl"
                             size="sm"
-                            fw={400}
                         >
                             {t('time_to_redeem_card.incentives_modal.view_pools_button')}
-                        </Button>
+                        </FAssetButton>
                     </div>
                     <SimpleGrid
                         cols={{base: 1, md: 2}}
@@ -369,19 +366,15 @@ export default function TimeToRedeemCard({ tokens }: ITimeToRedeemCard) {
                         c="var(--flr-border-color)"
                         className="my-10 -mx-4 sm:-mx-14"
                     />
-                    <Button
+                    <FAssetButton
                         onClick={() => {
                             modals.closeAll()
                         }}
-                        variant="filled"
-                        color="black"
-                        radius="xl"
-                        size="sm"
                         fullWidth
-                        className="hover:text-white font-normal mb-5"
+                        className="hover:text-white mb-5"
                     >
                         {t('time_to_redeem_card.incentives_modal.done_button')}
-                    </Button>
+                    </FAssetButton>
                 </div>
             )
         })

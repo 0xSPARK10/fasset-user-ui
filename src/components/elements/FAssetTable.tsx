@@ -212,7 +212,7 @@ const FAssetTable = memo((
                 ))}
             </Table.Tr>
         ));
-    }, [localItems]);
+    }, [localItems, columns]);
 
     return (
         <div className={className} style={style}>

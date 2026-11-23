@@ -1,23 +1,20 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useInterval, useMediaQuery } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
-import { groupBy, map, orderBy } from "lodash-es";
+import { orderBy } from "lodash-es";
 import FAssetTable from "@/components/elements/FAssetTable";
 import { useUserProgress } from "@/api/user";
 import { useWeb3 } from "@/hooks/useWeb3";
-import { COINS } from "@/config/coin";
 import { IFAssetCoin } from "@/types";
-import RetryMintModal from "@/components/modals/RetryMintModal";
 import { useTransactionInvalidation } from "@/hooks/useTransactionInvalidation";
 import { XRP_NAMESPACE } from "@/config/networks";
 import {
     ITransaction,
-    IUnderlyingTransactionData,
-    ACTION_TYPE_MINT,
-    ACTION_TYPE_REDEEM,
     LATEST_TRANSACTIONS_REFRESH_INTERVAL,
 } from "./transactionTypes";
 import { useMintTransactionTable } from "./useMintTransactionTable";
+import { progressRows } from "./progressRows";
+import { useRetryMint } from "./useRetryMint";
 
 interface IMintTransactionsCard {
     className?: string;
@@ -27,9 +24,7 @@ interface IMintTransactionsCard {
 
 export default function MintTransactionsCard({ className, refreshKey, fAssetCoin }: IMintTransactionsCard) {
     const [transactions, setTransactions] = useState<ITransaction[]>();
-    const [mintingTransaction, setMintingTransaction] = useState<{ [id: string]: boolean }>({});
-    const [isRetryMintModalActive, setIsRetryMintModalActive] = useState<boolean>(false);
-    const underlyingTransaction = useRef<IUnderlyingTransactionData>();
+    const { mintingTransaction, onRetryMintClick, retryMintModal } = useRetryMint();
     const { t } = useTranslation();
     const { mainToken, connectedCoins } = useWeb3();
     const isMobile = useMediaQuery('(max-width: 768px)');
@@ -58,22 +53,7 @@ export default function MintTransactionsCard({ className, refreshKey, fAssetCoin
             return;
         }
 
-        const mintTransactions: ITransaction[] = userProgress.data.filter(transaction => transaction.action.toLowerCase() === ACTION_TYPE_MINT);
-        const grouped = groupBy(userProgress.data.filter(transaction => transaction.action.toLowerCase() === ACTION_TYPE_REDEEM), 'txhash');
-        const redeemTransactions: ITransaction[] = map(grouped, (group) => ({
-            ...group[0],
-            tickets: group.map(item => {
-                const coin = COINS.find(coin => coin.type.toLowerCase() === item.fasset.toLowerCase());
-                return {
-                    ticketId: item.ticketID!,
-                    value: 'vaultToken' in item ? item.vaultTokenValueRedeemed! : item.underlyingPaid!,
-                    type: 'vaultToken' in item ? item.vaultToken! : coin?.nativeName!,
-                    status: item.status
-                };
-            })
-        }));
-
-        setTransactions(orderBy([...mintTransactions, ...redeemTransactions], ['timestamp'], 'desc'));
+        setTransactions(orderBy(progressRows(userProgress.data), ['timestamp'], 'desc'));
     }, [userProgress.data]);
 
     useEffect(() => {
@@ -85,10 +65,7 @@ export default function MintTransactionsCard({ className, refreshKey, fAssetCoin
         className,
         fAssetCoin,
         mintingTransaction,
-        onRetryMintClick: (data) => {
-            underlyingTransaction.current = data;
-            setIsRetryMintModalActive(true);
-        },
+        onRetryMintClick,
         isMobile: !!isMobile,
     });
 
@@ -109,23 +86,7 @@ export default function MintTransactionsCard({ className, refreshKey, fAssetCoin
                 mobileBreakPoint={768}
                 appendColumn={renderAppendRow}
             />
-            {isRetryMintModalActive && underlyingTransaction.current &&
-                <RetryMintModal
-                    opened={isRetryMintModalActive}
-                    onClose={(isMinting: boolean) => {
-                        setIsRetryMintModalActive(false);
-                        const id = underlyingTransaction.current?.paymentReference!;
-                        if (isMinting && id) {
-                            setMintingTransaction(prev => ({ ...prev, [id]: true }));
-                            setTimeout(() => {
-                                setMintingTransaction(prev => ({ ...prev, [id]: false }));
-                            }, 30000);
-                        }
-                        underlyingTransaction.current = undefined;
-                    }}
-                    underlyingTransaction={underlyingTransaction.current}
-                />
-            }
+            {retryMintModal}
         </>
     );
 }

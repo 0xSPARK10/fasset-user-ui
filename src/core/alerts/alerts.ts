@@ -1,4 +1,4 @@
-import { IAlertMessage } from "@/components/elements/FormAlert";
+import type { IAlertMessage } from "@/core/alerts/types";
 
 
 export function resolveAlert(candidates: Array<IAlertMessage | undefined | null | false>) : IAlertMessage | undefined {

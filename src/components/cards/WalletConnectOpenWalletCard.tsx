@@ -2,8 +2,6 @@ import { Paper, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 import { useWeb3 } from "@/hooks/useWeb3";
 
-interface IWalletConnectOpenWalletCard {}
-
 export default function WalletConnectOpenWalletCard() {
     const { t } = useTranslation();
     const { walletConnectConnector } = useWeb3();

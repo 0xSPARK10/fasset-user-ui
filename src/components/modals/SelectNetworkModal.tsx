@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
     Checkbox,
     Stack,
-    Button,
     Title,
     Text,
     Stepper,
@@ -20,6 +19,8 @@ import { INetwork } from "@/types";
 import { IWallet } from "@/config/connectors";
 import { WALLET } from "@/constants";
 import { useWeb3 } from "@/hooks/useWeb3";
+import { getRedirectPath } from "@/utils";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface ISelectNetworkModal {
     opened: boolean;
@@ -127,7 +128,9 @@ export default function SelectNetworkModal({ opened, onClose, wallet }: ISelectN
                 queryClient.clear();
                 await queryClient.invalidateQueries();
                 onClose([], true);
-                await router.push((router.query?.redirect ?? '/mint') as string);
+                if(router.pathname === '/connect') {
+                    await router.push(getRedirectPath(router.query));
+                }
             }
         }
     }
@@ -258,11 +261,7 @@ export default function SelectNetworkModal({ opened, onClose, wallet }: ISelectN
             </FAssetModal.Body>
             <FAssetModal.Footer>
                 <div className="flex justify-between">
-                    <Button
-                        variant="filled"
-                        color="var(--mantine-color-black)"
-                        radius="xl"
-                        size="sm"
+                    <FAssetButton
                         fullWidth
                         className="font-light hover:text-white"
                         onClick={currentStep === STEP_CHOOSE_NETWORK ? onConnect : onLedgerConnect}
@@ -275,7 +274,7 @@ export default function SelectNetworkModal({ opened, onClose, wallet }: ISelectN
                                 network: currentNetworkToConnect?.name
                             })
                         }
-                    </Button>
+                    </FAssetButton>
                 </div>
             </FAssetModal.Footer>
         </FAssetModal>

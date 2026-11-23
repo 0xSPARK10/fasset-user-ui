@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Anchor, Button, LoadingOverlay, Paper, rem, Text, Title } from "@mantine/core";
+import { Anchor, LoadingOverlay, Paper, rem, Text, Title } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 import { IconArrowUpRight, IconExclamationCircle } from "@tabler/icons-react";
 import CryptoJS from "crypto-js";
@@ -13,6 +13,7 @@ import { useUnderlyingBalance } from "@/api/balance"
 import { BALANCE_FETCH_INTERVAL, WALLET } from "@/constants";
 import { BTC_NAMESPACE } from "@/config/networks";
 import classes from "@/styles/components/cards/UnderlyingBalanceCard.module.scss";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface IUnderlyingBalanceCard {
     className?: string;
@@ -189,29 +190,23 @@ export default function UnderlyingBalanceCard({ className, fAssetCoin }: IUnderl
                         </div>
                     </div>
                     {!notConnected && isBalanceUnavailable &&
-                        <Button
+                        <FAssetButton
+                            variant="secondary"
                             onClick={fetchBalance}
-                            variant="gradient"
-                            size="xs"
-                            radius="xl"
                             className="flex-shrink-0 ml-8"
-                            fw={400}
                             loading={isLoading}
                         >
                             {t('underlying_balance_card.refresh_button')}
-                        </Button>
+                        </FAssetButton>
                     }
                     {notConnected &&
-                        <Button
-                            variant="gradient"
-                            size="xs"
-                            radius="xl"
-                            fw={400}
+                        <FAssetButton
+                            variant="secondary"
                             className="ml-auto"
                             onClick={() => openConnectWalletModal()}
                         >
                             {t('underlying_balance_card.manage_connection_button')}
-                        </Button>
+                        </FAssetButton>
                     }
                 </div>
                 {!notConnected && isBalanceUnavailable &&

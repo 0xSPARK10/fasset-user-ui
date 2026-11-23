@@ -208,7 +208,7 @@ export default function FAssetWindDownModal({ opened, onClose, fAssets }: IFAsse
                                     component="a"
                                     href="https://v3.dex.enosys.global/"
                                     target="_blank"
-                                    className="font-normal mb-3"
+                                    className="font-normal"
                                     classNames={{
                                         inner: 'w-full',
                                         label: 'w-full',

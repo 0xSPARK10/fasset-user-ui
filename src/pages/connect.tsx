@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
     Accordion,
     Anchor,
-    Button,
     Card,
     Container,
     List,
@@ -19,6 +18,8 @@ import BlingIcon from "@/components/icons/BlingIcon";
 import { COINS } from "@/config/coin";
 import { CoinEnum } from "@/types";
 import { useNetworks } from "@/hooks/useNetworks";
+import { getRedirectPath } from "@/utils";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 export default function Connect() {
     const [isBeforeYouStartOpened, setIsBeforeYourStartOpened] = useState<boolean>(false);
@@ -28,11 +29,11 @@ export default function Connect() {
     const { isMainnet } = useNetworks();
     const { t } = useTranslation();
     const faucetCoins = COINS.filter(coin => coin.enabled && coin.faucetUrl !== undefined);
-    const isMintPage = !router.query?.redirect || router.query?.redirect === '/mint';
+    const isMintPage = getRedirectPath(router.query) === '/mint';
 
     const onConnectClick = async () => {
         if (isConnected) {
-            await router.push((router.query?.redirect ?? '/mint') as string);
+            await router.push(getRedirectPath(router.query));
         } else {
             openConnectWalletModal();
         }
@@ -260,17 +261,14 @@ export default function Connect() {
                     shadow="sm"
                     className="mt-6"
                 >
-                    <Button
-                        variant="filled"
-                        color="black"
-                        radius="xl"
+                    <FAssetButton
                         size="lg"
                         onClick={onConnectClick}
                         rightSection={<BlingIcon width="14" height="14" />}
                         className="pl-12 pr-12 font-light hover:text-white"
                     >
                         {t('connect.connect_button')}
-                    </Button>
+                    </FAssetButton>
                 </Card>
             </Container>
         </div>

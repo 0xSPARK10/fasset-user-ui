@@ -1,14 +1,15 @@
-import { AppShell, Text } from "@mantine/core";
+import { AppShell } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 import Head from "next/head";
 import { useInterval } from "@mantine/hooks";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { IconAlertTriangle } from "@tabler/icons-react";
 import Footer from "@/components/layouts/Footer";
 import Header from "@/components/layouts/Header";
+import PauseBanner from "@/components/elements/PauseBanner";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useFassetState } from "@/api/user";
+import { useOftPaused } from "@/api/oft";
 import { usePools, useUserPools } from "@/api/pool";
 import { useModalState } from "@/hooks/useModalState";
 import { COINS } from "@/config/coin";
@@ -23,7 +24,7 @@ export default function Layout({ children, ...props }: ILayout) {
     const [redirectBackUrl, setRedirectBackUrl] = useState<string>();
 
     const { t } = useTranslation();
-    const { walletConnectConnector, isConnected, connectedCoins, mainToken } = useWeb3();
+    const { walletConnectConnector, isConnected, connectedCoins, mainToken, isBridgeEnabled } = useWeb3();
     const { isMintModalActive, isRedeemModalActive } = useModalState();
 
     const pools = usePools(COINS.filter(coin => coin.isFAssetCoin && coin.enabled).map(coin => coin.type), false);
@@ -34,6 +35,9 @@ export default function Layout({ children, ...props }: ILayout) {
     );
     const fassetState = useFassetState();
     const pausedTokens = fassetState.data?.filter(item => item.state)?.map(item => item.fasset);
+    // Flare OFT adapter pause — every LayerZero transfer stops (same query as the bridge form).
+    // Only where the bridge exists (Flare / Coston2), like the Bridge link in the header
+    const oftPaused = useOftPaused(isBridgeEnabled);
 
     const router = useRouter();
     const userPoolInterval = useInterval(() => {
@@ -54,6 +58,7 @@ export default function Layout({ children, ...props }: ILayout) {
 
         const routeChangeStart = () => {
             fassetState.refetch();
+            if (isBridgeEnabled) oftPaused.refetch();
             if (!isConnected && (window.history.state?.as !== '/mint' || window.history.state?.as !== '/bridge')) {
                 setRedirectBackUrl(window.history.state?.as?.replace(router.basePath, '') ?? '');
             }
@@ -66,7 +71,7 @@ export default function Layout({ children, ...props }: ILayout) {
             window.removeEventListener('popstate', handleBackButton);
             router.events.off('routeChangeStart', routeChangeStart);
         }
-    }, [redirectBackUrl, isConnected]);
+    }, [redirectBackUrl, isConnected, isBridgeEnabled]);
 
     useEffect(() => {
         if (walletConnectConnector.isInitializing || !walletConnectConnector.hasCheckedPersistedSession) return;
@@ -102,20 +107,10 @@ export default function Layout({ children, ...props }: ILayout) {
             <AppShell>
                 <AppShell.Main className="flex flex-col">
                     {pausedTokens && pausedTokens?.length > 0 &&
-                        <div className="flex items-center justify-center bg-[var(--flr-red)] py-2">
-                            <IconAlertTriangle
-                                size={24}
-                                color="var(--flr-white)"
-                                className="flex-shrink-0"
-                            />
-                            <Text
-                                className="text-16 ml-4"
-                                fw={400}
-                                c="var(--flr-white)"
-                            >
-                                {t('layout.fasset_system_paused_label', { tokens: pausedTokens.join(', ')})}
-                            </Text>
-                        </div>
+                        <PauseBanner text={t('layout.fasset_system_paused_label', { tokens: pausedTokens.join(', ')})} />
+                    }
+                    {oftPaused.data === true &&
+                        <PauseBanner text={t('layout.oft_paused_label')} />
                     }
                     <Header />
                     <div className="flex flex-1 w-full">

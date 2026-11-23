@@ -4,6 +4,7 @@ import { useConnectedCoin } from "@/store/coin";
 import ConnectWalletModal from "@/components/modals/ConnectWalletModal";
 import SessionExpiredModal from "@/components/modals/SessionExpiredModal";
 import { useWeb3 } from "@/hooks/useWeb3";
+import { getRedirectPath } from "@/utils";
 
 type ConnectWalletModalContextType = {
     openConnectWalletModal: () => void;
@@ -33,7 +34,7 @@ export const Web3ModalProvider = ({ children, isProtected = false }: React.Props
         }
 
         if (useConnectedCoin.getState().localConnectedCoins.length > 0 && router.pathname === '/connect') {
-            await router.push((router.query?.redirect ?? '/mint') as string);
+            await router.push(getRedirectPath(router.query));
         }
     }
 

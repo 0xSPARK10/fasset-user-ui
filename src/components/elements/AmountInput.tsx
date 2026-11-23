@@ -20,6 +20,9 @@ interface IAmountInput {
 	decimalScale?: number;
 	autoFocus?: boolean
 	className?: string;
+	// "inline" = bridge page layout: full width and no coin label (the token is already named
+	// next to the input). Amount left, Max right — like the default variant.
+	variant?: "default" | "inline";
 }
 
 const AmountInput = forwardRef<HTMLInputElement, IAmountInput>(
@@ -39,10 +42,34 @@ const AmountInput = forwardRef<HTMLInputElement, IAmountInput>(
 			allowDecimal = true,
 			decimalScale,
 			className = "mt-3",
+			variant = "default",
 		}: IAmountInput,
 		ref,
 	) => {
 		const { t } = useTranslation();
+		const isInline = variant === "inline";
+		const isMaxDisabled = maxAmount === undefined || maxAmount === 0 || readOnly;
+
+		const maxButton = (
+			<Button
+				size="sm"
+				variant="transparent"
+				color="var(--flr-gray)"
+				fw={400}
+				className="pr-2 text-16"
+				style={{ opacity: isMaxDisabled ? 0.4 : 1, pointerEvents: isMaxDisabled ? 'none' : 'auto' }}
+				onClick={() => {
+					if (isMaxDisabled) return;
+					const scale = allowDecimal ? (decimalScale ?? fAssetCoin.contractDecimals ?? 6) : 0;
+					const factor = Math.pow(10, scale);
+					const floored = Math.floor(maxAmount! * factor) / factor;
+					form.setFieldValue(fieldName, floored);
+				}}
+			>
+				{t("bridge_modal.form.max_button")}
+			</Button>
+		);
+
 		return (
 			<NumberInput
 				{...form.getInputProps(fieldName)}
@@ -53,11 +80,14 @@ const AmountInput = forwardRef<HTMLInputElement, IAmountInput>(
 				placeholder={placeholder}
 				description={description}
 				inputWrapperOrder={["label", "input", "error", "description"]}
-				size="sm"
+				// No size on the bridge page: Mantine would write --input-height (36px) inline on the
+				// wrapper and override the 32px below. Without it the CSS defaults are the same as "sm".
+				size={isInline ? undefined : "sm"}
 				inputMode={allowDecimal ? "decimal" : "numeric"}
 				autoComplete="off"
 				step={1}
-				min={1}
+				// Strict clamping rejects typing below min, so 1 would block 0.5 — whole-unit inputs only
+				min={allowDecimal ? 0 : 1}
 				max={maxAmount}
 				allowDecimal={allowDecimal}
 				allowedDecimalSeparators={ALLOWED_DECIMAL_SEPARATORS}
@@ -70,45 +100,39 @@ const AmountInput = forwardRef<HTMLInputElement, IAmountInput>(
 				}}
 				className={className}
 				classNames={{
-					wrapper: "flex-shrink-0 w-full sm:w-2/4",
+					wrapper: isInline ? "w-full" : "flex-shrink-0 w-full sm:w-2/4",
 					section: "w-auto",
 				}}
 				styles={{
+					// Bridge page: 32px like the destination address / tag inputs next to it
+					wrapper: isInline ? { "--input-height": "32px" } as React.CSSProperties : undefined,
 					input: { borderRadius: "0.125rem" },
 					description: { marginBottom: "calc(var(--mantine-spacing-xs) / 2)" },
 				}}
-				rightSection={
-					<Button
-						size="sm"
-						variant="transparent"
-						color="var(--flr-gray)"
-						fw={400}
-						className="pr-2 text-16"
-						style={{ opacity: maxAmount === undefined || maxAmount === 0 || readOnly ? 0.4 : 1, pointerEvents: maxAmount === undefined || maxAmount === 0 || readOnly ? 'none' : 'auto' }}
-						onClick={() => {
-							if (maxAmount === undefined || maxAmount === 0 || readOnly) return;
-							const scale = allowDecimal ? (decimalScale ?? fAssetCoin.contractDecimals ?? 6) : 0;
-							const factor = Math.pow(10, scale);
-							const floored = Math.floor(maxAmount * factor) / factor;
-							form.setFieldValue(fieldName, floored);
-						}}
-					>
-						{t("bridge_modal.form.max_button")}
-					</Button>
-				}
-				rightSectionPointerEvents="all"
-				rightSectionWidth={64}
-				inputContainer={(children) => (
-					<div className="flex items-center flex-wrap sm:flex-nowrap">
-						{children}
-						<div className="sm:ml-2 mb-1 hidden sm:flex items-center">
-							{fAssetCoin.icon({ width: "24", height: "24" })}
-							<Text c="var(--flr-gray)" className="text-18 mx-2" fw={400}>
-								{fAssetCoin.type}
-							</Text>
-						</div>
-					</div>
-				)}
+				hideControls={isInline || undefined}
+				{...(isInline
+					? {
+						rightSection: maxButton,
+						rightSectionPointerEvents: "all" as const,
+						// Narrower than the default variant's right section — the inline input is small
+						rightSectionWidth: 52,
+					}
+					: {
+						rightSection: maxButton,
+						rightSectionPointerEvents: "all" as const,
+						rightSectionWidth: 64,
+						inputContainer: (children: React.ReactNode) => (
+							<div className="flex items-center flex-wrap sm:flex-nowrap">
+								{children}
+								<div className="sm:ml-2 mb-1 hidden sm:flex items-center">
+									{fAssetCoin.icon({ width: "24", height: "24" })}
+									<Text c="var(--flr-gray)" className="text-18 mx-2" fw={400}>
+										{fAssetCoin.type}
+									</Text>
+								</div>
+							</div>
+						),
+					})}
 			/>
 		);
 	},

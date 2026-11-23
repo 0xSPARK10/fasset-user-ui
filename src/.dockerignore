@@ -1,0 +1,5 @@
+# Build context is src/ (CI: docker/build-push-action context: src; Coston2: dev-build.sh).
+# A local node_modules copied over the image's own install brings stale packages
+# (e.g. an old @tanstack/react-query that fails the type check).
+node_modules
+.next

@@ -1,38 +1,36 @@
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { ethers, AbiCoder } from "ethers";
+import { useMutation, useQueryClient, useQuery, useQueries } from "@tanstack/react-query";
+import { ethers, AbiCoder, isError } from "ethers";
 import i18next from "i18next";
 import {
     AssetManagerAbi,
     CollateralPoolAbi,
     IIFAssetAbi,
-    FAssetOFTAdapterAbi,
-    OFTUpgradeableAbi,
     MintingTagManagerAbi
 } from "@/abi";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { XRP_NAMESPACE } from "@/config/networks";
-import { formatUnit } from "@/utils";
+import { formatUnit, isWalletRequestBlocked } from "@/utils";
 import { Fees } from "@/core/fees";
-import { createLogger } from "@/utils/debug";
+import { createLogger, devError } from "@/utils/debug";
 import { BridgeChain, BridgeType, ICoin, INetwork, IUtxo } from "@/types";
 import {
     WALLET,
     ABI_ERRORS,
-    BRIDGE_TYPE,
     BRIDGE_CHAIN,
-    BRIDGE_SOURCE_CHAIN,
-    BRIDGE_DESTINATION_CHAIN,
-    BRIDGE_COMPOSE_KIND
+    IS_MAINNET
 } from "@/constants";
 import { POOL_KEY } from "@/api/pool";
-import { bridgeChainEid, BRIDGE_SOURCE_OFT } from "@/config/bridge";
+import { bridgeChainEid, BRIDGE_SOURCE_OFT, getBridgeLzRoute, xrplComposeGas } from "@/config/bridge";
 import { BRIDGE_FASSET_COIN, BRIDGE_GAS_COIN } from "@/config/coin";
 import { Options } from "@layerzerolabs/lz-v2-utilities";
+import { buildSendAssetTypedData, formatCoreAmount, HYPERCORE_TO_EVM_GAS, IHyperCoreToken } from "@/core/hypercore";
+import { postHyperCoreAction } from "@/api/hypercore";
 
 export const CONTRACT_KEY = {
     HYPER_EVM_BALANCE: 'contract.hyperliquid_balance',
     HYPE_BALANCE: 'contract.hype_balance',
-    REDEEM_WITH_TAG_SUPPORTED: 'contract.redeem_with_tag_supported'
+    REDEEM_WITH_TAG_SUPPORTED: 'contract.redeem_with_tag_supported',
+    HYPERCORE_TRANSFER_FEES: 'contract.hypercore_transfer_fees'
 }
 
 function getProvider(address: string) {
@@ -41,7 +39,8 @@ function getProvider(address: string) {
         ledgerConnector,
         walletConnectConnector,
         metaMaskConnector,
-        xamanConnector
+        xamanConnector,
+        fireblocksConnector
     } = useWeb3();
 
     const connectedCoin = connectedCoins.find(coin => coin.address === address);
@@ -54,25 +53,52 @@ function getProvider(address: string) {
         return ledgerConnector;
     } else if (connectedCoin.connectedWallet === WALLET.XAMAN) {
         return xamanConnector;
+    } else if (connectedCoin.connectedWallet === WALLET.FIREBLOCKS) {
+        return fireblocksConnector;
     }
 
     return walletConnectConnector;
 }
 
 function handleErrors(error: any) {
+    devError('handleErrors', error);
     const errorCode = error?.error?.data ?? error?.data ?? error?.error?.error?.data;
 
     if (errorCode in ABI_ERRORS) {
         throw new Error(i18next.t('errors.abi_custom_error_label', { error: ABI_ERRORS[errorCode] }));
+    } else if (isWalletRequestBlocked(error)) {
+        // ethers wraps it as "could not coalesce error" — checked first so it gets its own message
+        throw new Error(i18next.t('notifications.request_blocked_by_wallet_label'));
     } else if (error.message.includes('could not coalesce error')) {
         throw new Error(i18next.t('errors.try_reconnecting_label'));
     } else if (error?.message?.includes('no such account')) {
         // ethers, from getSigner() on an empty eth_accounts: the WalletConnect session holds
         // no account for this chain. A session cannot gain chains, so only a new one fixes it.
         throw new Error(i18next.t('errors.wallet_reconnect_required_label'));
+    } else if (isError(error, 'CALL_EXCEPTION') && !error.data && !error.receipt) {
+        // "missing revert data" from estimateGas / eth_call: the RPC is down or the call reverts
+        // without a reason — the two look the same. A mined tx that reverted carries a receipt.
+        throw new Error(i18next.t('errors.network_unavailable_label'));
+    } else if (isError(error, 'NETWORK_ERROR') || isError(error, 'TIMEOUT') || isError(error, 'SERVER_ERROR')) {
+        // The RPC could not be reached, timed out or answered with an HTTP error (5xx, 429)
+        throw new Error(i18next.t('errors.network_unavailable_label'));
     }
 
     throw error;
+}
+
+// One read-only provider per RPC, with the chain id fixed up front. A provider without a
+// static network keeps retrying eth_chainId every second for as long as the RPC is
+// unreachable, and a new provider per query stacked those loops into thousands of requests.
+const rpcProviders = new Map<string, ethers.JsonRpcProvider>();
+function getRpcProvider(network: INetwork) {
+    let provider = rpcProviders.get(network.rpcUrl);
+    if (!provider) {
+        const staticNetwork = ethers.Network.from(BigInt(network.chainId));
+        provider = new ethers.JsonRpcProvider(network.rpcUrl, staticNetwork, { staticNetwork });
+        rpcProviders.set(network.rpcUrl, provider);
+    }
+    return provider;
 }
 
 // Wraps tx.wait() with a fallback for the ethers v6 "could not coalesce error"
@@ -81,14 +107,14 @@ function handleErrors(error: any) {
 // actually succeeded on-chain. In that case, we re-fetch the receipt directly
 // via JsonRpcProvider bypassing the wallet provider. All other errors pass through.
 const waitLogger = createLogger('waitForTransaction');
-async function waitForTransaction(tx: any, rpcUrl: string) {
+async function waitForTransaction(tx: any, network: INetwork) {
     try {
         return await tx.wait();
     } catch (waitError: any) {
         if (waitError?.message?.includes('could not coalesce error')) {
             waitLogger.log('coalesce error, fetching receipt directly from RPC for', tx.hash);
             try {
-                const rpcProvider = new ethers.JsonRpcProvider(rpcUrl);
+                const rpcProvider = getRpcProvider(network);
                 const receipt = await rpcProvider.waitForTransaction(tx.hash, 1, 10000);
                 waitLogger.log('rpc receipt status:', receipt?.status);
                 if (receipt?.status === 1) return receipt;
@@ -101,7 +127,7 @@ async function waitForTransaction(tx: any, rpcUrl: string) {
 }
 
 async function getFeeData(token: ICoin) {
-    const provider = new ethers.JsonRpcProvider(token.network.rpcUrl);
+    const provider = getRpcProvider(token.network);
     return await provider.getFeeData();
 }
 
@@ -149,7 +175,7 @@ export function useReserveCollateral() {
                 );
 
                 log.log('tx hash:', tx.hash);
-                const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
+                const receipt = await waitForTransaction(tx, mainToken?.network!);
                 log.log('receipt status:', receipt.status, 'blockNumber:', receipt.blockNumber);
                 if (receipt.status === 0) {
                     throw new Error(i18next.t('errors.transaction_failed_label'));
@@ -216,7 +242,7 @@ export function useRedeem() {
                     );
 
                 log.log('tx hash:', tx.hash);
-                const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
+                const receipt = await waitForTransaction(tx, mainToken?.network!);
                 log.log('receipt status:', receipt.status, 'blockNumber:', receipt.blockNumber);
                 if (receipt.status === 0) {
                     throw new Error(i18next.t('errors.transaction_failed_label'));
@@ -237,7 +263,7 @@ export function useRedeemWithTagSupported(assetManagerAddress: string, enabled: 
     return useQuery({
         queryKey: [CONTRACT_KEY.REDEEM_WITH_TAG_SUPPORTED, assetManagerAddress],
         queryFn: async () => {
-            const provider = new ethers.JsonRpcProvider(mainToken?.network?.rpcUrl!);
+            const provider = getRpcProvider(mainToken?.network!);
             const contract = new ethers.Contract(assetManagerAddress, AssetManagerAbi, provider);
             return await contract.redeemWithTagSupported() as boolean;
         },
@@ -361,7 +387,7 @@ export function useEnterCollateralPool() {
                 const signer = await provider.getSigner();
                 const contract = new ethers.Contract(poolAddress, CollateralPoolAbi, signer);
 
-                const feeProvider = new ethers.JsonRpcProvider(mainToken?.network?.rpcUrl!);
+                const feeProvider = getRpcProvider(mainToken?.network!);
                 const feeData = await getFeeData(mainToken!);
                 //@ts-ignore
                 let gasLimit = await contract.connect(feeProvider).enter.estimateGas({
@@ -386,7 +412,7 @@ export function useEnterCollateralPool() {
                 });
 
                 log.log('tx hash:', tx.hash);
-                const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
+                const receipt = await waitForTransaction(tx, mainToken?.network!);
                 log.log('receipt status:', receipt.status, 'blockNumber:', receipt.blockNumber);
                 if (receipt.status === 0) {
                     throw new Error(i18next.t('errors.transaction_failed_label'));
@@ -424,7 +450,7 @@ export function useExitCollateralPool() {
                const signer = await provider.getSigner();
                const contract = new ethers.Contract(poolAddress, CollateralPoolAbi, signer);
 
-               const feeProvider = new ethers.JsonRpcProvider(mainToken?.network?.rpcUrl!);
+               const feeProvider = getRpcProvider(mainToken?.network!);
                const feeData = await getFeeData(mainToken!);
                //@ts-ignore
                let gasLimit = await contract.connect(feeProvider).exit.estimateGas(tokenShare, {
@@ -447,7 +473,7 @@ export function useExitCollateralPool() {
                });
 
                log.log('tx hash:', tx.hash);
-               const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
+               const receipt = await waitForTransaction(tx, mainToken?.network!);
                log.log('receipt status:', receipt.status, 'blockNumber:', receipt.blockNumber);
                if (receipt.status === 0) {
                    throw new Error(i18next.t('errors.transaction_failed_label'));
@@ -511,7 +537,7 @@ export function useWithdrawFeesCollateralPool() {
                     from: userAddress
                 });
 
-                const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
+                const receipt = await waitForTransaction(tx, mainToken?.network!);
                 if (receipt.status === 0) {
                     throw new Error(i18next.t('errors.transaction_failed_label'));
                 }
@@ -540,7 +566,7 @@ export function useCancelCollateralReservation() {
                 log.log('params:', { assetManagerAddress, crtId });
                 const tx = await contract.cancelCollateralReservation(crtId, { from: mainToken?.address! });
                 log.log('tx hash:', tx.hash);
-                const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
+                const receipt = await waitForTransaction(tx, mainToken?.network!);
                 log.log('receipt status:', receipt.status, 'blockNumber:', receipt.blockNumber);
 
                 if (receipt.status === 0) {
@@ -615,7 +641,7 @@ function bridgeSignerToken(
     bridgeType: BridgeType,
     getBridgeToken: (chain: BridgeChain) => ICoin | undefined,
 ): ICoin | undefined {
-    const sourceChain = BRIDGE_SOURCE_CHAIN[bridgeType];
+    const sourceChain = getBridgeLzRoute(bridgeType).source;
     return sourceChain === BRIDGE_CHAIN.FLARE ? undefined : getBridgeToken(sourceChain);
 }
 
@@ -623,7 +649,7 @@ function bridgeSignerToken(
  * The contract `quoteSend` / `send` is called on, chosen by the route's source chain.
  */
 function bridgeSourceContract(bridgeType: BridgeType, signer: any) {
-    const { address, abi } = BRIDGE_SOURCE_OFT[BRIDGE_SOURCE_CHAIN[bridgeType]];
+    const { address, abi } = BRIDGE_SOURCE_OFT[getBridgeLzRoute(bridgeType).source];
 
     if (!address || !abi) {
         throw new Error(i18next.t('errors.transaction_failed_label'));
@@ -646,7 +672,7 @@ interface BridgeSendParamsArgs {
 }
 
 /**
- * Builds the LayerZero `SendParam` for a bridge route. Shared by `useBridgeQouteSend`
+ * Builds the LayerZero `SendParam` for a bridge route. Shared by `useBridgeQuoteSendReadOnly`
  * and `useBridgeSend`, which each used to build the same parameters independently —
  * every new route previously had to be added in both places.
  */
@@ -669,10 +695,11 @@ function buildBridgeSendParams({
     let to = ethers.zeroPadValue(recipient, 32);
     let amountToSend = amount;
 
-    const composeKind = BRIDGE_COMPOSE_KIND[bridgeType];
+    const { source, destination, compose: composeKind } = getBridgeLzRoute(bridgeType);
 
     if (composeKind === 'hyper_core') {
-        composeMsg = abiCoder.encode(['uint256', 'address'], ['0', signerAddress]);
+        // The composer credits `receiver` on Hyperliquid
+        composeMsg = abiCoder.encode(['uint256', 'address'], ['0', recipient]);
         to = ethers.zeroPadValue(process.env.HYPERLIQUID_COMPOSER_ADDRESS!, 32);
         options.addExecutorComposeOption(0, 200_000, '0');
     } else if (composeKind === 'xrpl') {
@@ -703,14 +730,15 @@ function buildBridgeSendParams({
         );
         log?.log('composeMsg encoded:', composeMsg);
         // The redeem composer always lives on Flare and supports every source chain —
-        // this address is unchanged for XRPL_FROM_ETH.
+        // this address is the same for every source.
         to = ethers.zeroPadValue(process.env.FXRP_COMPOSER_ADDRESS!, 32);
+        const composeGas = xrplComposeGas(source);
         // executorFee from /api/oft/redemptionFees — required for executor to process the redemption
-        options = Options.newOptions().addExecutorLzReceiveOption(400_000, 0).addExecutorComposeOption(0, 5_000_000, executorFee ?? '0');
+        options = Options.newOptions().addExecutorLzReceiveOption(400_000, 0).addExecutorComposeOption(0, composeGas, executorFee ?? '0');
     }
 
     return {
-        dstEid: bridgeChainEid(BRIDGE_DESTINATION_CHAIN[bridgeType], mainnet),
+        dstEid: bridgeChainEid(destination, mainnet),
         to: to,
         amountLD: amountToSend,
         minAmountLD: amountToSend,
@@ -720,41 +748,55 @@ function buildBridgeSendParams({
     };
 }
 
-export function useBridgeQouteSend() {
-    const { mainToken, getBridgeToken } = useWeb3();
-    const provider = getProvider(mainToken?.address!);
+/**
+ * `quoteSend` without the wallet — a view call through the source chain's public RPC.
+ * Same SendParam as `useBridgeSend` (sender = the connected EVM address, the account that
+ * later signs the send). The bridge page quotes on every amount, route and recipient change;
+ * going through `getSigner` would ask the wallet to switch chain each time, and a switch
+ * still pending left the call on the wrong chain (`0x` result).
+ */
+export function useBridgeQuoteSendReadOnly() {
+    const { mainToken } = useWeb3();
 
     return useMutation({
         mutationFn: async ({ amount, bridgeType, executorFee, composerFeePPM, destinationAddress, destinationTag }: {
             amount: string;
-            bridgeType: typeof BRIDGE_TYPE[keyof typeof BRIDGE_TYPE];
+            bridgeType: BridgeType;
             executorFee?: string;
             composerFeePPM?: string;
             destinationAddress?: string;
             destinationTag?: number;
         }) => {
-            if (!provider) return;
+            if (!mainToken) return;
+            // No wallet yet → quote with the zero address as sender: an address is a fixed-size
+            // ABI word in the compose message, so the nativeFee is the same (fee visible before
+            // connecting, as in the design)
+            const sender = mainToken.address ?? ethers.ZeroAddress;
+
+            const sourceChain = getBridgeLzRoute(bridgeType).source;
+            const network = sourceChain === BRIDGE_CHAIN.FLARE
+                ? mainToken.network
+                : BRIDGE_FASSET_COIN[sourceChain]?.network;
+            if (!network?.rpcUrl) return;
+
+            const sendParams = buildBridgeSendParams({
+                bridgeType,
+                amount,
+                signerAddress: sender,
+                recipient: sender,
+                mainnet: !!mainToken.network?.mainnet,
+                executorFee,
+                composerFeePPM,
+                destinationAddress,
+                destinationTag
+            });
 
             try {
-                const signer = await provider.getSigner(bridgeSignerToken(bridgeType, getBridgeToken));
-                const signerAddress = await signer?.getAddress();
-
-                const sendParams = buildBridgeSendParams({
-                    bridgeType,
-                    amount,
-                    signerAddress,
-                    recipient: mainToken?.address!,
-                    mainnet: !!mainToken?.network?.mainnet,
-                    executorFee,
-                    composerFeePPM,
-                    destinationAddress,
-                    destinationTag
-                });
-
-                const contract = bridgeSourceContract(bridgeType, signer);
+                const contract = bridgeSourceContract(bridgeType, getRpcProvider(network));
                 const result = await contract.quoteSend(sendParams, false);
-                return result.nativeFee;
+                return result.nativeFee as bigint;
             } catch (error: any) {
+                // Same translated messages as the other contract calls (handleErrors)
                 handleErrors(error);
             }
         }
@@ -776,7 +818,7 @@ export function useBridgeApprove() {
                 log.log('amount:', amount, 'spender:', process.env.BRIDGE_FXRP_OFT_ADAPTER_ADDRESS);
                 const tx = await contract.approve(process.env.BRIDGE_FXRP_OFT_ADAPTER_ADDRESS!, amount);
                 log.log('tx hash:', tx.hash);
-                const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
+                const receipt = await waitForTransaction(tx, mainToken?.network!);
                 log.log('receipt status:', receipt.status);
 
                 if (receipt.status === 0) {
@@ -797,7 +839,7 @@ export function useBridgeSend() {
         mutationFn: async ({ amount, fee, bridgeType, executorFee, composerFeePPM, destinationAddress, destinationTag }: {
             amount: string,
             fee: bigint,
-            bridgeType: typeof BRIDGE_TYPE[keyof typeof BRIDGE_TYPE],
+            bridgeType: BridgeType,
             executorFee?: string,
             composerFeePPM?: string,
             destinationAddress?: string,
@@ -814,7 +856,11 @@ export function useBridgeSend() {
                     bridgeType,
                     amount,
                     signerAddress,
-                    recipient: mainToken?.address!,
+                    // Plain transfer and → Hyperliquid: the page's recipient (own or custom EVM
+                    // address); the XRPL compose carries an XRPL address in destinationAddress
+                    recipient: getBridgeLzRoute(bridgeType).compose !== 'xrpl' && destinationAddress
+                        ? destinationAddress
+                        : mainToken?.address!,
                     mainnet: !!mainToken?.network?.mainnet,
                     executorFee,
                     composerFeePPM,
@@ -826,7 +872,7 @@ export function useBridgeSend() {
                 const contract = bridgeSourceContract(bridgeType, signer);
                 log.log('params:', {
                     bridgeType,
-                    sourceChain: BRIDGE_SOURCE_CHAIN[bridgeType],
+                    sourceChain: getBridgeLzRoute(bridgeType).source,
                     ...sendParams,
                     fee: fee?.toString(),
                     signerAddress
@@ -858,7 +904,13 @@ export function useBridgeSend() {
                 );
 
                 log.log('tx hash:', tx.hash);
-                const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
+                // The fallback receipt lookup must hit the chain the tx was sent on — Flare's RPC
+                // knows nothing of a HyperEVM / Ethereum / BSC transaction
+                const sourceChain = getBridgeLzRoute(bridgeType).source;
+                const sourceNetwork = sourceChain === BRIDGE_CHAIN.FLARE
+                    ? mainToken?.network
+                    : BRIDGE_FASSET_COIN[sourceChain]?.network;
+                const receipt = await waitForTransaction(tx, sourceNetwork!);
                 log.log('receipt status:', receipt.status, 'blockNumber:', receipt.blockNumber);
                 if (receipt.status === 0) {
                     // Carry the hash in the message: it is the only channel that reaches the
@@ -895,7 +947,7 @@ export function useTransferFrom() {
                 const signer = await provider.getSigner();
                 const contract = new ethers.Contract(tokenAddress, IIFAssetAbi, signer);
                 const tx = await contract.transferFrom(from, to, amount);
-                const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
+                const receipt = await waitForTransaction(tx, mainToken?.network!);
 
                 if (receipt.status === 0) {
                     throw new Error(i18next.t('errors.transaction_failed_label'));
@@ -913,50 +965,53 @@ export function useTransferFrom() {
 // Going through the wallet signer mutates universalProvider.defaultChain and races
 // with concurrent operations on Flare, producing ethers "network changed" errors.
 //
-// `chain` defaults to HYPER_EVM so existing callers stay unchanged.
-export function useHyperEVMBalance(enabled: boolean = true, chain: BridgeChain = BRIDGE_CHAIN.HYPER_EVM) {
+// FXRP OFT balance on each given remote chain, one query per chain
+export function useRemoteFxrpBalances(chains: BridgeChain[]) {
     const { mainToken } = useWeb3();
-    const rpcUrl = BRIDGE_FASSET_COIN[chain]?.network?.rpcUrl;
-    const oftAddress = BRIDGE_SOURCE_OFT[chain]?.address;
 
-    return useQuery({
-        queryKey: [CONTRACT_KEY.HYPER_EVM_BALANCE, mainToken?.address!, chain],
-        queryFn: async () => {
-            if (!mainToken?.address || !rpcUrl || !oftAddress) return 0;
+    return useQueries({
+        queries: chains.map(chain => {
+            const network = BRIDGE_FASSET_COIN[chain]?.network;
+            const oftAddress = BRIDGE_SOURCE_OFT[chain]?.address;
 
-            try {
-                const provider = new ethers.JsonRpcProvider(rpcUrl);
-                const contract = new ethers.Contract(oftAddress, IIFAssetAbi, provider);
-                const balance = await contract.balanceOf(mainToken.address);
-                return balance;
-            } catch (error: any) {
-                handleErrors(error);
-            }
-        },
-        enabled: enabled && !!mainToken?.address && !!rpcUrl && !!oftAddress,
-        staleTime: 10000
-    })
+            return {
+                queryKey: [CONTRACT_KEY.HYPER_EVM_BALANCE, mainToken?.address!, chain],
+                queryFn: async () => {
+                    if (!mainToken?.address || !network?.rpcUrl || !oftAddress) return 0;
+
+                    try {
+                        const contract = new ethers.Contract(oftAddress, IIFAssetAbi, getRpcProvider(network));
+                        return await contract.balanceOf(mainToken.address);
+                    } catch (error: any) {
+                        handleErrors(error);
+                    }
+                },
+                enabled: !!mainToken?.address && !!network?.rpcUrl && !!oftAddress,
+                staleTime: 10000
+            };
+        })
+    });
 }
 
-// Gas balance on the bridge chain (HYPE or ETH) — pays the LayerZero nativeFee.
+// Gas balance on the bridge chain (its BRIDGE_GAS_COIN) — pays the LayerZero nativeFee.
 export function useHypeBalance(enabled: boolean = true, chain: BridgeChain = BRIDGE_CHAIN.HYPER_EVM) {
     const { mainToken } = useWeb3();
-    const rpcUrl = BRIDGE_GAS_COIN[chain]?.network?.rpcUrl;
+    const network = BRIDGE_GAS_COIN[chain]?.network;
 
     return useQuery({
         queryKey: [CONTRACT_KEY.HYPE_BALANCE, mainToken?.address!, chain],
         queryFn: async () => {
-            if (!mainToken?.address || !rpcUrl) return 0;
+            if (!mainToken?.address || !network?.rpcUrl) return 0;
 
             try {
-                const provider = new ethers.JsonRpcProvider(rpcUrl);
+                const provider = getRpcProvider(network);
                 const balance = await provider.getBalance(mainToken.address);
                 return balance;
             } catch (error: any) {
                 handleErrors(error);
             }
         },
-        enabled: enabled && !!mainToken?.address && !!rpcUrl,
+        enabled: enabled && !!mainToken?.address && !!network?.rpcUrl,
         staleTime: 10000
     })
 }
@@ -981,7 +1036,7 @@ export function useReserveTag() {
                 log.log('reservationFee:', reservationFee.toString());
                 const tx = await contract.reserve({ value: reservationFee });
                 log.log('tx hash:', tx.hash);
-                const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
+                const receipt = await waitForTransaction(tx, mainToken?.network!);
                 log.log('receipt status:', receipt.status);
 
                 const event = receipt.logs
@@ -1021,7 +1076,7 @@ export function useTransferTag() {
                 log.log('tagId:', tagId, 'to:', to);
                 const tx = await contract.transfer(to, tagId);
                 log.log('tx hash:', tx.hash);
-                const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
+                const receipt = await waitForTransaction(tx, mainToken?.network!);
                 log.log('receipt status:', receipt?.status);
                 return receipt;
             } catch (error) {
@@ -1052,7 +1107,7 @@ export function useSetMintingRecipient() {
                 log.log('tagId:', tagId, 'mintingRecipient:', mintingRecipient);
                 const tx = await contract.setMintingRecipient(tagId, mintingRecipient);
                 log.log('tx hash:', tx.hash);
-                const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
+                const receipt = await waitForTransaction(tx, mainToken?.network!);
                 log.log('receipt status:', receipt.status);
                 return receipt;
             } catch (error) {
@@ -1083,11 +1138,147 @@ export function useSetAllowedExecutor() {
                 log.log('tagId:', tagId, 'executor:', executor);
                 const tx = await contract.setAllowedExecutor(tagId, executor);
                 log.log('tx hash:', tx.hash);
-                const receipt = await waitForTransaction(tx, mainToken?.network?.rpcUrl!);
+                const receipt = await waitForTransaction(tx, mainToken?.network!);
                 log.log('receipt status:', receipt.status);
                 return receipt;
             } catch (error) {
                 log.error('error:', error);
+                handleErrors(error);
+            }
+        }
+    });
+}
+
+// Gas of an ERC-20 transfer to a system address — the estimate needs a balance, the fee row does not
+const HYPERCORE_DEPOSIT_GAS = BigInt(60_000);
+
+/**
+ * HyperEVM gas price for the Hyperliquid ↔ HyperEVM fee rows, read-only (never the wallet).
+ * `toCore`: HyperEVM → Hyperliquid, an ERC-20 transfer paid in HYPE on HyperEVM.
+ * `toEvm`: Hyperliquid → HyperEVM, 200k gas at the base fee, paid on Core.
+ * Both in wei.
+ */
+export function useHyperCoreTransferFees(enabled: boolean = true) {
+    const network = BRIDGE_GAS_COIN[BRIDGE_CHAIN.HYPER_EVM]?.network;
+
+    return useQuery({
+        queryKey: [CONTRACT_KEY.HYPERCORE_TRANSFER_FEES],
+        queryFn: async () => {
+            const provider = getRpcProvider(network!);
+            const [block, feeData] = await Promise.all([provider.getBlock('latest'), provider.getFeeData()]);
+            const baseFee = block?.baseFeePerGas ?? feeData.gasPrice ?? BigInt(0);
+            const gasPrice = feeData.gasPrice ?? baseFee;
+            return {
+                toEvm: HYPERCORE_TO_EVM_GAS * baseFee,
+                toCore: HYPERCORE_DEPOSIT_GAS * gasPrice,
+            };
+        },
+        enabled: enabled && !!network?.rpcUrl,
+        refetchInterval: 30000
+    });
+}
+
+// The HyperEVM signer — switches the wallet to HyperEVM first (same path as HyperEVM-source bridges)
+async function hyperEvmSigner(provider: any, getBridgeToken: (chain: BridgeChain) => ICoin | undefined) {
+    return provider.getSigner(getBridgeToken(BRIDGE_CHAIN.HYPER_EVM));
+}
+
+/**
+ * Hyperliquid → HyperEVM: a `sendAsset` of FXRP to its system address on Core, signed as EIP-712
+ * typed data and posted to Hyperliquid. Hyperliquid credits the same address on HyperEVM.
+ * No EVM transaction, so no hash — the transfer shows in the Core ledger.
+ */
+export function useHyperCoreToEvmTransfer() {
+    const { mainToken, getBridgeToken } = useWeb3();
+    const provider = getProvider(mainToken?.address!);
+
+    return useMutation({
+        mutationFn: async ({ amount, token }: { amount: number; token: IHyperCoreToken }) => {
+            // No connected wallet behind mainToken — never report a transfer that was not sent
+            if (!provider) throw new Error(i18next.t('errors.try_reconnecting_label'));
+
+            const log = createLogger('HYPERCORE_TO_EVM');
+            try {
+                const signer = await hyperEvmSigner(provider, getBridgeToken);
+                const network = BRIDGE_FASSET_COIN[BRIDGE_CHAIN.HYPER_EVM]?.network;
+                const time = Date.now();
+                const { action, domain, types, message } = buildSendAssetTypedData({
+                    destination: token.systemAddress,
+                    token,
+                    amount: formatCoreAmount(amount),
+                    time,
+                    // Same flag as the Hyperliquid API client — a mismatch makes the signature invalid
+                    mainnet: IS_MAINNET,
+                    signatureChainId: Number(network?.chainId),
+                });
+                log.log('action:', action);
+
+                const signature = ethers.Signature.from(await signer.signTypedData(domain, types, message));
+                try {
+                    await postHyperCoreAction({
+                        action,
+                        nonce: time,
+                        signature: { r: signature.r, s: signature.s, v: signature.v }
+                    });
+                } catch (error: any) {
+                    // No answer (timeout, connection lost): Hyperliquid may have executed it — never
+                    // report "nothing sent", or the user retries and moves the FXRP twice
+                    if (error?.isAxiosError && !error.response) {
+                        log.log('no answer from /exchange — outcome unknown', error?.message);
+                        return { unconfirmed: true };
+                    }
+                    throw error;
+                }
+                log.log('accepted');
+                return { unconfirmed: false };
+            } catch (error: any) {
+                handleErrors(error);
+            }
+        }
+    });
+}
+
+/**
+ * HyperEVM → Hyperliquid: an ERC-20 transfer of FXRP to its system address on HyperEVM.
+ * Hyperliquid credits the sender's address on Core.
+ */
+export function useEvmToHyperCoreTransfer() {
+    const { mainToken, getBridgeToken } = useWeb3();
+    const provider = getProvider(mainToken?.address!);
+
+    return useMutation({
+        mutationFn: async ({ amount, token }: { amount: number; token: IHyperCoreToken }) => {
+            // No connected wallet behind mainToken — never report a transfer that was not sent
+            if (!provider) throw new Error(i18next.t('errors.try_reconnecting_label'));
+
+            const log = createLogger('EVM_TO_HYPERCORE');
+            try {
+                const signer = await hyperEvmSigner(provider, getBridgeToken);
+                const { address, abi } = BRIDGE_SOURCE_OFT[BRIDGE_CHAIN.HYPER_EVM];
+                if (!address) throw new Error(i18next.t('errors.transaction_failed_label'));
+
+                const contract = new ethers.Contract(address, abi, signer);
+                const value = ethers.parseUnits(formatCoreAmount(amount), 6);
+                let gasLimit = await contract.transfer.estimateGas(token.systemAddress, value);
+                gasLimit = (gasLimit * BigInt(150)) / BigInt(100);
+                log.log('transfer:', { to: token.systemAddress, value: value.toString(), gasLimit: gasLimit.toString() });
+
+                const tx = await contract.transfer(token.systemAddress, value, { gasLimit });
+                log.log('tx hash:', tx.hash);
+                let receipt;
+                try {
+                    receipt = await waitForTransaction(tx, BRIDGE_FASSET_COIN[BRIDGE_CHAIN.HYPER_EVM]!.network!);
+                } catch (error: any) {
+                    // Broadcast, but the receipt could not be read — sent, outcome unknown (not "failed",
+                    // or the user retries and moves the FXRP twice)
+                    log.log('receipt unavailable — outcome unknown', error?.message);
+                    return { hash: tx.hash as string, unconfirmed: true };
+                }
+                if (receipt.status === 0) {
+                    throw new Error(i18next.t('errors.transaction_failed_with_hash_label', { hash: tx.hash }));
+                }
+                return { hash: tx.hash as string, unconfirmed: false };
+            } catch (error: any) {
                 handleErrors(error);
             }
         }

@@ -3,7 +3,7 @@
 ## ⚠ CRITICAL — Never Break These
 - **Never run any npm/yarn/npx/next command from repo root** — ONLY from `src/`
 - **Never run `next build`** to check types — creates junk files at wrong level
-- To verify types: read code manually or ask user to run dev server
+- To verify types: `cd src && node_modules/.bin/tsc --noEmit` (safe — writes nothing but the gitignored tsbuildinfo)
 - Dev: `cd src && npm run dev`
 
 ## Project Layout
@@ -31,6 +31,30 @@ LayerZero · xrpl · i18next · Tailwind + SCSS modules
 - Translations: `t('key')` via `useTranslation()`, keys in `languages/en.json`
 - Logging: `devLog` / `devError` from `@/utils/debug` — **never `console.log` directly**
 
+## Code Quality
+- **Smallest diff that solves the task.** No drive-by refactors, renames or reformatting — mention them instead.
+- **Reuse first:** search `utils/`, `hooks/`, `core/`, `components/elements` before writing a helper, hook or component (`toLots`, `parseUnits(x, 6)`, `devLog`, `FormAlert` …).
+- **Where code goes:** domain rules and calculations → `core/<domain>/` (`*Rules.ts`, `*Calculator.ts`), pure functions without React so they are unit-testable; data/contract hooks → `hooks/`; UI → `components/<feature>/`. Keep feature-only code next to the feature; extract to shared only at 3+ uses.
+- **No speculative code** (options, wrappers, generic params nobody uses) and **no defensive noise** (try/catch or fallbacks for impossible cases).
+- **Types:** see TypeScript below.
+- **No React Compiler in this repo** — `useMemo`/`useCallback` are legitimate where they prevent real re-render/identity issues; don't add them by reflex, don't strip existing ones.
+- **Flare FE guide** (company standard: Vite, TanStack Router, React 19 …) is the target for new projects. Here apply only its stack-independent rules (colocation, no prop drilling, pass objects, avoid unnecessary `useEffect`, naming, types) — don't migrate stack or file naming unless that is the task.
+- **Readable over clever:** clear names, early returns, small functions, no nested ternaries. Comments explain *why*, never *what*.
+- **Follow the file you're in:** match its existing patterns and naming, even if you'd do it differently.
+- **Medium+ task → plan first:** list files and approach, wait for a go.
+- **Done means verified:** lint + `tsc --noEmit` clean before saying done; say plainly what you didn't verify (e.g. wallet flows not run).
+
+## TypeScript
+Lint warns on `any`, `!`, object-literal `as` and `@ts-ignore`. The lint hook reports only lines you changed: fix those, leave old debt alone.
+- **No `as` to make errors go away.** Narrow instead: a type guard (`function isFAssetCoin(c: ICoin): c is IFAssetCoin`), `in` / `typeof` checks, or a discriminated union with a literal field (`kind: 'fasset' | 'native'`). `as const` is fine.
+- **`satisfies`** for config objects and lookup maps: checks the shape and keeps literal types (`const X = {...} satisfies Record<BridgeType, Cfg>`).
+- **Derive, don't duplicate:** `Pick` / `Omit` / `Partial` from existing types, `typeof CONST[number]` for unions from constants, `yup.InferType<typeof schema>` for form values, `ReturnType` / `Awaited` for hook and API results.
+- **No `!`:** handle the missing case with an early return or a default that is actually valid.
+- **Exhaustive `switch`** on unions (`BridgeType`, statuses): end with `default: { const _exhaustive: never = x; }`.
+- **`unknown` at boundaries** (API responses, `JSON.parse`, wallet payloads), then validate or narrow. Never `any`.
+- **Where types live:** new domain types → `core/<domain>/types.ts` (like `core/bridge/types.ts`); don't grow `types.ts` (870 lines). Component props stay in the component file.
+- **Explicit return types** on exported functions in `core/`, `hooks/`, `api/`, `utils/`.
+
 ## Required Reading — Before Any Implementation
 
 **Always read these before starting a task:**
@@ -48,6 +72,7 @@ Before proposing a commit or MR, check whether `docs/` needs an update, and do i
 - **New/changed pattern, shared component, hook, or flow** → `docs/DEV_SPEC.md`
 - **New edge case, constraint, or decision** → `docs/BUSINESS_RULES.md`
 - **Product-level change** (new route/chain, removed feature) → `docs/PRODUCT_OWNER.md`
+- **New flow, status or edge case worth testing** (esp. failure / recovery paths and how to trigger them) → add or update a scenario in `docs/qa-scenarios/<scenario_group>/<id>.md` (one file per scenario, QA repo's format — see `docs/qa-scenarios/README.md`) — QA turns these into Playwright tests. Public file: no names, secrets or internal URLs
 
 Pure refactors with no behavior or pattern change need no doc update. If you skip it, say why.
 
@@ -82,9 +107,12 @@ See `docs/CHANGELOG.md` for released changes; session notes and decisions in `de
 - Format ima tri tipe vnosov:
   - **Komponente/refaktoring** — opis + seznam fajlov ki jih treba posodobiti
   - **Open questions** — nejasnosti ki potrebujejo odgovor pred implementacijo
-  - **Task Table** — status overview (`todo` / `in-progress` / `done`)
-- Ko najdeš bug, tech debt ali odprto vprašanje → dodaj v pravi sekcijo
+  - **Task Table** — odprte naloge (`todo` / `in-progress`)
+  - **Low priority** — stari (že live) ali nenujni; ob začetku premakni v Task Table
+  - **Done** — končane naloge, ločena tabela na dnu
+- Ko najdeš bug, tech debt ali odprto vprašanje → dodaj v pravi sekcijo (nova številka = naslednja prosta)
 - Ko začneš task → status na `in-progress`
-- Ko končaš → status na `done`, ne briši vrstice
+- Ko končaš → status na `done` + kratka opomba (commit / kaj je ostalo), vrstico **premakni** iz Task Table v **Done** (številka ostane ista, ne briši)
+- Sekcija, ki postane zastarela → označi (`~~naslov~~` / "zastarelo, glej #N"), ne briši
 - Nove komponente dokumentiraj kot `FormAlert` — kaj zamenjuje, kje že implementirano, kje še treba
 

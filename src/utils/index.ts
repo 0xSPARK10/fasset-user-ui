@@ -5,3 +5,5 @@ export * from "./lots";
 export * from "./number";
 export * from "./string";
 export * from "./units";
+export * from "./url";
+export * from "./walletErrors";

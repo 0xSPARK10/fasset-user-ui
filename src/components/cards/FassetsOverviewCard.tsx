@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Title, Text, Grid, rem, Divider, Button, Stack } from "@mantine/core";
+import { Title, Text, Grid, rem, Divider, Stack } from "@mantine/core";
 import { IEcosystemInfo } from "@/types";
 import { formatNumberWithSuffix } from "@/utils";
 import { COINS } from "@/config/coin";
@@ -8,6 +8,7 @@ import XrpIcon from "@/components/icons/XrpIcon";
 import React from "react";
 import { modals } from "@mantine/modals";
 import { useMediaQuery } from "@mantine/hooks";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface IFassetsOverviewCard {
     ecoSystemInfo: IEcosystemInfo | undefined;
@@ -108,19 +109,15 @@ export default function FassetsOverviewCard({ ecoSystemInfo } : IFassetsOverview
                           c="var(--flr-border-color)"
                           className="my-10 -mx-4"
                       />
-                      <Button
+                      <FAssetButton
                           onClick={() => {
                               modals.closeAll()
                           }}
-                          variant="filled"
-                          color="black"
-                          radius="xl"
-                          size="sm"
                           fullWidth
-                          className="hover:text-white font-normal mb-5"
+                          className="hover:text-white mb-5"
                       >
                           {t('core_vault_card.modal.confirm_button')}
-                      </Button>
+                      </FAssetButton>
                   </div>
               )
           })

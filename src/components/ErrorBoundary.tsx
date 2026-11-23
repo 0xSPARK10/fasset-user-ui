@@ -1,7 +1,8 @@
-import { Title, Text, Button } from "@mantine/core";
+import { Title, Text } from "@mantine/core";
 import React, { Component, ErrorInfo } from 'react';
 import { withTranslation } from 'react-i18next';
 import i18n from 'i18next';
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface Props {
     children: React.ReactNode;
@@ -39,17 +40,13 @@ class ErrorBoundary extends Component<Props, State> {
                             : this.props.t('error.try_again_label')
                         }
                     </Text>
-                    <Button
-                        variant="filled"
-                        color="black"
-                        radius="xl"
+                    <FAssetButton
                         size="lg"
-                        fw={400}
                         className="mt-6 pl-12 pr-12 hover:text-white"
                         onClick={() => window.location.href = '/'}
                     >
                         {this.props.t('error.go_home_button')}
-                    </Button>
+                    </FAssetButton>
                 </div>
             );
         }

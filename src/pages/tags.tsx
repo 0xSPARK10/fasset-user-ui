@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
 	Accordion,
 	ActionIcon,
-	Button,
 	Card,
 	Container,
 	CopyButton,
@@ -44,6 +43,7 @@ import { ITagsByAddress } from "@/types";
 import CopyIcon from "@/components/icons/CopyIcon";
 import RecipientTagModal from "@/components/modals/RecipientTagModal";
 import TimerIcon from "@/components/icons/TimerIcon";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 const HOW_TO_ACCORDION = "how_to";
 
@@ -138,22 +138,18 @@ export default function Tags() {
 							</Text>
 						</Text>
 						<Card shadow="sm" className="mt-6">
-							<Button
-								variant="filled"
-								color="black"
-								radius="xl"
+							<FAssetButton
 								size="lg"
 								onClick={handleReserveTag}
 								rightSection={
 									isConnected ? undefined : <BlingIcon width="14" height="14" />
 								}
 								className="pl-12 pr-12 font-light hover:text-white"
-								fw={400}
 							>
 								{isConnected
 									? t("my_tags.reserve_tag_button")
 									: t("connect_wallet_button.title")}
-							</Button>
+							</FAssetButton>
 						</Card>
 					</>
 				)}
@@ -262,15 +258,12 @@ export default function Tags() {
 						({tags.length})
 					</Text>
 				</Title>
-				<Button
-					variant="gradient"
-					radius="xl"
-					size="xs"
-					fw={400}
+				<FAssetButton
+					variant="secondary"
 					onClick={() => setIsModalOpen(true)}
 				>
 					{t("my_tags.reserve_tag_button")}
-				</Button>
+				</FAssetButton>
 			</Group>
 
 			{/* Tag list */}
@@ -466,34 +459,25 @@ function TagCard({
 
 			{/* Action buttons */}
 			<Group justify="flex-end" gap="xs">
-				<Button
-					variant="gradient"
-					radius="xl"
-					size="xs"
-					fw={400}
+				<FAssetButton
+					variant="secondary"
 					onClick={onEdit}
 				>
 					{t("my_tags.change_recipient_button")}
-				</Button>
-				<Button
-					variant="gradient"
-					radius="xl"
-					size="xs"
-					fw={400}
+				</FAssetButton>
+				<FAssetButton
+					variant="secondary"
 					onClick={onEditExecutor}
 					disabled={tag.pendingNewExecutor !== undefined}
 				>
 					{t("my_tags.edit_executor_button")}
-				</Button>
-				<Button
-					variant="gradient"
-					radius="xl"
-					size="xs"
-					fw={400}
+				</FAssetButton>
+				<FAssetButton
+					variant="secondary"
 					onClick={onTransfer}
 				>
 					{t("my_tags.transfer_button")}
-				</Button>
+				</FAssetButton>
 			</Group>
 		</Stack>
 	);

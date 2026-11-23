@@ -1,0 +1,33 @@
+.row {
+    background-color: transparent;
+    transition: background-color 120ms ease;
+
+    &:hover:not([data-disabled]) {
+        background-color: var(--flr-lightest-gray);
+    }
+
+    &[data-checked] {
+        background-color: var(--flr-border-color);
+    }
+
+    // Unreachable pair (or the TO column before FROM is picked) — faded like the design.
+    &[data-disabled] {
+        opacity: 0.35;
+        cursor: not-allowed;
+    }
+}
+
+// Figma atoms/forms/radio-button: 24px, Neutrals/Stroke/lighter-medium border until checked
+.indicator:not([data-checked]) {
+    border-color: #C0C0C0;
+}
+
+// Mantine's dot is a circle filling its whole 5×5 viewBox — at a fractional offset
+// the antialiased right edge was clipped by the svg box.
+.indicator {
+    flex-shrink: 0;
+
+    svg {
+        overflow: visible;
+    }
+}

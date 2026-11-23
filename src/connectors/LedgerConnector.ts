@@ -6,7 +6,7 @@ import AppBtc from "@ledgerhq/hw-app-btc";
 import FlareApp from "@zondax/ledger-flare";
 import i18next from "i18next";
 import { Client, encode } from "xrpl";
-import { ethers, TransactionRequest, JsonRpcProvider, VoidSigner, Transaction as EtherTransaction } from "ethers";
+import { ethers, TransactionRequest, JsonRpcProvider, VoidSigner, Transaction as EtherTransaction, TypedDataDomain, TypedDataEncoder, TypedDataField } from "ethers";
 import CryptoJS from "crypto-js";
 import * as bitcoin from "bitcoinjs-lib";
 import { BIP44_PATH, LEDGER_APP, WALLET } from "@/constants";
@@ -24,6 +24,19 @@ export interface ILedgerConnector {
     disconnect: () => Promise<void>;
     getSigner: (token?: ICoin) => Promise<VoidSigner>;
     request: ({ chainId, method, params }: { chainId: string, method: string, params: any }) => Promise<any>;
+}
+
+// APDU status words of the Ethereum app
+const LEDGER_STATUS = {
+    // The device / app has no EIP-712 clear signing (e.g. Nano S or an old Ethereum app)
+    INS_NOT_SUPPORTED: 0x6d00,
+    // Blind signing is off in the app settings
+    BLIND_SIGNING_DISABLED: 0x6a80,
+} as const;
+
+function ledgerStatusCode(error: unknown): number | undefined {
+    if (typeof error !== "object" || error === null || !("statusCode" in error)) return undefined;
+    return typeof error.statusCode === "number" ? error.statusCode : undefined;
 }
 
 export default function LedgerConnector(): ILedgerConnector {
@@ -174,6 +187,38 @@ export default function LedgerConnector(): ILedgerConnector {
             unsignedTx.signature = signature;
 
             return EtherTransaction.from(unsignedTx).serialized;
+        }
+
+        // EIP-712 typed data (Hyperliquid actions). Clear signing shows the fields on the device;
+        // a Ledger without it signs the two hashes instead, which needs Blind signing
+        signer.signTypedData = async(domain: TypedDataDomain, types: Record<string, TypedDataField[]>, value: Record<string, unknown>) => {
+            const bipPath = token?.bipPath;
+            const ledgerApp = token?.network.ledgerApp;
+            if (!bipPath || !ledgerApp) throw new Error(i18next.t('errors.try_reconnecting_label'));
+            const payload = TypedDataEncoder.getPayload(domain, types, value);
+
+            const signature = await execute(async (transport: Transport) => {
+                const eth = new AppEth(transport);
+                try {
+                    return await eth.signEIP712Message(bipPath, payload);
+                } catch (error: unknown) {
+                    if (ledgerStatusCode(error) !== LEDGER_STATUS.INS_NOT_SUPPORTED) throw error;
+                }
+                try {
+                    return await eth.signEIP712HashedMessage(
+                        bipPath,
+                        TypedDataEncoder.hashDomain(domain),
+                        TypedDataEncoder.from(types).hash(value)
+                    );
+                } catch (error: unknown) {
+                    if (ledgerStatusCode(error) === LEDGER_STATUS.BLIND_SIGNING_DISABLED) {
+                        throw new Error(i18next.t('ledger.errors.blind_signing_disabled_error'), { cause: 'ledger' });
+                    }
+                    throw error;
+                }
+            }, ledgerApp);
+
+            return ethers.Signature.from({ r: `0x${signature.r}`, s: `0x${signature.s}`, v: signature.v }).serialized;
         }
 
         return signer;

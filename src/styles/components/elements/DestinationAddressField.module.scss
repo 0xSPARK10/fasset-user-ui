@@ -14,3 +14,26 @@
 .inputErrorText {
     color: var(--errors-border-color);
 }
+
+// Bridge recipient + destination tag inputs: 32px, like the address row next to them
+// (BridgeAddress h-8) and the FROM → TO arrow. Set on the wrapper: Mantine resolves
+// --input-size / line-height / padding from --input-height there. Doubled class so it
+// outranks Mantine's own wrapper rule regardless of stylesheet order.
+.inputCompactWrapper.inputCompactWrapper {
+    --input-height: 32px;
+}
+
+// 14px on desktop, 16px when the main pointer is touch (phone, iPad — iOS zooms in on focus
+// below 16px). `pointer`, not `any-pointer`: a touchscreen laptop with a mouse stays at 14px.
+// Set explicitly in both cases so TextInput (no type) and NumberInput (type="text") match —
+// the global `input[type="text"]` 16px (globals.scss) only reaches the latter. Doubled class
+// outranks that global rule.
+.inputCompact.inputCompact {
+    font-size: 14px;
+}
+
+@media (pointer: coarse) {
+    .inputCompact.inputCompact {
+        font-size: 16px;
+    }
+}

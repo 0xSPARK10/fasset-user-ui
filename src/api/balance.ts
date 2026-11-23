@@ -122,7 +122,8 @@ export function useNativeBalance(address: string, enabled: boolean = true) {
             const response = await apiClient.get(`${resource}/native/${address}`);
             return response.data as INativeBalance[];
         },
-        enabled: enabled
+        // Callers pass the wallet address before a wallet is connected
+        enabled: enabled && !!address
     });
 }
 

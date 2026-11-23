@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 interface BridgeFeesProps {
     /**
      * The coin the LayerZero nativeFee is paid in — resolved by the caller from
-     * `FEE_TOKEN_CHAIN[bridgeConfig.feeTokenKey]` (undefined chain = mainToken).
+     * `bridgeConfig.feeChain` (undefined chain = mainToken).
      */
     feeCoin?: ICoin;
     fee?: string;

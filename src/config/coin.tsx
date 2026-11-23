@@ -1,5 +1,5 @@
 import React from "react";
-import { CoinEnum, ICoin } from "@/types";
+import { CoinEnum, ICoin, IIconProps, INetwork } from "@/types";
 import XrpIcon from "@/components/icons/XrpIcon";
 import FXrpIcon from "@/components/icons/FXrpIcon";
 import FBtcIcon from "@/components/icons/FBtcIcon";
@@ -20,6 +20,14 @@ import {
     HYPERLIQUID_EVM_TESTNET,
     NETWORK_ETHEREUM,
     NETWORK_ETHEREUM_SEPOLIA,
+    NETWORK_BSC,
+    NETWORK_BSC_TESTNET,
+    NETWORK_BASE,
+    NETWORK_BASE_SEPOLIA,
+    NETWORK_KATANA,
+    NETWORK_KATANA_TESTNET,
+    NETWORK_MONAD,
+    NETWORK_MONAD_TESTNET,
     NETWORK_BTC,
     NETWORK_BTC_TESTNET,
     NETWORK_DOGE,
@@ -35,6 +43,16 @@ import { BIP44_PATH, BRIDGE_CHAIN, IS_MAINNET, WALLET } from "@/constants";
 import HypeIcon from "@/components/icons/HypeIcon";
 import FXrpHypeEVMIcon from "@/components/icons/FXrpHypeEVMIcon";
 import FXrpEthIcon from "@/components/icons/FXrpEthIcon";
+import FXrpBnbIcon from "@/components/icons/FXrpBnbIcon";
+import BnbIcon from "@/components/icons/BnbIcon";
+import BaseIcon from "@/components/icons/BaseIcon";
+import KatanaIcon from "@/components/icons/KatanaIcon";
+import MonadIcon from "@/components/icons/MonadIcon";
+import FXrpBaseIcon from "@/components/icons/FXrpBaseIcon";
+import FXrpKatanaIcon from "@/components/icons/FXrpKatanaIcon";
+import FXrpMonadIcon from "@/components/icons/FXrpMonadIcon";
+import EthBaseIcon from "@/components/icons/EthBaseIcon";
+import EthKatanaIcon from "@/components/icons/EthKatanaIcon";
 
 const enabledUnderlyingFassets = process.env.ENABLED_UNDERLYING_FASSETS && process.env.ENABLED_UNDERLYING_FASSETS.length > 0
     ? process.env.ENABLED_UNDERLYING_FASSETS.split(',').map(fasset => fasset.toLowerCase())
@@ -93,7 +111,7 @@ export const FTEST_XRP: ICoin = {
     enabled: !isMainnet && enabledUnderlyingFassets.includes(CoinEnum.FTestXRP.toLowerCase()),
     isFAssetCoin: true,
     faucetUrl: 'https://test.bithomp.com/faucet',
-    supportedWallets: [WALLET.WALLET_CONNECT, WALLET.LEDGER, WALLET.XAMAN],
+    supportedWallets: [WALLET.WALLET_CONNECT, WALLET.LEDGER, WALLET.XAMAN, WALLET.FIREBLOCKS],
     decimals: 2,
     contractDecimals: 6,
     bipPath: BIP44_PATH.TESTNET.XRP
@@ -182,7 +200,7 @@ export const SGB: ICoin = {
     network: NETWORK_SONGBIRD,
     enabled: isMainnet && mainnetChain === 'SGB',
     isFAssetCoin: false,
-    supportedWallets: [WALLET.WALLET_CONNECT, WALLET.META_MASK, WALLET.LEDGER],
+    supportedWallets: [WALLET.WALLET_CONNECT, WALLET.META_MASK, WALLET.LEDGER, WALLET.FIREBLOCKS],
     decimals: 2,
     isMainToken: true,
     bipPath: BIP44_PATH.MAINNET.ETH,
@@ -198,7 +216,7 @@ export const FXRP: ICoin = {
     network: NETWORK_XRPL,
     enabled: isMainnet && enabledUnderlyingFassets.includes(CoinEnum.FXRP.toLowerCase()),
     isFAssetCoin: true,
-    supportedWallets: [WALLET.WALLET_CONNECT, WALLET.LEDGER, WALLET.XAMAN],
+    supportedWallets: [WALLET.WALLET_CONNECT, WALLET.LEDGER, WALLET.XAMAN, WALLET.FIREBLOCKS],
     decimals: 2,
     contractDecimals: 6,
     bipPath: BIP44_PATH.MAINNET.XRP
@@ -259,7 +277,7 @@ export const FLR: ICoin = {
     network: NETWORK_FLARE,
     enabled: isMainnet && mainnetChain === 'FLR',
     isFAssetCoin: false,
-    supportedWallets: [WALLET.WALLET_CONNECT, WALLET.META_MASK, WALLET.LEDGER],
+    supportedWallets: [WALLET.WALLET_CONNECT, WALLET.META_MASK, WALLET.LEDGER, WALLET.FIREBLOCKS],
     decimals: 2,
     isMainToken: true,
     bipPath: BIP44_PATH.MAINNET.ETH,
@@ -400,6 +418,127 @@ export const FTEST_XRP_ETH: ICoin = {
     bipPath: BIP44_PATH.TESTNET.ETH
 }
 
+// Gas coin on BNB Chain — pays the LayerZero nativeFee for routes that start on BSC.
+export const BNB: ICoin = {
+    type: CoinEnum.BNB,
+    nativeName: 'BNB',
+    icon: (props) => <BnbIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    lotSize: 1,
+    minWalletBalance: 0,
+    network: NETWORK_BSC,
+    enabled: isMainnet,
+    isFAssetCoin: false,
+    supportedWallets: [],
+    decimals: 6,
+    feeDecimals: 6,
+    bipPath: BIP44_PATH.MAINNET.ETH
+}
+
+export const BSC_TESTNET_BNB: ICoin = {
+    type: CoinEnum.BNB,
+    nativeName: 'BNB',
+    icon: (props) => <BnbIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    lotSize: 1,
+    minWalletBalance: 0,
+    network: NETWORK_BSC_TESTNET,
+    enabled: !isMainnet,
+    isFAssetCoin: false,
+    supportedWallets: [],
+    decimals: 6,
+    feeDecimals: 6,
+    bipPath: BIP44_PATH.TESTNET.ETH
+}
+
+// FXRP as BNB Chain sees it (the OFT). Mirrors FXRP_ETH / FTEST_XRP_ETH.
+export const FXRP_BSC: ICoin = {
+    type: CoinEnum.FXRP,
+    nativeName: 'FXRP',
+    icon: (props) => <FXrpBnbIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    nativeIcon: (props) => <BnbIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    lotSize: 10,
+    minWalletBalance: 0,
+    network: NETWORK_BSC,
+    enabled: isMainnet && enabledUnderlyingFassets.includes(CoinEnum.FXRP.toLowerCase()),
+    isFAssetCoin: false,
+    supportedWallets: [],
+    decimals: 2,
+    bipPath: BIP44_PATH.MAINNET.ETH
+}
+
+export const FTEST_XRP_BSC: ICoin = {
+    type: CoinEnum.FTestXRP,
+    nativeName: 'FTestXRP',
+    icon: (props) => <FXrpBnbIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    nativeIcon: (props) => <BnbIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+    lotSize: testnetChain === 'C2FLR' ? 10 : 20,
+    minWalletBalance: 0,
+    network: NETWORK_BSC_TESTNET,
+    enabled: !isMainnet && enabledUnderlyingFassets.includes(CoinEnum.FTestXRP.toLowerCase()),
+    isFAssetCoin: false,
+    supportedWallets: [],
+    decimals: 2,
+    bipPath: BIP44_PATH.TESTNET.ETH
+}
+
+/**
+ * Gas coin of a remote bridge chain — pays the LayerZero nativeFee for routes that start there.
+ * Same shape as ETH / BNB above.
+ */
+function remoteGasCoin(type: CoinEnum, Icon: (props: IIconProps) => React.ReactNode, network: INetwork): ICoin {
+    return {
+        type,
+        nativeName: type,
+        icon: (props) => <Icon width="32" height="32" className="flex-shrink-0" {...props} />,
+        lotSize: 1,
+        minWalletBalance: 0,
+        network,
+        enabled: network.mainnet === isMainnet,
+        isFAssetCoin: false,
+        supportedWallets: [],
+        decimals: 6,
+        feeDecimals: 6,
+        bipPath: network.mainnet ? BIP44_PATH.MAINNET.ETH : BIP44_PATH.TESTNET.ETH
+    };
+}
+
+// FXRP as a remote bridge chain sees it (the OFT). Same shape as FXRP_BSC / FTEST_XRP_BSC.
+function remoteFassetCoin(
+    Icon: (props: IIconProps) => React.ReactNode,
+    NativeIcon: (props: IIconProps) => React.ReactNode,
+    network: INetwork
+): ICoin {
+    const type = network.mainnet ? CoinEnum.FXRP : CoinEnum.FTestXRP;
+    return {
+        type,
+        nativeName: type,
+        icon: (props) => <Icon width="32" height="32" className="flex-shrink-0" {...props} />,
+        nativeIcon: (props) => <NativeIcon width="32" height="32" className="flex-shrink-0" {...props} />,
+        lotSize: network.mainnet || testnetChain === 'C2FLR' ? 10 : 20,
+        minWalletBalance: 0,
+        network,
+        enabled: network.mainnet === isMainnet && enabledUnderlyingFassets.includes(type.toLowerCase()),
+        isFAssetCoin: false,
+        supportedWallets: [],
+        decimals: 2,
+        bipPath: network.mainnet ? BIP44_PATH.MAINNET.ETH : BIP44_PATH.TESTNET.ETH
+    };
+}
+
+// Base and Katana pay gas in ETH, Monad in MON
+export const BASE_ETH = remoteGasCoin(CoinEnum.ETH, EthBaseIcon, NETWORK_BASE);
+export const BASE_SEPOLIA_ETH = remoteGasCoin(CoinEnum.ETH, EthBaseIcon, NETWORK_BASE_SEPOLIA);
+export const KATANA_ETH = remoteGasCoin(CoinEnum.ETH, EthKatanaIcon, NETWORK_KATANA);
+export const KATANA_TESTNET_ETH = remoteGasCoin(CoinEnum.ETH, EthKatanaIcon, NETWORK_KATANA_TESTNET);
+export const MON = remoteGasCoin(CoinEnum.MON, MonadIcon, NETWORK_MONAD);
+export const MONAD_TESTNET_MON = remoteGasCoin(CoinEnum.MON, MonadIcon, NETWORK_MONAD_TESTNET);
+
+export const FXRP_BASE = remoteFassetCoin(FXrpBaseIcon, BaseIcon, NETWORK_BASE);
+export const FTEST_XRP_BASE = remoteFassetCoin(FXrpBaseIcon, BaseIcon, NETWORK_BASE_SEPOLIA);
+export const FXRP_KATANA = remoteFassetCoin(FXrpKatanaIcon, KatanaIcon, NETWORK_KATANA);
+export const FTEST_XRP_KATANA = remoteFassetCoin(FXrpKatanaIcon, KatanaIcon, NETWORK_KATANA_TESTNET);
+export const FXRP_MONAD = remoteFassetCoin(FXrpMonadIcon, MonadIcon, NETWORK_MONAD);
+export const FTEST_XRP_MONAD = remoteFassetCoin(FXrpMonadIcon, MonadIcon, NETWORK_MONAD_TESTNET);
+
 export const WCFLR: ICoin = {
     type: CoinEnum.WCFLR,
     icon: (props) => <CflrIcon width="32" height="32" className="flex-shrink-0" {...props} />,
@@ -478,20 +617,36 @@ export const BRIDGE_COINS = [
     FTEST_XRP_HYPE,
     FXRP_HYPE,
     FTEST_XRP_ETH,
-    FXRP_ETH
+    FXRP_ETH,
+    FTEST_XRP_BSC,
+    FXRP_BSC,
+    FTEST_XRP_BASE,
+    FXRP_BASE,
+    FTEST_XRP_KATANA,
+    FXRP_KATANA,
+    FTEST_XRP_MONAD,
+    FXRP_MONAD
 ];
 
 // Gas coin per bridge chain — the fee token for the LayerZero nativeFee.
 // BRIDGE_CHAIN.FLARE is absent because there the fee is paid in mainToken (FLR/C2FLR/SGB).
 export const BRIDGE_GAS_COIN: Record<string, ICoin> = {
     [BRIDGE_CHAIN.HYPER_EVM]: isMainnet ? HYPE : TEST_HYPE,
-    [BRIDGE_CHAIN.ETHEREUM]: isMainnet ? ETH : SEPOLIA_ETH
+    [BRIDGE_CHAIN.ETHEREUM]: isMainnet ? ETH : SEPOLIA_ETH,
+    [BRIDGE_CHAIN.BSC]: isMainnet ? BNB : BSC_TESTNET_BNB,
+    [BRIDGE_CHAIN.BASE]: isMainnet ? BASE_ETH : BASE_SEPOLIA_ETH,
+    [BRIDGE_CHAIN.KATANA]: isMainnet ? KATANA_ETH : KATANA_TESTNET_ETH,
+    [BRIDGE_CHAIN.MONAD]: isMainnet ? MON : MONAD_TESTNET_MON
 };
 
 // FXRP OFT coin per bridge chain — the source token for routes originating on a remote chain.
 export const BRIDGE_FASSET_COIN: Record<string, ICoin> = {
     [BRIDGE_CHAIN.HYPER_EVM]: isMainnet ? FXRP_HYPE : FTEST_XRP_HYPE,
-    [BRIDGE_CHAIN.ETHEREUM]: isMainnet ? FXRP_ETH : FTEST_XRP_ETH
+    [BRIDGE_CHAIN.ETHEREUM]: isMainnet ? FXRP_ETH : FTEST_XRP_ETH,
+    [BRIDGE_CHAIN.BSC]: isMainnet ? FXRP_BSC : FTEST_XRP_BSC,
+    [BRIDGE_CHAIN.BASE]: isMainnet ? FXRP_BASE : FTEST_XRP_BASE,
+    [BRIDGE_CHAIN.KATANA]: isMainnet ? FXRP_KATANA : FTEST_XRP_KATANA,
+    [BRIDGE_CHAIN.MONAD]: isMainnet ? FXRP_MONAD : FTEST_XRP_MONAD
 };
 
 export const FASSET_COIN = COINS.find(c => c.enabled && c.isFAssetCoin)!;

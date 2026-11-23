@@ -1,5 +1,4 @@
 import {
-    Button,
     Divider,
     lighten,
     Loader,
@@ -26,14 +25,15 @@ import { FAssetOFTAdapterAbi } from "@/abi";
 import { BRIDGE_KEY, useMessage } from "@/api/bridge";
 import { modals } from "@mantine/modals";
 import { useWeb3 } from "@/hooks/useWeb3";
-import { BRIDGE_TYPE, LAYER_ZERO_STATUS, WALLET } from "@/constants";
-import { BridgeConfig } from "@/components/modals/BridgeModal";
+import { LAYER_ZERO_STATUS, WALLET } from "@/constants";
+import { BridgeConfig, bridgeDestinationNameKey, bridgeSourceNameKey } from "@/config/bridge";
 import WalletConnectOpenWalletCard from "@/components/cards/WalletConnectOpenWalletCard";
 import LedgerConfirmTransactionCard from "@/components/cards/LedgerConfirmTransactionCard";
 import { useQueryClient } from "@tanstack/react-query";
 import { BALANCE_KEY } from "@/api/balance";
 import { OFT_KEY } from "@/api/oft";
 import { FASSET_COIN } from "@/config/coin";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface IConfirmStepper {
     token: ICoin;
@@ -41,6 +41,9 @@ interface IConfirmStepper {
     onError: (error: string) => void;
     onClose: (status: boolean) => void;
     bridgeConfig: BridgeConfig;
+    // LayerZero FAILED / BLOCKED / PAYLOAD_STORED after broadcast: when given, the waiting
+    // modal closes and this gets the message (bridge page → toast); absent = onError as before
+    onDeliveryFailed?: (message: string) => void;
 }
 
 const CHECK_STATUS_INTERVAL = 10000;
@@ -51,8 +54,11 @@ const STEP_APPROVE = 0;
 const STEP_BRIDGE = 1;
 const STEP_COMPLETED = 2;
 
-export default function ConfirmStepper({ token, formValues, onError, onClose, bridgeConfig }: IConfirmStepper) {
+export default function ConfirmStepper({ token, formValues, onError, onClose, bridgeConfig, onDeliveryFailed }: IConfirmStepper) {
     const { t } = useTranslation();
+    // The route's own type names the chains (Hyperliquid for the composer route)
+    const destinationName = t(bridgeDestinationNameKey(bridgeConfig.type));
+    const sourceName = t(bridgeSourceNameKey(bridgeConfig.type));
     const { mainToken, bridgeToken } = useWeb3();
     const queryClient = useQueryClient();
     const mediaQueryMatches = useMediaQuery('(max-width: 640px)');
@@ -88,12 +94,19 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                     exact: true,
                     refetchType: 'all'
                 });
+                // Prefix match — the history key also carries the XRPL address
                 queryClient.invalidateQueries({
-                    queryKey: [OFT_KEY.USER_HISTORY, mainToken?.address],
+                    queryKey: [OFT_KEY.FULL_HISTORY, mainToken?.address],
+                    refetchType: 'all'
+                });
+                // Remote → remote rows in "Latest transactions" come from LayerZero Scan
+                queryClient.invalidateQueries({
+                    queryKey: [BRIDGE_KEY.WALLET_MESSAGES, mainToken?.address],
                     exact: true,
                     refetchType: 'all'
                 });
-                if (bridgeConfig.type !== BRIDGE_TYPE.HYPER_CORE) {
+                // Flare → Hyperliquid touches no remote OFT balance; remote → Hyperliquid burns on its source
+                if (bridgeConfig.compose !== 'hyper_core' || bridgeConfig.feeChain !== undefined) {
                     // No `exact` because the query key now carries the bridge chain —
                     // a prefix match covers both the HyperEVM and Ethereum instances.
                     queryClient.invalidateQueries({
@@ -101,7 +114,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                         refetchType: 'all'
                     });
                 }
-                if (bridgeConfig.type === BRIDGE_TYPE.HYPER_CORE) {
+                if (bridgeConfig.compose === 'hyper_core') {
                     queryClient.invalidateQueries({
                         queryKey: [BRIDGE_KEY.BALANCE, mainToken?.address],
                         exact: true,
@@ -109,15 +122,21 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                     });
                 }
                 // Every route that does not originate on Flare pays its fee in the remote
-                // chain's gas coin (HYPE or ETH) — that is the balance which changes.
-                if (bridgeConfig.feeTokenKey !== 'native') {
+                // chain's gas coin — that is the balance which changes.
+                if (bridgeConfig.feeChain !== undefined) {
                     queryClient.invalidateQueries({
                         queryKey: [CONTRACT_KEY.HYPE_BALANCE, mainToken?.address],
                         refetchType: 'all'
                     });
                 }
             } else if ([LAYER_ZERO_STATUS.FAILED, LAYER_ZERO_STATUS.BLOCKED, LAYER_ZERO_STATUS.PAYLOAD_STORED].includes(data?.status?.name)) {
-                onError(data?.status?.message);
+                if (onDeliveryFailed) {
+                    // Its onClose ends the flow (onClose(false)) after the interval is stopped
+                    modals.close(WAITING_MODAL);
+                    onDeliveryFailed(data?.status?.message);
+                } else {
+                    onError(data?.status?.message);
+                }
                 checkStatusInterval.stop();
                 setIsLedgerButtonDisabled(false);
             }
@@ -244,7 +263,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
     const openWaitingModal = () => {
         modals.open({
             modalId: WAITING_MODAL,
-            title: t(`bridge_modal.${bridgeConfig.titleKey}_title`, { fAsset: token?.type }),
+            title: t(`bridge_modal.${bridgeConfig.titleKey}_title`, { fAsset: token?.type, bridgeType: destinationName }),
             closeOnClickOutside: false,
             closeOnEscape: false,
             centered: true,
@@ -284,7 +303,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
             zIndex: 3000,
             size: 600,
             fullScreen: mediaQueryMatches,
-            title: t(`bridge_modal.${bridgeConfig.titleKey}_title`, { fAsset: token?.type }),
+            title: t(`bridge_modal.${bridgeConfig.titleKey}_title`, { fAsset: token?.type, bridgeType: destinationName }),
             children: (
                 <div className="px-0 sm:px-7">
                     <Title
@@ -309,7 +328,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                                 // The XRPL route redeems the FAsset, so the user receives the
                                 // underlying coin (XRP) rather than the FAsset the route started with.
                                 underlying: FASSET_COIN?.nativeName,
-                                bridgeType: formValues?.type === BRIDGE_TYPE.HYPER_CORE ? 'Hyperliquid' : 'HyperEVM'
+                                bridgeType: destinationName
                             })}
                         </Text>
                     </div>
@@ -319,17 +338,13 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                             root: 'mx-[-1rem] sm:mx-[-2.7rem]'
                         }}
                     />
-                    <Button
+                    <FAssetButton
                         onClick={() => { modals.closeAll() }}
-                        variant="filled"
-                        color="black"
-                        radius="xl"
-                        size="sm"
                         fullWidth
-                        className="hover:text-white font-normal mb-5"
+                        className="hover:text-white mb-5"
                     >
                         {t('bridge_modal.finished_modal.confirm_button')}
-                    </Button>
+                    </FAssetButton>
                 </div>
             ),
             centered: true,
@@ -351,17 +366,8 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
             >
                 {t('bridge_modal.confirm_step_title')}
             </Title>
-            <Text
-                className="my-5 text-16"
-                fw={400}
-                c="var(--flr-black)"
-            >
-                {bridgeConfig.needsApproval
-                    ? t('mint_modal.confirm_step_description')
-                    : t('bridge_modal.confirm_step_description')
-                }
-            </Text>
             <Stepper
+                className="mt-5"
                 active={currentStep}
                 iconSize={32}
                 size="sm"
@@ -387,7 +393,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                                 fw={400}
                                 c={lighten('var(--flr-gray)', 0.378)}
                             >
-                                {t('bridge_modal.approve_step_description')}
+                                {t('bridge_modal.approve_step_description', { fAsset: token?.type })}
                             </Text>
                         }
                         icon={
@@ -412,7 +418,7 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                         >
                             {t(`bridge_modal.bridge_${bridgeConfig.titleKey}_step_label`, {
                                 fAsset: token?.type,
-                                sourceChain: bridgeConfig.sourceName
+                                sourceChain: sourceName
                             })}
                         </Text>
                     }
@@ -424,7 +430,8 @@ export default function ConfirmStepper({ token, formValues, onError, onClose, br
                         >
                             {t(`bridge_modal.bridge_${bridgeConfig.titleKey}_step_description`, {
                                 fAsset: token?.type,
-                                sourceChain: bridgeConfig.sourceName
+                                sourceChain: sourceName,
+                                bridgeType: destinationName
                             })}
                         </Text>
                     }

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Box, Button, Divider, Group, Stack, Text, Title, UnstyledButton } from "@mantine/core";
+import { Box, Divider, Group, Stack, Text, Title, UnstyledButton } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import { useElementSize } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
@@ -7,6 +7,7 @@ import { useRouter } from "next/router";
 import { useQueryClient } from "@tanstack/react-query";
 import SelectNetworkModal from "@/components/modals/SelectNetworkModal";
 import AlreadyConnectedModal from "@/components/modals/AlreadyConnectedModal";
+import FireblocksConnectModal from "@/components/modals/FireblocksConnectModal";
 import { IWallet } from "@/config/connectors";
 import { useConnectWalletModal } from "@/hooks/useWeb3Modal";
 import { useWeb3 } from "@/hooks/useWeb3";
@@ -14,7 +15,9 @@ import { notifications } from "@mantine/notifications";
 import { INetwork } from "@/types";
 import { COINS } from "@/config/coin";
 import { WALLET } from "@/constants";
+import { getEvmAssetId } from "@/core/fireblocks";
 import classes from "@/styles/components/elements/SelectWalletButton.module.scss";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 interface ISelectWalletButton {
     wallet: IWallet;
@@ -27,6 +30,7 @@ const CONNECT_FLR_MODAL = 'connect_flr_modal';
 export default function SelectWalletButton({ wallet, disabled = false, selectNetwork = false }: ISelectWalletButton) {
     const [isSelectNetworkModalActive, setIsSelectNetworkModalActive] = useState<boolean>(false);
     const [isAlreadyConnectedModalActive, setIsAlreadyConnectedModalActive] = useState<boolean>(false);
+    const [isFireblocksModalActive, setIsFireblocksModalActive] = useState<boolean>(false);
     const {
         connect,
         connectedWallets,
@@ -74,20 +78,16 @@ export default function SelectWalletButton({ wallet, disabled = false, selectNet
                             root: 'mx-[-1rem] sm:mx-[-2.7rem]'
                         }}
                     />
-                    <Button
+                    <FAssetButton
                         onClick={() => {
                             modals.closeAll();
                             openConnectWalletModal();
                         }}
-                        variant="filled"
-                        color="black"
-                        radius="xl"
-                        size="sm"
                         fullWidth
-                        className="hover:text-white font-normal mb-5"
+                        className="hover:text-white mb-5"
                     >
                         {t('connect_flr_modal.confirm_button')}
-                    </Button>
+                    </FAssetButton>
                 </div>
             ),
             onClose: () => {
@@ -110,13 +110,20 @@ export default function SelectWalletButton({ wallet, disabled = false, selectNet
                     setIsSelectNetworkModalActive(true);
                     return;
                 }
-                if (wallet.id === WALLET.XAMAN) {
+                // Fireblocks connects the Flare side itself where Fireblocks has the network's asset
+                const isFlareFromFireblocks = wallet.id === WALLET.FIREBLOCKS && !!mainToken && getEvmAssetId(mainToken.type) !== undefined;
+                if ((wallet.id === WALLET.XAMAN || wallet.id === WALLET.FIREBLOCKS) && !isFlareFromFireblocks) {
                     const isConnectedToFlr = mainToken ? getConnectedCoin(mainToken.type) !== undefined : false;
                     if (!isConnectedToFlr) {
                         closeConnectWalletModal();
                         openConnectFlrModal();
                         return;
                     }
+                }
+                if (wallet.id === WALLET.FIREBLOCKS) {
+                    closeConnectWalletModal(false);
+                    setIsFireblocksModalActive(true);
+                    return;
                 }
 
                 await connect(wallet.id, []);
@@ -167,6 +174,16 @@ export default function SelectWalletButton({ wallet, disabled = false, selectNet
             walletConnectConnector.web3Modal?.closeModal();
             closeConnectWalletModal();
         }
+    }
+
+    const onCloseFireblocksModal = async (isConnected: boolean) => {
+        setIsFireblocksModalActive(false);
+        if (!isConnected) {
+            openConnectWalletModal();
+            return;
+        }
+        queryClient.clear();
+        await queryClient.invalidateQueries();
     }
 
     const onCloseAlreadyConnectedModal = () => {
@@ -244,6 +261,12 @@ export default function SelectWalletButton({ wallet, disabled = false, selectNet
                     opened={isSelectNetworkModalActive}
                     onClose={onCloseSelectNetworkModal}
                     wallet={wallet}
+                />
+            }
+            {wallet.id === WALLET.FIREBLOCKS &&
+                <FireblocksConnectModal
+                    opened={isFireblocksModalActive}
+                    onClose={onCloseFireblocksModal}
                 />
             }
             <AlreadyConnectedModal

@@ -8,22 +8,25 @@ import { useTranslation } from "react-i18next";
 interface BridgeXrplFeesProps {
     /**
      * The coin the LayerZero nativeFee is paid in — resolved by the caller from
-     * `FEE_TOKEN_CHAIN[bridgeConfig.feeTokenKey]` (undefined chain = mainToken).
+     * `bridgeConfig.feeChain` (undefined chain = mainToken).
      */
     feeCoin?: ICoin;
     fee?: string;
     isLoading: boolean;
-    totalFeeAmount?: number;
+    redemptionFeeAmount?: number;
+    // In FXRP on the source chain — undefined = no row (composer fee 0)
+    composerFee?: { amount: number; coin: ICoin };
 }
 
 export function useBridgeXrplFees({
     feeCoin,
     fee,
     isLoading,
-    totalFeeAmount,
+    redemptionFeeAmount,
+    composerFee,
 }: BridgeXrplFeesProps) {
     const { t } = useTranslation();
-    return [
+    const items = [
         buildFeeItem({
             label: t("bridge_modal.form.cross_chain_fee_label"),
             token: feeCoin as ICoin,
@@ -37,8 +40,22 @@ export function useBridgeXrplFees({
             token: FASSET_COIN,
             currencyName: FASSET_COIN.nativeName,
             fee: {
-                amount: totalFeeAmount && totalFeeAmount > 0 ? totalFeeAmount : null,
+                amount: redemptionFeeAmount && redemptionFeeAmount > 0 ? redemptionFeeAmount : null,
             },
+            format: (n) => formatNumber(n, 4),
+        }),
+    ];
+    if (!composerFee) return items;
+
+    return [
+        ...items,
+        // Kept by the redeem composer on Flare, in FXRP — not part of the redemption
+        buildFeeItem({
+            label: t("bridge_modal.form.composer_fee_label"),
+            // Fee rows prefer `nativeIcon`, which on a bridge FXRP coin is the chain's gas coin (ETH)
+            token: { ...composerFee.coin, nativeIcon: undefined },
+            currencyName: composerFee.coin.type,
+            fee: { amount: composerFee.amount > 0 ? composerFee.amount : null },
             format: (n) => formatNumber(n, 4),
         }),
     ];

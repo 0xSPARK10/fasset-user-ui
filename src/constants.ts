@@ -4,17 +4,23 @@ export const WALLET = {
     WALLET_CONNECT: 'WalletConnect',
     META_MASK: 'MetaMask',
     LEDGER: 'Ledger',
-    XAMAN: 'Xaman'
-}
+    XAMAN: 'Xaman',
+    FIREBLOCKS: 'Fireblocks'
+} as const;
+
+export type WalletId = (typeof WALLET)[keyof typeof WALLET];
 
 // Mirrors BE WalletType enum — sent as nativeWalletId / underlyingWalletId on POST /api/mint.
 // See dev-docs/WALLET_IDS.md before changing.
-export const WALLET_ID: Record<string, number> = {
+export const WALLET_ID: Partial<Record<WalletId, number>> = {
     [WALLET.META_MASK]: 1,
     [WALLET.WALLET_CONNECT]: 2,
     [WALLET.LEDGER]: 3,
     [WALLET.XAMAN]: 4,
 }
+
+// 0 = no BE WalletType for this wallet (Fireblocks until BE adds one) or no wallet connected
+export const getWalletId = (wallet?: WalletId): number => (wallet ? WALLET_ID[wallet] : undefined) ?? 0;
 
 export const BIP44_PATH = {
     TESTNET: {
@@ -111,61 +117,44 @@ export const FASSETS_EXPLORER_URL = IS_MAINNET
     ? 'https://flare.space/dapp/fassets-explorer'
     : 'https://flare-space-test.matheo.si/dapp/fassets-explorer';
 
+// Smart accounts website — a recovered direct mint & bridge leaves the FXRP on the Personal Account there
+export const SMART_ACCOUNTS_WEBSITE_URL = IS_MAINNET
+    ? 'https://fsa.flare.network'
+    : 'https://smart-account-coston2.flare.rocks';
+
 export const BALANCE_FETCH_INTERVAL = 45000;
 
-export const BRIDGE_TYPE = {
-    HYPER_EVM: 'hyper_evm',
-    HYPER_CORE: 'hyper_core',
-    FLARE: 'flare',
-    XRPL: 'xrpl',
-    ETHEREUM: 'ethereum',
-    // FLARE / XRPL are taken and mean "from HyperEVM", hence the _FROM_ETH suffix.
-    // Goes away with the route registry — see dev-docs/TODO.md row 41.
-    FLARE_FROM_ETH: 'flare_from_eth',
-    XRPL_FROM_ETH: 'xrpl_from_eth'
-} as const;
-
-// The chain the transaction is signed on and where the source OFT lives.
+// The chain the transaction is signed on and where the source OFT lives. Every chain but
+// Flare is a "remote" chain with its own FXRP OFT; a LayerZero route is any pair of them
+// (see `config/bridge.ts` → BRIDGE_LZ_ROUTES).
 export const BRIDGE_CHAIN = {
     FLARE: 'flare',
     HYPER_EVM: 'hyper_evm',
-    ETHEREUM: 'ethereum'
+    ETHEREUM: 'ethereum',
+    BSC: 'bsc',
+    BASE: 'base',
+    KATANA: 'katana',
+    MONAD: 'monad'
 } as const;
 
-// Single source of truth for "where does this route start". Replaces the hand-written
-// `bridgeType === FLARE || bridgeType === XRPL` chains, which meant "source is
-// HyperEVM" — with Ethereum there are two remote chains, so that reading is wrong.
-export const BRIDGE_SOURCE_CHAIN = {
-    [BRIDGE_TYPE.HYPER_EVM]: BRIDGE_CHAIN.FLARE,
-    [BRIDGE_TYPE.HYPER_CORE]: BRIDGE_CHAIN.FLARE,
-    [BRIDGE_TYPE.ETHEREUM]: BRIDGE_CHAIN.FLARE,
-    [BRIDGE_TYPE.FLARE]: BRIDGE_CHAIN.HYPER_EVM,
-    [BRIDGE_TYPE.XRPL]: BRIDGE_CHAIN.HYPER_EVM,
-    [BRIDGE_TYPE.FLARE_FROM_ETH]: BRIDGE_CHAIN.ETHEREUM,
-    [BRIDGE_TYPE.XRPL_FROM_ETH]: BRIDGE_CHAIN.ETHEREUM
+// The rows of the bridge page route picker. Wider than BRIDGE_CHAIN: XRPL is not a
+// LayerZero chain and HYPER_CORE lives inside HyperEVM, but both are something the user
+// moves FXRP from or to. A FROM → TO pair resolves to a route in `config/bridgeRoutes.tsx`.
+export const BRIDGE_ROUTE_CHAIN = {
+    XRPL: 'xrpl',
+    ...BRIDGE_CHAIN,
+    HYPER_CORE: 'hyper_core'
 } as const;
 
-// The chain LayerZero delivers the message to (dstEid).
-// XRPL routes target Flare — the redeem composer there redeems onward into XRP.
-export const BRIDGE_DESTINATION_CHAIN = {
-    [BRIDGE_TYPE.HYPER_EVM]: BRIDGE_CHAIN.HYPER_EVM,
-    [BRIDGE_TYPE.HYPER_CORE]: BRIDGE_CHAIN.HYPER_EVM,
-    [BRIDGE_TYPE.ETHEREUM]: BRIDGE_CHAIN.ETHEREUM,
-    [BRIDGE_TYPE.FLARE]: BRIDGE_CHAIN.FLARE,
-    [BRIDGE_TYPE.XRPL]: BRIDGE_CHAIN.FLARE,
-    [BRIDGE_TYPE.FLARE_FROM_ETH]: BRIDGE_CHAIN.FLARE,
-    [BRIDGE_TYPE.XRPL_FROM_ETH]: BRIDGE_CHAIN.FLARE
+// What the bridge page runs for a picked pair — XRPL → Flare is a mint, Flare → XRPL a
+// redeem, everything else a LayerZero bridge identified by its BridgeType.
+export const BRIDGE_ROUTE_ACTION = {
+    MINT: 'mint',
+    REDEEM: 'redeem',
+    BRIDGE: 'bridge',
+    DIRECT_MINT_BRIDGE: 'direct_mint_bridge',
+    // Hyperliquid (Core spot) ↔ HyperEVM through the token's system address — not LayerZero
+    HYPERCORE_TRANSFER: 'hypercore_transfer'
 } as const;
 
-// How composeMsg + extraOptions are encoded for each route.
-// 'plain' = a straight transfer with no composer.
-export const BRIDGE_COMPOSE_KIND = {
-    [BRIDGE_TYPE.HYPER_EVM]: 'plain',
-    [BRIDGE_TYPE.HYPER_CORE]: 'hyper_core',
-    [BRIDGE_TYPE.ETHEREUM]: 'plain',
-    [BRIDGE_TYPE.FLARE]: 'plain',
-    [BRIDGE_TYPE.FLARE_FROM_ETH]: 'plain',
-    [BRIDGE_TYPE.XRPL]: 'xrpl',
-    [BRIDGE_TYPE.XRPL_FROM_ETH]: 'xrpl'
-} as const;
 

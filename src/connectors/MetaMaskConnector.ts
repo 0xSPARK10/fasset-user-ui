@@ -4,6 +4,7 @@ import { useConnectedCoin } from "@/store/coin";
 import { ethers, JsonRpcSigner } from "ethers";
 import { BRIDGE_COINS, BRIDGE_GAS_COIN, COINS } from "@/config/coin";
 import { ICoin } from "@/types";
+import i18next from "i18next";
 
 export interface IMetaMaskConnector {
     connect: () => Promise<boolean>;
@@ -115,30 +116,42 @@ export default function MetaMaskConnector(): IMetaMaskConnector {
 
         //@ts-ignore
         const ethereum = window.ethereum;
-        const chainId = await ethereum.request({ method: 'eth_chainId' });
+        const targetChainId = `0x${Number(token?.network?.chainId).toString(16)}`;
 
         try {
             await ethereum.request({
                 method: "wallet_switchEthereumChain",
-                params: [{ chainId: `0x${Number(token?.network?.chainId!).toString(16)}` }]
+                params: [{ chainId: targetChainId }]
             });
         } catch (error: any) {
-            // 4902 = Unrecognized chain
-            if (error?.code === 4902) {
-                await ethereum.request({
-                    method: "wallet_addEthereumChain",
-                    params: [{
-                        chainId: `0x${Number(token?.network?.chainId!).toString(16)}`,
-                        rpcUrls: [token?.network?.rpcUrl],
-                        chainName: token?.network?.name,
-                        nativeCurrency: {
-                            name: token?.nativeName,
-                            symbol: token?.type,
-                            decimals: 18
-                        }
-                    }]
-                });
-            }
+            // 4902 = Unrecognized chain (MetaMask mobile wraps it in a -32603). Any other error
+            // (rejected, a request already pending) must stop here — signing on the previous chain
+            // fails later with a misleading error.
+            const isUnrecognizedChain = error?.code === 4902 || error?.data?.originalError?.code === 4902;
+            if (!isUnrecognizedChain) {
+                // Already on the target chain (e.g. the switch call is unsupported or another one is
+                // pending) — nothing to switch, sign as before
+                const currentChainId: string = await ethereum.request({ method: 'eth_chainId' });
+                if (currentChainId.toLowerCase() !== targetChainId) throw error;
+            } else await ethereum.request({
+                method: "wallet_addEthereumChain",
+                params: [{
+                    chainId: targetChainId,
+                    rpcUrls: [token?.network?.rpcUrl],
+                    chainName: token?.network?.name,
+                    nativeCurrency: {
+                        name: token?.nativeName,
+                        symbol: token?.type,
+                        decimals: 18
+                    }
+                }]
+            });
+        }
+
+        // MetaMask can resolve without switching (e.g. the added chain was not switched to)
+        const chainId: string = await ethereum.request({ method: 'eth_chainId' });
+        if (chainId.toLowerCase() !== targetChainId) {
+            throw new Error(i18next.t('errors.wallet_switch_network_label', { network: token?.network?.name }));
         }
 
         //@ts-ignore

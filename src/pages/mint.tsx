@@ -5,8 +5,7 @@ import {
     Grid,
     Text,
     Anchor,
-    rem,
-    Button
+    rem
 } from "@mantine/core";
 import { IconArrowUpRight } from "@tabler/icons-react";
 import { useScrollIntoView } from "@mantine/hooks";
@@ -22,6 +21,7 @@ import classes from "@/styles/pages/Mint.module.scss";
 import { useMintEnabled } from "@/api/minting";
 import { NETWORK_FLARE, NETWORK_SONGBIRD, XRP_NAMESPACE } from "@/config/networks";
 import { useNetworks } from "@/hooks/useNetworks";
+import FAssetButton from "@/components/elements/FAssetButton";
 
 export default function Mint() {
     const [fAssetCoins, setFAssetCoins] = useState<IFAssetCoin[]>([]);
@@ -115,16 +115,13 @@ export default function Mint() {
                 >
                     {t('dashboard.latest_transactions_subtitle')}
                 </Title>
-                <Button
-                    variant="gradient"
-                    size="xs"
-                    radius="xl"
-                    fw={400}
+                <FAssetButton
+                    variant="secondary"
                     onClick={() => setLatestTransactionCardKey(latestTransactionCardKey + 1)}
                     className="mt-2 sm:mt-0"
                 >
                     {t('dashboard.refresh_button')}
-                </Button>
+                </FAssetButton>
             </div>
             <MintTransactionsCard
                 refreshKey={latestTransactionCardKey}
